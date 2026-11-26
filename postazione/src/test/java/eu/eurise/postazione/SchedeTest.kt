@@ -1,9 +1,12 @@
 package eu.eurise.postazione
 
 import eu.eurise.postazione.data.Cielo
+import eu.eurise.postazione.data.Intervallo
+import eu.eurise.postazione.data.Liberi
 import eu.eurise.postazione.data.Scheda
 import eu.eurise.postazione.data.Schede
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import java.time.LocalDateTime
 
@@ -26,5 +29,29 @@ class SchedeTest {
         assertEquals(Cielo.Mattino, Schede.cielo(giovedi))
         assertEquals(Cielo.Tramonto, Schede.cielo(giovedi.withHour(17)))
         assertEquals(Cielo.Notte, Schede.cielo(giovedi.withHour(22)))
+    }
+
+    @Test fun fineGiornata() {
+        assertEquals(false, Schede.fineGiornata(giovedi.withHour(17).withMinute(14)))
+        assertEquals(true, Schede.fineGiornata(giovedi.withHour(17).withMinute(15)))
+        assertEquals(false, Schede.fineGiornata(LocalDateTime.of(2026, 11, 28, 17, 30)))
+    }
+
+    private fun min(m: Int) = m * 60_000L
+
+    @Test fun spazioPrimaDelProssimoImpegno() =
+        assertEquals(Intervallo(min(0), min(50)), Liberi.primo(min(0), min(480), listOf(min(50) to min(110))))
+
+    @Test fun spazioDopoLImpegnoInCorso() =
+        assertEquals(Intervallo(min(60), min(110)), Liberi.primo(min(30), min(480), listOf(min(0) to min(60), min(110) to min(170))))
+
+    @Test fun impegniAttaccatiNonLascianoSpazio() =
+        assertEquals(Intervallo(min(120), min(480)), Liberi.primo(min(0), min(480), listOf(min(10) to min(60), min(70) to min(120))))
+
+    @Test fun senzaImpegniNienteDaDire() = assertNull(Liberi.primo(min(0), min(480), emptyList()))
+
+    @Test fun quanteCoseCiStanno() {
+        assertEquals(2, Liberi.quante(Intervallo(min(0), min(50)), 5))
+        assertEquals(1, Liberi.quante(Intervallo(min(0), min(120)), 1))
     }
 }

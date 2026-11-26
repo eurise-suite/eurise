@@ -71,6 +71,14 @@ class Telefono(private val context: Context) {
     fun avvia(intent: Intent): Boolean =
         runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess
 
+    /** Un sito messo in un gruppo: nel Browser di Eurise se c'è, altrimenti nel browser del telefono. */
+    fun apriSito(indirizzo: String): Boolean {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(indirizzo)).addCategory(Intent.CATEGORY_BROWSABLE)
+        val eurise = listOf("eu.eurise.browser", "eu.eurise.browser.debug").firstOrNull { pm.getLaunchIntentForPackage(it) != null }
+        if (eurise != null && avvia(Intent(intent).setPackage(eurise))) return true
+        return avvia(intent)
+    }
+
     fun avviaPacchetto(pkg: String): Intent? = pm.getLaunchIntentForPackage(pkg)
 
     /** Prima l'app della suite (attività esatta), se c'è; altrimenti [riserva]. */

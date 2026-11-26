@@ -40,6 +40,7 @@ public class Prova extends Activity {
             apri("backup", "content://eu.eurise.password" + suffix + ".eurise.backup/export");
             call("aspetto", "content://eu.eurise.hub" + suffix + ".appearance", "hand", null);
             call("giornata", "content://eu.eurise.hub" + suffix + ".postazione", "today", null);
+            call("rimanda", "content://eu.eurise.hub" + suffix + ".postazione", "postpone", null);
             query("codici", "content://eu.eurise.password" + suffix + ".codes/otp?package=org.esempio.curiosa");
             ponte(suffix);
             Log.i(TAG, "fine");

@@ -46,8 +46,6 @@
     <string name="scaduta">Scaduta</string>
     <string name="niente_da_fare">Niente in scadenza oggi</string>
     <string name="senza_eurise">Installa l\'app Eurise per vedere qui impegni e cose da fare. La Postazione funziona anche da sola.</string>
-    <string name="personale_presto">Musica, notizie e oroscopo arrivano qui nel prossimo giro: ognuno si accende e si spegne a scelta.</string>
-    <string name="viaggio_presto">Preferiti da chiamare con un tocco e «dove hai lasciato l\'auto» arrivano nel prossimo giro.</string>
     <string name="viaggio_meta">Dove vai</string>
 
     <string name="ventaglio_aiuto">Un tocco sul gruppo apre la preferita, quella con la stellina.</string>
@@ -69,4 +67,79 @@
     <string name="imp_sinistra">Sinistra</string>
     <string name="imp_fatto">Fatto</string>
     <string name="imp_predefinita">Rendila la schermata iniziale</string>
+
+    <string name="ritardo">Ritardo</string>
+    <string name="ritardo_testo">Sono in ritardo di circa 10 minuti per «%1$s». Arrivo.</string>
+    <string name="ritardo_a">Avvisa del ritardo</string>
+    <string name="meteo_riga">%1$s %2$d°</string>
+    <string name="meteo_pioggia"> · pioggia dalle %1$s</string>
+    <string name="meteo_pioggia_domani"> · domani pioggia dalle %1$s</string>
+    <string name="cielo_sereno">Sereno</string>
+    <string name="cielo_poco_nuvoloso">Poco nuvoloso</string>
+    <string name="cielo_nuvoloso">Nuvoloso</string>
+    <string name="cielo_nebbia">Nebbia</string>
+    <string name="cielo_pioviggine">Pioviggine</string>
+    <string name="cielo_pioggia">Pioggia</string>
+    <string name="cielo_rovesci">Rovesci</string>
+    <string name="cielo_neve">Neve</string>
+    <string name="cielo_temporale">Temporale</string>
+
+    <string name="libero_ora">Libero fino alle %1$s</string>
+    <string name="libero_tra">%1$s–%2$s libero</string>
+    <plurals name="libero_cose">
+        <item quantity="one">: ci sta %1$d cosa</item>
+        <item quantity="other">: ci stanno %1$d cose</item>
+    </plurals>
+
+    <string name="fine_titolo">FINE GIORNATA</string>
+    <string name="fine_stacca">Chiudi e stacca</string>
+    <plurals name="fine_aperte">
+        <item quantity="one">%1$d cosa ancora aperta passa a domani.</item>
+        <item quantity="other">%1$d cose ancora aperte passano a domani.</item>
+    </plurals>
+    <string name="fine_tutto_fatto">Tutto fatto per oggi.</string>
+    <string name="fine_chiudi">Chiudi la giornata</string>
+    <string name="fine_non_oggi">Non oggi</string>
+
+    <string name="da_rispondere">Da rispondere · %1$d</string>
+    <string name="messaggi">Messaggi · %1$d</string>
+    <string name="niente_da_rispondere">Nessun messaggio in attesa</string>
+    <string name="ascolto_nome">Da rispondere e musica</string>
+    <string name="ascolto_spento">«Da rispondere» e la musica che suona sono spenti.</string>
+    <string name="accendi">Accendi</string>
+    <string name="ascolto_titolo">Da rispondere e musica nella Postazione</string>
+    <string name="ascolto_letto">Le notifiche di messaggi, posta e chiamate perse (chi scrive, la prima riga, l\'ora) e il titolo di quello che sta suonando. Delle altre notifiche non si guarda nulla.</string>
+    <string name="ascolto_esce">Niente: la Postazione non ha il permesso di andare in rete e non scrive questi dati su disco.</string>
+    <string name="ascolto_chi">Solo tu, sulla schermata iniziale del telefono sbloccato.</string>
+    <string name="ascolto_indietro">Si spegne nella stessa pagina di Android che si apre adesso (Accesso alle notifiche), o da Impostazioni della Postazione.</string>
+    <string name="musica_da">da %1$s</string>
+    <string name="musica_pausa">in pausa · %1$s</string>
+    <string name="suona">Suona o metti in pausa</string>
+    <string name="avanti">Avanti</string>
+    <string name="indietro">Indietro</string>
+
+    <string name="preferiti">Preferiti · un tocco e componi</string>
+    <string name="contatti">Rubrica</string>
+    <string name="preferiti_spenti">I preferiti da chiamare sono spenti.</string>
+    <string name="preferiti_vuoti">Nessun contatto con la stellina nella rubrica.</string>
+    <string name="preferiti_titolo">Preferiti da chiamare nella scheda Viaggio</string>
+    <string name="preferiti_letto">Nome e numero dei soli contatti con la stellina nella rubrica.</string>
+    <string name="preferiti_esce">Niente: restano sul telefono. Il tocco apre il tastierino con il numero già scritto; la Postazione non chiama da sola.</string>
+    <string name="preferiti_chi">Solo tu.</string>
+    <string name="preferiti_indietro">Togli il permesso «Contatti» alla Postazione nelle impostazioni di Android.</string>
+
+    <string name="rapido_adesso">Adesso</string>
+    <string name="rapido_usate">Più usate</string>
+    <string name="rapido_recenti">Recenti</string>
+    <string name="rapido_tutte">Tutte le app dalla A alla Z</string>
+    <string name="rapido_titolo">Le tue app</string>
+    <string name="sito_aggiungi">Aggiungi un sito</string>
+    <string name="sito_indirizzo">Indirizzo (es. banca.it)</string>
+    <string name="sito_nome">Nome</string>
+    <string name="sito_errore">Scrivi un indirizzo web valido (https).</string>
+    <string name="annulla">Annulla</string>
+    <string name="aggiungi">Aggiungi</string>
+    <string name="imp_ascolto">Da rispondere e musica (accesso alle notifiche)</string>
+    <string name="imp_acceso">Acceso · tocca per spegnerlo in Android</string>
+    <string name="imp_spento">Spento · tocca per accenderlo</string>
 </resources>

@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -55,6 +56,8 @@ import eu.eurise.postazione.R
 import eu.eurise.postazione.data.Cosa
 import eu.eurise.postazione.data.Gruppo
 import eu.eurise.postazione.data.Impegno
+import eu.eurise.postazione.data.Liberi
+import eu.eurise.postazione.data.Meteo
 import eu.eurise.postazione.data.Saluto
 import eu.eurise.postazione.data.Scheda
 import eu.eurise.postazione.data.Schede
@@ -75,6 +78,7 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
     var ventaglio by remember { mutableStateOf<Gruppo?>(null) }
     var cassetto by remember { mutableStateOf(false) }
     var cercaSubito by remember { mutableStateOf(false) }
+    var sitoPer by remember { mutableStateOf<Gruppo?>(null) }
     var scegliPer by remember { mutableStateOf<Gruppo?>(null) }
     var impostazioni by remember { mutableStateOf(false) }
 
@@ -108,7 +112,7 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
             model, scheda, col,
             onGruppo = { g ->
                 val prima = model.gruppi[g]?.firstOrNull()
-                if (prima == null || !model.telefono.apri(prima)) ventaglio = g
+                if (prima == null || !model.apri(prima)) ventaglio = g
             },
             onVentaglio = { ventaglio = it },
             onLente = { apriCassetto(true) },
@@ -126,10 +130,17 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
                 onScelta = { chiave ->
                     val g = scegliPer
                     if (g != null) { model.aggiungi(g, chiave); cassetto = false; scegliPer = null; ventaglio = g }
-                    else if (model.telefono.apri(chiave)) cassetto = false
+                    else if (model.apri(chiave)) cassetto = false
                 },
+                onSito = { sitoPer = scegliPer },
                 onImpostazioni = { impostazioni = true },
                 onChiudi = { cassetto = false; scegliPer = null },
+            )
+        }
+        sitoPer?.let { g ->
+            NuovoSito(
+                onAggiungi = { indirizzo, nome -> model.aggiungiSito(g, indirizzo, nome).also { ok -> if (ok) { sitoPer = null; cassetto = false; scegliPer = null; ventaglio = g } } },
+                onChiudi = { sitoPer = null },
             )
         }
         if (impostazioni) Impostazioni(model, onChiudi = { impostazioni = false })
@@ -178,8 +189,9 @@ private fun Testata(model: PostazioneModel, colore: Color, modifier: Modifier) {
             Modifier.clickable { tel.apriSuiteO(hub, "eu.eurise.hub.MainActivity", tel.avviaPacchetto(hub)) },
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(EuriseIcons.sun(), null, Modifier.size(16.dp), tint = colore)
-            Text(" " + stringResource(R.string.apri_meteo), color = colore, fontSize = 13.5.sp, fontWeight = FontWeight.Medium)
+            val meteo = model.giornata.meteo
+            Icon(iconaCielo(meteo?.cielo), null, Modifier.size(16.dp), tint = colore)
+            Text(" " + (meteo?.let { rigaMeteo(it, adesso) } ?: stringResource(R.string.apri_meteo)), color = colore, fontSize = 13.5.sp, fontWeight = FontWeight.Medium)
             Icon(EuriseIcons.chevronRight(), null, Modifier.size(12.dp), tint = colore.copy(alpha = 0.6f))
         }
     }
@@ -239,7 +251,7 @@ private fun Foglio(model: PostazioneModel, scheda: Scheda, col: Colori, modifier
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         if (!g.collegata) {
-            item { Avviso(stringResource(R.string.senza_eurise), col) }
+            item { Nota(stringResource(R.string.senza_eurise), col) }
         } else if (g.impegni.isEmpty()) {
             item {
                 Riga(stringResource(R.string.nessun_impegno), stringResource(R.string.calendario), col) { apriCalendario() }
@@ -251,30 +263,87 @@ private fun Foglio(model: PostazioneModel, scheda: Scheda, col: Colori, modifier
                         val e = g.impegni[i]
                         SchedaImpegno(e, i == 0, scheda == Scheda.Viaggio, model.adesso, col,
                             onNaviga = { tel.avvia(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(e.luogo)))) },
+                            onRitardo = { testo, titolo ->
+                                tel.avvia(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, testo), titolo))
+                            },
                             onApri = { apriCalendario() })
                     }
                 }
             }
         }
+        val apriAttivita = { tel.apriSuiteO(hub, "eu.eurise.hub.TasksApp", null) }
         when (scheda) {
-            Scheda.Lavoro -> if (g.collegata) {
-                item {
-                    val totale = g.aperte + g.fatte
-                    Intestazione(
-                        if (g.fatte > 0) stringResource(R.string.da_fare_fatte, g.fatte, totale) else stringResource(R.string.da_fare_oggi, g.aperte),
-                        stringResource(R.string.attivita), col,
-                    ) { tel.apriSuiteO(hub, "eu.eurise.hub.TasksApp", null) }
+            Scheda.Lavoro -> {
+                if (g.collegata && model.fineGiornata) item { FineGiornata(model, col) }
+                avvisi(model, col, R.string.da_rispondere)
+                if (g.collegata) {
+                    item {
+                        val totale = g.aperte + g.fatte
+                        Intestazione(
+                            if (g.fatte > 0) stringResource(R.string.da_fare_fatte, g.fatte, totale) else stringResource(R.string.da_fare_oggi, g.aperte),
+                            stringResource(R.string.attivita), col,
+                        ) { apriAttivita() }
+                    }
+                    val ora = model.adesso.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    val sera = model.adesso.toLocalDate().atTime(18, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    val spazio = if (g.aperte > 0) Liberi.primo(ora, sera, g.impegni.filter { !it.tuttoIlGiorno }.map { it.inizio to it.fine }) else null
+                    if (spazio != null) item { SpazioLibero(spazio, spazio.inizio == ora, Liberi.quante(spazio, g.aperte), col) { apriAttivita() } }
+                    if (g.cose.isEmpty()) item { Text(stringResource(R.string.niente_da_fare), color = col.sotto, fontSize = 13.5.sp) }
+                    items(g.cose.size) { i -> RigaCosa(g.cose[i], col) { apriAttivita() } }
                 }
-                if (g.cose.isEmpty()) item { Text(stringResource(R.string.niente_da_fare), color = col.sotto, fontSize = 13.5.sp) }
-                items(g.cose.size) { i -> RigaCosa(g.cose[i], col) { tel.apriSuiteO(hub, "eu.eurise.hub.TasksApp", null) } }
             }
-            Scheda.Personale -> item { Avviso(stringResource(R.string.personale_presto), col) }
-            Scheda.Viaggio -> item { Avviso(stringResource(R.string.viaggio_presto), col) }
+            Scheda.Personale -> {
+                if (model.ascolto && model.brano != null) item { SchedaMusica(model, col) }
+                avvisi(model, col, R.string.messaggi)
+            }
+            Scheda.Viaggio -> {
+                item { BollaPreferiti(model, col) }
+                if (model.ascolto && model.brano != null) item { SchedaMusica(model, col) }
+            }
         }
     }
 }
 
-private fun orario(ms: Long): String = Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).toLocalTime().format(Ora)
+/** «Da rispondere»: messaggi, posta e chiamate perse ancora tra le notifiche; spento, la riga per accenderlo. */
+private fun androidx.compose.foundation.lazy.LazyListScope.avvisi(model: PostazioneModel, col: Colori, titolo: Int) {
+    if (!model.ascolto) {
+        item { AccendiAscolto(col) }
+        return
+    }
+    val lista = model.avvisi
+    item {
+        Text(stringResource(titolo, lista.size), color = col.inchiostro, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+    }
+    if (lista.isEmpty()) item { Text(stringResource(R.string.niente_da_rispondere), color = col.sotto, fontSize = 13.5.sp) }
+    items(lista.size) { i -> RigaAvviso(model, lista[i], col) }
+}
+
+private fun iconaCielo(cielo: String?): ImageVector = when (cielo) {
+    null, "Clear" -> EuriseIcons.sun()
+    "Fog" -> EuriseIcons.fog()
+    "Drizzle", "Rain", "Showers" -> EuriseIcons.rain()
+    "Snow" -> EuriseIcons.snow()
+    "Storm" -> EuriseIcons.storm()
+    else -> EuriseIcons.cloud()
+}
+
+@Composable
+private fun rigaMeteo(m: Meteo, adesso: LocalDateTime): String {
+    val cielo = stringResource(
+        when (m.cielo) {
+            "Clear" -> R.string.cielo_sereno; "PartlyCloudy" -> R.string.cielo_poco_nuvoloso; "Fog" -> R.string.cielo_nebbia
+            "Drizzle" -> R.string.cielo_pioviggine; "Rain" -> R.string.cielo_pioggia; "Showers" -> R.string.cielo_rovesci
+            "Snow" -> R.string.cielo_neve; "Storm" -> R.string.cielo_temporale; else -> R.string.cielo_nuvoloso
+        },
+    )
+    val base = stringResource(R.string.meteo_riga, cielo, m.gradi)
+    if (m.pioggia <= 0L || m.cielo in setOf("Drizzle", "Rain", "Showers", "Storm")) return base
+    val quando = Instant.ofEpochMilli(m.pioggia).atZone(ZoneId.systemDefault())
+    val ora = quando.toLocalTime().format(Ora)
+    return base + if (quando.toLocalDate().isAfter(adesso.toLocalDate())) stringResource(R.string.meteo_pioggia_domani, ora) else stringResource(R.string.meteo_pioggia, ora)
+}
+
+internal fun orario(ms: Long): String = Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).toLocalTime().format(Ora)
 
 @Composable
 private fun richiamo(e: Impegno, adesso: LocalDateTime, primo: Boolean): String {
@@ -293,7 +362,7 @@ private fun richiamo(e: Impegno, adesso: LocalDateTime, primo: Boolean): String 
 @Composable
 private fun SchedaImpegno(
     e: Impegno, primo: Boolean, viaggio: Boolean, adesso: LocalDateTime, col: Colori,
-    onNaviga: () -> Unit, onApri: () -> Unit,
+    onNaviga: () -> Unit, onRitardo: (String, String) -> Unit, onApri: () -> Unit,
 ) {
     Row(
         Modifier.width(if (primo) 300.dp else 250.dp).height(IntrinsicSize.Min)
@@ -308,13 +377,27 @@ private fun SchedaImpegno(
             }
             Text(e.titolo, color = col.inchiostro, fontSize = if (primo) 19.sp else 16.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (e.luogo.isNotBlank()) Text(e.luogo, color = col.sotto, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (primo && e.luogo.isNotBlank()) {
+            val ora = adesso.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val vicino = primo && !e.tuttoIlGiorno && e.inizio - ora < 90 * 60_000L
+            if (primo && (e.luogo.isNotBlank() || vicino)) {
                 Spacer(Modifier.height(6.dp))
-                Box(
-                    Modifier.fillMaxWidth().height(40.dp).background(col.lente, RoundedCornerShape(12.dp)).clickable { onNaviga() },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(stringResource(if (viaggio) R.string.avvia_navigatore else R.string.naviga), color = Color.White, fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (e.luogo.isNotBlank()) {
+                        Box(
+                            Modifier.weight(1.4f).height(40.dp).background(col.lente, RoundedCornerShape(12.dp)).clickable { onNaviga() },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(stringResource(if (viaggio) R.string.avvia_navigatore else R.string.naviga), color = Color.White, fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    if (vicino) {
+                        val testo = stringResource(R.string.ritardo_testo, e.titolo)
+                        val titolo = stringResource(R.string.ritardo_a)
+                        Box(
+                            Modifier.weight(1f).height(40.dp).background(col.foglio, RoundedCornerShape(12.dp)).clickable { onRitardo(testo, titolo) },
+                            contentAlignment = Alignment.Center,
+                        ) { Text(stringResource(R.string.ritardo), color = col.inchiostro, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold) }
+                    }
                 }
             }
         }
@@ -322,7 +405,7 @@ private fun SchedaImpegno(
 }
 
 @Composable
-private fun Intestazione(titolo: String, link: String, col: Colori, onLink: () -> Unit) {
+internal fun Intestazione(titolo: String, link: String, col: Colori, onLink: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(titolo, color = col.inchiostro, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
         Row(Modifier.clickable { onLink() }, verticalAlignment = Alignment.CenterVertically) {
@@ -360,7 +443,7 @@ private fun Riga(testo: String, link: String, col: Colori, onLink: () -> Unit) {
 }
 
 @Composable
-private fun Avviso(testo: String, col: Colori) {
+private fun Nota(testo: String, col: Colori) {
     Text(
         testo, color = col.sotto, fontSize = 13.5.sp, lineHeight = 19.sp,
         modifier = Modifier.fillMaxWidth().background(col.riquadro, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 10.dp),

@@ -5,6 +5,8 @@
     <!-- Nessuna rete: la Postazione mostra solo ciò che è sul telefono (Compila APK lo controlla a ogni giro). -->
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+    <!-- Preferiti da chiamare nella scheda Viaggio: spento di base, chiesto solo accendendo la funzione dopo la spiegazione. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
     <!-- Le altre app della suite: solo quelle firmate con la stessa chiave. -->
     <uses-permission android:name="${suitePermission}" />
     <permission android:name="${suitePermission}" android:protectionLevel="signature" />
@@ -64,5 +66,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+            «Da rispondere» e la musica che suona: accesso alle notifiche, spento di base. Solo il sistema può legarsi a
+            questo servizio (permesso BIND_NOTIFICATION_LISTENER_SERVICE); si accende e si spegne nelle impostazioni di Android.
+        -->
+        <service
+            android:name=".data.AscoltoService"
+            android:exported="true"
+            android:label="@string/ascolto_nome"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

@@ -6,9 +6,11 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
 import eu.eurise.core.data.EuriseData
+import eu.eurise.core.data.weather.MeteoRepository
 import eu.eurise.core.suite.SuiteAccess
 import eu.eurise.core.suite.PostazioneContract as C
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -23,7 +25,27 @@ class PostazioneProvider : ContentProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         val context = context ?: return null
         if (!SuiteAccess.callerAllowed(context)) throw SecurityException("Eurise: solo le app della suite")
-        if (method != C.METHOD_TODAY) return null
+        return when (method) {
+            C.METHOD_TODAY -> today(context)
+            C.METHOD_POSTPONE -> postpone(context)
+            else -> null
+        }
+    }
+
+    /** Le attività aperte con scadenza fino a oggi passano a domani (i passi seguono la loro attività). */
+    private fun postpone(context: android.content.Context): Bundle {
+        val data = EuriseData.create(context)
+        val today = LocalDate.now()
+        val open = runCatching { runBlocking { data.tasks.observeDueBy(today).first() } }.getOrDefault(emptyList())
+            .filter { !it.done && it.parentId == null }
+        var moved = 0
+        runBlocking {
+            open.forEach { t -> runCatching { data.tasks.update(t.copy(due = today.plusDays(1))) }.onSuccess { moved++ } }
+        }
+        return Bundle().apply { putInt(C.KEY_MOVED, moved) }
+    }
+
+    private fun today(context: android.content.Context): Bundle {
         val data = EuriseData.create(context)
         val now = System.currentTimeMillis()
         val zone = ZoneId.systemDefault()
@@ -57,6 +79,17 @@ class PostazioneProvider : ContentProvider() {
             putBooleanArray(C.KEY_TASK_LATE, shown.map { t -> t.due?.isBefore(today) == true }.toBooleanArray())
             putInt(C.KEY_TASK_OPEN, open.size)
             putInt(C.KEY_TASK_DONE, doneToday)
+            // Il meteo già sul telefono (copia dell'app Eurise, al più di tre ore fa): questa chiamata non va in rete.
+            val meteo = runCatching { runBlocking { MeteoRepository(context).cached() } }.getOrNull()
+            val forecast = meteo?.forecast?.takeIf { meteo.updated > 0 && now - meteo.updated < 3 * 3_600_000L }
+            putBoolean(C.KEY_W_OK, forecast != null)
+            if (forecast != null) {
+                putInt(C.KEY_W_TEMP, forecast.now.temp)
+                putString(C.KEY_W_SKY, forecast.now.sky.name)
+                val here = LocalDateTime.now(forecast.zone)
+                val rain = forecast.hours.firstOrNull { it.time.isAfter(here) && it.rainChance >= 50 }
+                putLong(C.KEY_W_RAIN, rain?.time?.atZone(forecast.zone)?.toInstant()?.toEpochMilli() ?: 0L)
+            }
         }
     }
 

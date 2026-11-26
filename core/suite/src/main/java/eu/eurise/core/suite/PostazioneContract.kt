@@ -35,6 +35,23 @@ object PostazioneContract {
     /** Int: attività chiuse oggi. */
     const val KEY_TASK_DONE = "taskDone"
 
+    /** Boolean: c'è un meteo recente già sul telefono (nessuna richiesta in rete per questa chiamata). */
+    const val KEY_W_OK = "wOk"
+    /** Int: gradi adesso. */
+    const val KEY_W_TEMP = "wTemp"
+    /** String: il cielo adesso (nome di `Sky`: Clear, PartlyCloudy, Cloudy, Fog, Drizzle, Rain, Showers, Snow, Storm). */
+    const val KEY_W_SKY = "wSky"
+    /** Long: la prima ora delle prossime 24 con pioggia probabile, millisecondi; 0 se non piove. */
+    const val KEY_W_RAIN = "wRain"
+
+    /**
+     * «Chiudi la giornata»: le attività aperte con scadenza fino a oggi passano a domani. Risposta [KEY_MOVED].
+     * Scrive nei dati dell'app Eurise: solo app della suite, come tutto il resto.
+     */
+    const val METHOD_POSTPONE = "postpone"
+    /** Int: quante attività sono passate a domani. */
+    const val KEY_MOVED = "moved"
+
     const val MAX_EVENTS = 5
     const val MAX_TASKS = 4
     const val HOURS = 36

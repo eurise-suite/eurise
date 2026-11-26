@@ -59,9 +59,51 @@ object Gruppi {
 
     fun togli(lista: List<String>, chiave: String): List<String> = lista.filter { it != chiave }
 
-    /** Le voci salvate di un gruppo, una per riga; tiene solo le app ancora installate. */
+    /** Le voci salvate di un gruppo, una per riga; tiene le app ancora installate e i siti. */
     fun leggi(testo: String?, installate: Collection<String>): List<String>? =
-        testo?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() && it in installate }
+        testo?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() && (it in installate || Siti.eSito(it)) }
 
     fun scrivi(lista: List<String>): String = lista.joinToString("\n")
+}
+
+/** Un sito messo in un gruppo come se fosse un'app: la voce è `web:` più l'indirizzo. */
+object Siti {
+    const val PREFISSO = "web:"
+
+    fun eSito(chiave: String) = chiave.startsWith(PREFISSO)
+    fun indirizzo(chiave: String) = chiave.removePrefix(PREFISSO)
+    fun chiave(indirizzo: String) = PREFISSO + indirizzo
+
+    /**
+     * L'indirizzo scritto a mano, messo in ordine: senza schema diventa https; solo http e https (mai `intent:`,
+     * `file:`, `javascript:` o altro), con un nome di sito vero e senza nome utente dentro. Null se non va.
+     */
+    fun normalizza(testo: String): String? {
+        val t = testo.trim()
+        if (t.isEmpty() || t.any { it.isWhitespace() }) return null
+        val con = if (t.contains("://")) t else if (t.contains(':') && !t.substringBefore(':').contains('.')) return null else "https://$t"
+        val minuscolo = con.lowercase()
+        if (!minuscolo.startsWith("https://") && !minuscolo.startsWith("http://")) return null
+        val host = con.substringAfter("://").substringBefore('/').substringBefore('?').substringBefore('#')
+        if (host.isEmpty() || '@' in host || !host.contains('.') || host.startsWith('.') || host.endsWith('.')) return null
+        return con
+    }
+
+    /** Il nome da proporre: il sito senza `www.`. */
+    fun nomeDa(indirizzo: String): String =
+        indirizzo.substringAfter("://").substringBefore('/').substringBefore(':').removePrefix("www.")
+}
+
+/** Quante volte hai aperto ogni app dalla Postazione: resta sul telefono, serve per «Più usate». */
+object Usi {
+    fun leggi(testo: String?): Map<String, Int> = testo.orEmpty().lines().mapNotNull { riga ->
+        val n = riga.substringAfterLast('\t', "").toIntOrNull() ?: return@mapNotNull null
+        riga.substringBeforeLast('\t').takeIf { it.isNotEmpty() }?.let { it to n }
+    }.toMap()
+
+    fun scrivi(usi: Map<String, Int>): String = usi.entries.joinToString("\n") { it.key + "\t" + it.value }
+
+    /** Le [n] più usate tra quelle installate, nell'ordine dell'uso; a parità resta l'ordine alfabetico di [installate]. */
+    fun piuUsate(usi: Map<String, Int>, installate: List<String>, n: Int): List<String> =
+        installate.filter { (usi[it] ?: 0) > 0 }.sortedByDescending { usi[it] ?: 0 }.take(n)
 }

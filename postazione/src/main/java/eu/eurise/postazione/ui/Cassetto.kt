@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -58,20 +60,24 @@ import androidx.compose.ui.unit.sp
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.postazione.PostazioneModel
 import eu.eurise.postazione.R
+import eu.eurise.postazione.data.App
+import eu.eurise.postazione.data.Ascolto
 import eu.eurise.postazione.data.Gruppo
 import kotlinx.coroutines.launch
 import java.text.Normalizer
 
 /**
- * Tutte le app dalla A alla Z, con il campo di ricerca in basso sotto il pollice e l'indice delle lettere dal lato della
- * mano. Con [scegliPer] serve a scegliere l'app da aggiungere a un gruppo.
+ * Le app. Si apre a «mezzo tiro»: quelle che servono adesso, le più usate e le recenti, con il campo di ricerca in basso
+ * sotto il pollice; un altro tocco (o due lettere) e ci sono tutte dalla A alla Z, con l'indice dal lato della mano.
+ * Con [scegliPer] serve a scegliere l'app, o il sito, da aggiungere a un gruppo.
  */
 @Composable
 fun Cassetto(
     model: PostazioneModel, col: Colori, cercaSubito: Boolean, scegliPer: Gruppo?,
-    onScelta: (String) -> Unit, onImpostazioni: () -> Unit, onChiudi: () -> Unit,
+    onScelta: (String) -> Unit, onSito: () -> Unit, onImpostazioni: () -> Unit, onChiudi: () -> Unit,
 ) {
-    BackHandler { onChiudi() }
+    var tutteAperte by remember { mutableStateOf(scegliPer != null) }
+    BackHandler { if (tutteAperte && scegliPer == null) tutteAperte = false else onChiudi() }
     var testo by remember { mutableStateOf("") }
     val fuoco = remember { FocusRequester() }
     val griglia = rememberLazyGridState()
@@ -81,13 +87,15 @@ fun Cassetto(
     val mostrate = if (chiave.isEmpty()) tutte else tutte.filter { semplice(it.nome).contains(chiave) }
         .sortedBy { if (semplice(it.nome).startsWith(chiave)) 0 else 1 }
     LaunchedEffect(cercaSubito) { if (cercaSubito) runCatching { fuoco.requestFocus() } }
+    val rapido = chiave.isEmpty() && !tutteAperte
+    val perChiave = remember(tutte) { tutte.associateBy { it.chiave } }
 
     Box(Modifier.fillMaxSize().background(col.foglio)) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
             Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     scegliPer?.let { stringResource(R.string.aggiungi_a, stringResource(aspetto(it).nome)) }
-                        ?: stringResource(R.string.cassetto_titolo, tutte.size),
+                        ?: if (rapido) stringResource(R.string.rapido_titolo) else stringResource(R.string.cassetto_titolo, tutte.size),
                     color = col.inchiostro, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f),
                 )
                 Icon(EuriseIcons.gear(), stringResource(R.string.impostazioni), Modifier.size(44.dp).clickable { onImpostazioni() }.padding(11.dp), tint = col.sotto)
@@ -95,7 +103,7 @@ fun Cassetto(
             }
             Row(Modifier.weight(1f)) {
                 val indice: @Composable () -> Unit = {
-                    if (chiave.isEmpty()) {
+                    if (chiave.isEmpty() && !rapido) {
                         val lettere = tutte.map { it.iniziale }.distinct()
                         Column(
                             Modifier.padding(horizontal = 4.dp, vertical = 8.dp).width(26.dp).background(col.riquadro, RoundedCornerShape(13.dp)).padding(vertical = 6.dp),
@@ -119,17 +127,29 @@ fun Cassetto(
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    items(mostrate, key = { it.chiave }) { a ->
-                        Column(
-                            Modifier.clickable { onScelta(a.chiave) }.padding(vertical = 2.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            IconaApp(model.telefono, a.chiave, 50.dp)
-                            Text(
-                                a.nome, color = col.inchiostro, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center, modifier = Modifier.padding(top = 5.dp, start = 2.dp, end = 2.dp),
-                            )
+                    if (scegliPer != null && chiave.isEmpty()) {
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            Row(
+                                Modifier.padding(horizontal = 8.dp).fillMaxWidth().height(52.dp).background(col.riquadro, RoundedCornerShape(16.dp)).clickable { onSito() }.padding(horizontal = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(EuriseIcons.globe(), null, Modifier.size(20.dp), tint = col.accento)
+                                Text(stringResource(R.string.sito_aggiungi), color = col.accento, fontSize = 14.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 10.dp))
+                            }
                         }
+                    }
+                    if (rapido) {
+                        sezione("adesso", R.string.rapido_adesso, model.perAdesso(4).mapNotNull { perChiave[it] }, model, col, onScelta)
+                        sezione("usate", R.string.rapido_usate, model.piuUsate(8).mapNotNull { perChiave[it] }, model, col, onScelta)
+                        sezione("recenti", R.string.rapido_recenti, model.recenti.mapNotNull { perChiave[it] }.take(4), model, col, onScelta)
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            Box(
+                                Modifier.padding(horizontal = 8.dp, vertical = 4.dp).fillMaxWidth().height(48.dp).background(col.riquadro, RoundedCornerShape(16.dp)).clickable { tutteAperte = true },
+                                contentAlignment = Alignment.Center,
+                            ) { Text(stringResource(R.string.rapido_tutte), color = col.accento, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
+                        }
+                    } else {
+                        items(mostrate, key = { it.chiave }) { a -> Tessera(a, model, col, onScelta) }
                     }
                 }
                 if (!model.mancino) indice()
@@ -160,6 +180,46 @@ fun Cassetto(
     }
 }
 
+private fun LazyGridScope.sezione(id: String, titolo: Int, lista: List<App>, model: PostazioneModel, col: Colori, onScelta: (String) -> Unit) {
+    if (lista.isEmpty()) return
+    item(key = "titolo:$id", span = { GridItemSpan(maxLineSpan) }) {
+        Text(stringResource(titolo), color = col.sotto, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp, top = 4.dp))
+    }
+    items(lista, key = { "$id:" + it.chiave }) { a -> Tessera(a, model, col, onScelta) }
+}
+
+@Composable
+private fun Tessera(a: App, model: PostazioneModel, col: Colori, onScelta: (String) -> Unit) {
+    Column(Modifier.clickable { onScelta(a.chiave) }.padding(vertical = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        IconaApp(model.telefono, a.chiave, 50.dp)
+        Text(
+            a.nome, color = col.inchiostro, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center, modifier = Modifier.padding(top = 5.dp, start = 2.dp, end = 2.dp),
+        )
+    }
+}
+
+/** Un sito da mettere in un gruppo: indirizzo (solo web) e nome. */
+@Composable
+fun NuovoSito(onAggiungi: (String, String) -> Boolean, onChiudi: () -> Unit) {
+    var indirizzo by remember { mutableStateOf("") }
+    var nome by remember { mutableStateOf("") }
+    var errore by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onChiudi,
+        title = { Text(stringResource(R.string.sito_aggiungi)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(indirizzo, { indirizzo = it; errore = false }, label = { Text(stringResource(R.string.sito_indirizzo)) }, singleLine = true, isError = errore)
+                OutlinedTextField(nome, { nome = it }, label = { Text(stringResource(R.string.sito_nome)) }, singleLine = true)
+                if (errore) Text(stringResource(R.string.sito_errore), color = Color(0xFFB3261E), fontSize = 13.sp)
+            }
+        },
+        confirmButton = { TextButton({ if (!onAggiungi(indirizzo, nome)) errore = true }) { Text(stringResource(R.string.aggiungi)) } },
+        dismissButton = { TextButton(onChiudi) { Text(stringResource(R.string.annulla)) } },
+    )
+}
+
 /** Minuscole e senza accenti: «citta» trova «Città». */
 private fun semplice(s: String): String =
     Normalizer.normalize(s.trim().lowercase(), Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "")
@@ -180,6 +240,10 @@ fun Impostazioni(model: PostazioneModel, onChiudi: () -> Unit) {
                     RadioButton(!mancino, { mancino = false }); Text(stringResource(R.string.imp_destra))
                     Spacer(Modifier.width(16.dp))
                     RadioButton(mancino, { mancino = true }); Text(stringResource(R.string.imp_sinistra))
+                }
+                Text(stringResource(R.string.imp_ascolto), fontWeight = FontWeight.SemiBold)
+                TextButton({ Ascolto.impostazioni(context) }) {
+                    Text(stringResource(if (model.ascolto) R.string.imp_acceso else R.string.imp_spento))
                 }
                 TextButton({
                     runCatching { context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }

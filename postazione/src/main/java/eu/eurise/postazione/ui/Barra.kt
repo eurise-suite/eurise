@@ -44,6 +44,7 @@ import eu.eurise.postazione.R
 import eu.eurise.postazione.data.Gruppi
 import eu.eurise.postazione.data.Gruppo
 import eu.eurise.postazione.data.Scheda
+import eu.eurise.postazione.data.Siti
 import eu.eurise.postazione.data.Telefono
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -126,8 +127,8 @@ fun Ventaglio(model: PostazioneModel, g: Gruppo, col: Colori, onChiudi: () -> Un
             }
             if (lista.isEmpty()) Text(stringResource(R.string.gruppo_vuoto), color = col.sotto, fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp))
             lista.forEachIndexed { i, chiave ->
-                Voce(col, onClick = { if (model.telefono.apri(chiave)) onChiudi() }) {
-                    IconaApp(model.telefono, chiave, 40.dp)
+                Voce(col, onClick = { if (model.apri(chiave)) onChiudi() }) {
+                    if (Siti.eSito(chiave)) IconaSito(model.nomeDi(chiave), a.tinta, 40.dp) else IconaApp(model.telefono, chiave, 40.dp)
                     Text(model.nomeDi(chiave), color = col.inchiostro, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(start = 12.dp))
                     Icon(
@@ -163,4 +164,12 @@ fun IconaApp(telefono: Telefono, chiave: String, misura: Dp) {
     val b = bmp
     if (b != null) Image(b, null, Modifier.size(misura))
     else Box(Modifier.size(misura).background(Color(0x22888888), CircleShape))
+}
+
+/** Un sito messo in un gruppo: l'iniziale sul colore del gruppo. */
+@Composable
+fun IconaSito(nome: String, tinta: Color, misura: Dp) {
+    Box(Modifier.size(misura).background(tinta, CircleShape), contentAlignment = Alignment.Center) {
+        Text((nome.firstOrNull() ?: '?').uppercase(), color = Color.White, fontSize = (misura.value * 0.42f).sp, fontWeight = FontWeight.Bold)
+    }
 }

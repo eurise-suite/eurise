@@ -23,6 +23,12 @@ object Schede {
     fun attiva(auto: Scheda, manuale: Scheda?, autoAllaScelta: Scheda?): Scheda =
         if (manuale != null && autoAllaScelta == auto) manuale else auto
 
+    /** Da tre quarti d'ora prima della fine del lavoro, nei feriali, la scheda Lavoro propone «Chiudi la giornata». */
+    fun fineGiornata(now: LocalDateTime, end: Int = 18): Boolean {
+        val weekend = now.dayOfWeek == DayOfWeek.SATURDAY || now.dayOfWeek == DayOfWeek.SUNDAY
+        return !weekend && now.hour * 60 + now.minute >= end * 60 - 45
+    }
+
     fun cielo(now: LocalDateTime): Cielo = when (now.hour) {
         in 6..10 -> Cielo.Mattino
         in 11..15 -> Cielo.Giorno
@@ -39,3 +45,29 @@ object Schede {
 }
 
 enum class Saluto { Giorno, Pomeriggio, Sera }
+
+/** Uno spazio libero tra due impegni, in millisecondi. */
+data class Intervallo(val inizio: Long, val fine: Long) {
+    val minuti: Int get() = ((fine - inizio) / 60_000L).toInt()
+}
+
+object Liberi {
+    /**
+     * Il primo spazio libero di almeno [minuti] tra [ora] e [limite], dati gli impegni con un orario (inizio, fine).
+     * Senza impegni in quella finestra non c'è nulla da dire: tutta la giornata è libera.
+     */
+    fun primo(ora: Long, limite: Long, impegni: List<Pair<Long, Long>>, minuti: Int = 30): Intervallo? {
+        val rilevanti = impegni.filter { it.second > ora && it.first < limite }.sortedBy { it.first }
+        if (rilevanti.isEmpty()) return null
+        val soglia = minuti * 60_000L
+        var t = ora
+        for ((inizio, fine) in rilevanti) {
+            if (inizio - t >= soglia) return Intervallo(t, inizio)
+            if (fine > t) t = fine
+        }
+        return if (limite - t >= soglia) Intervallo(t, limite) else null
+    }
+
+    /** Quante cose da fare ci stanno in uno spazio: una ogni 25 minuti, al più quelle aperte. */
+    fun quante(spazio: Intervallo, aperte: Int): Int = minOf(aperte, spazio.minuti / 25)
+}
