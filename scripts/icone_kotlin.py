@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Porta i disegni nuovi delle icone (scripts/icone_disegni.json, tela «Icone della suite», pagina Icone) nella Scrivania:
-scrive feature/launcher/.../apps/SuiteDrawings.kt con i tracciati e i colori delle tre serie (bolle chiare, bolle scure,
+"""Porta i disegni nuovi delle icone (scripts/icone_disegni.json, tela «Icone della suite», pagina Icone) nelle schermate iniziali (Scrivania e
+Postazione): scrive core/designsystem/.../icon/SuiteDrawings.kt con i tracciati e i colori delle tre serie (bolle chiare, bolle scure,
 colorate), calcolati come sulla tela. Uso: python3 scripts/icone_kotlin.py (dalla cartella del repository).
 """
 import colorsys
@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = json.loads((ROOT / "scripts" / "icone_disegni.json").read_text())
-OUT = ROOT / "feature/launcher/src/main/java/eu/eurise/feature/launcher/apps/SuiteDrawings.kt"
+OUT = ROOT / "core/designsystem/src/main/java/eu/eurise/core/designsystem/icon/SuiteDrawings.kt"
 
 
 def hx(c):
@@ -65,7 +65,7 @@ def main():
             + (f'            stops = listOf({", ".join(f"{t:g}f" for t in app["tappe"])}),\n' if "tappe" in app else '')
             + f'        )')
     body = ",\n".join(entries)
-    OUT.write_text(f'''package eu.eurise.feature.launcher.apps
+    OUT.write_text(f'''package eu.eurise.core.designsystem.icon
 
 import androidx.compose.ui.graphics.Color
 
@@ -78,7 +78,7 @@ import androidx.compose.ui.graphics.Color
  * pieno nel colore del fondo (incavi); dal bestiario del 26 novembre «q» pieno a velo, «v» tratto a velo, «k» taglio
  * sottile, «H» taglio spesso, «o» filo di contorno. Ogni disegno ha i colori delle tre serie: bolle chiare, bolle scure, colorate.
  */
-internal object SuiteDrawings {{
+object SuiteDrawings {{
     class Part(val kind: String, val path: String)
 
     /** Tratto da [s0] a [s1], pieni da [p0] a [p1], campitura [tint], incavi [hole], spessore del tratto [stroke]. */

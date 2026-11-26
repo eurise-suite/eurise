@@ -1,4 +1,4 @@
-package eu.eurise.feature.launcher.apps
+package eu.eurise.core.designsystem.icon
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

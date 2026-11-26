@@ -1,4 +1,4 @@
-package eu.eurise.feature.launcher.apps
+package eu.eurise.core.designsystem.icon
 
 import androidx.compose.ui.graphics.Color
 
@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.Color
  * pieno nel colore del fondo (incavi); dal bestiario del 26 novembre «q» pieno a velo, «v» tratto a velo, «k» taglio
  * sottile, «H» taglio spesso, «o» filo di contorno. Ogni disegno ha i colori delle tre serie: bolle chiare, bolle scure, colorate.
  */
-internal object SuiteDrawings {
+object SuiteDrawings {
     class Part(val kind: String, val path: String)
 
     /** Tratto da [s0] a [s1], pieni da [p0] a [p1], campitura [tint], incavi [hole], spessore del tratto [stroke]. */

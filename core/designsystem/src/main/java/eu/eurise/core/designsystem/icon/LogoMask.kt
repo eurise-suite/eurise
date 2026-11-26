@@ -1,4 +1,4 @@
-package eu.eurise.feature.launcher.apps
+package eu.eurise.core.designsystem.icon
 
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -7,7 +7,7 @@ import android.graphics.Color
  * La sagoma del logo di un'icona a tutto riquadro, staccata dal colore di fondo. La logica sta in [maskOf] (pixel ARGB),
  * provata senza telefono in LogoMaskTest.
  */
-internal object LogoMask {
+object LogoMask {
 
     fun of(bitmap: Bitmap): Bitmap? {
         val w = bitmap.width

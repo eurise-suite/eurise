@@ -191,7 +191,7 @@ private fun LazyGridScope.sezione(id: String, titolo: Int, lista: List<App>, mod
 @Composable
 private fun Tessera(a: App, model: PostazioneModel, col: Colori, onScelta: (String) -> Unit) {
     Column(Modifier.clickable { onScelta(a.chiave) }.padding(vertical = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        IconaApp(model.telefono, a.chiave, 50.dp)
+        IconaApp(model.telefono, a.chiave, 50.dp, col.notte)
         Text(
             a.nome, color = col.inchiostro, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center, modifier = Modifier.padding(top = 5.dp, start = 2.dp, end = 2.dp),

@@ -43,7 +43,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
+import eu.eurise.core.designsystem.icon.AppSymbols
 import eu.eurise.core.designsystem.icon.EuriseIcons
+import eu.eurise.core.designsystem.icon.SuiteBubble
+import eu.eurise.core.designsystem.icon.SuiteDrawingCanvas
+import eu.eurise.core.designsystem.icon.SuiteSeries
+import eu.eurise.core.designsystem.icon.shimmer
+import eu.eurise.core.designsystem.icon.softTint
 import eu.eurise.core.designsystem.icon.SuiteSymbols
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -85,64 +91,12 @@ object IconLoader {
         // Le web app: il pacchetto è quello del browser, quindi il simbolo si cerca solo per nome; poi la sagoma
         // del logo staccata dal fondo, così hanno il tondo e le tinte della suite come le altre app.
         val glyph = if (entry.shortcut == null) SystemGlyphs.find(entry) else SystemGlyphs.findByLabel(entry.label)
-        val image = officialMono(drawable, px)
+        val image = AppSymbols.official(drawable, px)?.let { IconImage.Mono(it.bitmap, it.color) }
             ?: glyph?.let { IconImage.Glyph(it) }
-            ?: silhouette(drawable, px)
-            ?: logoOnBackground(drawable, px)
+            ?: (AppSymbols.silhouette(drawable, px) ?: AppSymbols.logo(drawable, px))?.let { IconImage.Mono(it.bitmap, it.color) }
             ?: IconImage.Full(drawable.toBitmap(px, px, Bitmap.Config.ARGB_8888).asImageBitmap())
         cache.put(cacheKey, image)
         image
-    }
-
-    /** Il simbolo monocromatico fornito dall'app (Android 13+). */
-    private fun officialMono(drawable: Drawable, px: Int): IconImage? {
-        if (Build.VERSION.SDK_INT < 33 || drawable !is AdaptiveIconDrawable) return null
-        val mono = drawable.monochrome ?: return null
-        // Il colore del disegno si legge dal primo piano a colori, che ha la stessa forma.
-        val color = drawable.foreground?.let { fg ->
-            val b = cropCenter(fg.toBitmap(px * 3 / 2, px * 3 / 2, Bitmap.Config.ARGB_8888))
-            val pixels = IntArray(b.width * b.height).also { b.getPixels(it, 0, b.width, 0, 0, b.width, b.height) }
-            LogoMask.glyphColor(pixels) { (pixels[it] ushr 24) > 200 }
-        }
-        return IconImage.Mono(cropCenter(mono.toBitmap(px * 3 / 2, px * 3 / 2, Bitmap.Config.ARGB_8888)).asImageBitmap(), color?.let { Color(it) })
-    }
-
-    /**
-     * Per le app senza simbolo monocromatico: se il primo piano dell'icona adattiva è un disegno su fondo
-     * trasparente (e non un riquadro pieno), se ne usa la sagoma, colorata come le altre.
-     */
-    private fun silhouette(drawable: Drawable, px: Int): IconImage? {
-        if (drawable !is AdaptiveIconDrawable) return null
-        val fg = drawable.foreground ?: return null
-        val bitmap = cropCenter(fg.toBitmap(px * 3 / 2, px * 3 / 2, Bitmap.Config.ARGB_8888))
-        val pixels = IntArray(bitmap.width * bitmap.height)
-        bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-        val coverage = pixels.count { (it ushr 24) > 128 }.toFloat() / pixels.size
-        if (coverage < 0.04f || coverage > 0.42f) return null
-        val color = LogoMask.glyphColor(pixels) { (pixels[it] ushr 24) > 200 }
-        return IconImage.Mono(bitmap.extractAlpha().asImageBitmap(), color?.let { Color(it) })
-    }
-
-    /**
-     * Per le icone a tutto riquadro (le web app hanno quasi sempre il logo su un fondo pieno): il fondo è il colore del
-     * bordo; i punti che se ne staccano formano la sagoma del logo. Se il bordo non è uniforme (una foto, un disegno
-     * sfumato) o la sagoma è troppo piccola o troppo grande, null: resta l'icona originale.
-     */
-    internal fun logoOnBackground(drawable: Drawable, px: Int): IconImage? {
-        val size = px * 3 / 2
-        val bitmap = if (drawable is AdaptiveIconDrawable) cropCenter(drawable.toBitmap(size, size, Bitmap.Config.ARGB_8888))
-        else drawable.toBitmap(px, px, Bitmap.Config.ARGB_8888)
-        val mask = LogoMask.of(bitmap) ?: return null
-        val pixels = IntArray(bitmap.width * bitmap.height).also { bitmap.getPixels(it, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height) }
-        val alpha = IntArray(mask.width * mask.height).also { mask.getPixels(it, 0, mask.width, 0, 0, mask.width, mask.height) }
-        val color = LogoMask.glyphColor(pixels) { (alpha[it] ushr 24) > 200 }
-        return IconImage.Mono(mask.asImageBitmap(), color?.let { Color(it) })
-    }
-
-    /** Le icone adattive stanno in un'area di 108 dp di cui si vedono i 72 centrali. */
-    private fun cropCenter(full: Bitmap): Bitmap {
-        val inset = full.width / 6
-        return Bitmap.createBitmap(full, inset, inset, full.width - 2 * inset, full.height - 2 * inset)
     }
 }
 
@@ -252,7 +206,7 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
     if (theme == IconThemes.BUBBLE_GLASS) {
         val glass = if (LocalIconsFollowBubbles.current) eu.eurise.core.designsystem.theme.EuriseThemeExtras.colors.glass else Color(0xC2FBFBF9)
         val darkGlass = glass.copy(alpha = 1f).luminance() < 0.4f
-        val series = if (darkGlass) SuiteIcons.Series.Dark else SuiteIcons.Series.Light
+        val series = if (darkGlass) SuiteSeries.Dark else SuiteSeries.Light
         val drawing = remember(entry.key) { SuiteIcons.drawingFor(entry) }
         var original by remember(entry.key) { mutableStateOf(AppColors.cachedOriginal(entry)) }
         if (drawing == null && entry.euriseSection == null) {
@@ -282,9 +236,9 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
         val round = drawing?.round ?: SuiteIcons.roundFor(tint)
         val glow = drawing?.glow ?: lerp(tint, Color.White, 0.32f)
         val brush = when (series) {
-            SuiteIcons.Series.Light -> vividSymbol(tint, false)
-            SuiteIcons.Series.Dark -> vividSymbol(tint, true)
-            SuiteIcons.Series.Color -> listOf(Color(0xFFFFFDF8), Color(0xFFEFDDBF))
+            SuiteSeries.Light -> vividSymbol(tint, false)
+            SuiteSeries.Dark -> vividSymbol(tint, true)
+            SuiteSeries.Color -> listOf(Color(0xFFFFFDF8), Color(0xFFEFDDBF))
         }
         Box(modifier.size(size), contentAlignment = Alignment.Center) {
             SuiteBubble(
@@ -297,7 +251,7 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
                     is IconImage.Mono -> Image(
                         img.bitmap,
                         contentDescription = null,
-                        modifier = Modifier.size(size * 0.8f).softTint(glyphBrush(img.color, series != SuiteIcons.Series.Light, brush)),
+                        modifier = Modifier.size(size * 0.8f).softTint(glyphBrush(img.color, series != SuiteSeries.Light, brush)),
                     )
                     is IconImage.Full -> Image(img.bitmap, contentDescription = null, modifier = Modifier.size(size * 0.86f))
                     is IconImage.Glyph -> Icon(img.vector, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.62f).softTint(brush))
@@ -382,10 +336,6 @@ fun AppIcon(entry: AppEntry, size: Dp, dark: Boolean, badge: Int = 0, modifier: 
 }
 
 /**
- * Colora il disegno con una sfumatura diagonale: [colors] dall'alto a sinistra al basso a destra. Il disegno sotto conta
- * solo per la forma (alfa).
- */
-/**
  * Il simbolo di un'app non nostra nel colore del suo disegno originale ([glyph]); se quel colore non si leggerebbe sulla
  * bolla (bianco su bolla chiara, nero su bolla scura) resta [fallback], la tinta presa dal fondo dell'icona.
  */
@@ -395,13 +345,6 @@ private fun glyphBrush(glyph: Color?, darkBubble: Boolean, fallback: List<Color>
     if (darkBubble && l < 0.18f || !darkBubble && l > 0.82f) return fallback
     return listOf(lerp(c, Color.White, 0.12f), c)
 }
-
-private fun Modifier.softTint(colors: List<Color>): Modifier = this
-    .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
-    .drawWithContent {
-        drawContent()
-        drawRect(Brush.linearGradient(colors, start = Offset.Zero, end = Offset(size.width, size.height)), blendMode = BlendMode.SrcIn)
-    }
 
 /** Il tondo blu notte delle icone: sfumatura diagonale dal lato della stellina (in alto a destra) al lato opposto. */
 private val EuriseRound: Brush = object : androidx.compose.ui.graphics.ShaderBrush() {
@@ -423,15 +366,6 @@ private val EuriseGlow: Brush = object : androidx.compose.ui.graphics.ShaderBrus
  * «Eurise a colori»: il simbolo nella tinta dell'app, più vivo e contrastato del tondo (tavola IconeColori): di giorno
  * dalla luminosità 0,48 a 0,31, di sera da 0,83 a 0,70, con la saturazione portata su con un tetto.
  */
-/**
- * La sfumatura cangiante di un colore originale (tema «Sfondo delle bolle»): dalla tinta più chiara a quella più intensa,
- * con la stessa tonalità; sul vetro scuro un po' più luminosa perché si legga.
- */
-internal fun shimmer(color: Color, darkGlass: Boolean): List<Color> {
-    val c = if (darkGlass && color.luminance() < 0.25f) lerp(color, Color.White, 0.35f) else if (!darkGlass && color.luminance() > 0.6f) lerp(color, Color.Black, 0.25f) else color
-    return listOf(lerp(c, Color.White, 0.28f), c, lerp(c, Color.Black, 0.22f))
-}
-
 internal fun vividSymbol(tint: Color, dark: Boolean): List<Color> {
     val hsl = FloatArray(3)
     androidx.core.graphics.ColorUtils.colorToHSL(tint.toArgb(), hsl)

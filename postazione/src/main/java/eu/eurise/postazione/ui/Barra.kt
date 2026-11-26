@@ -29,8 +29,8 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -41,10 +41,16 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import eu.eurise.core.designsystem.icon.EuriseIcons
+import eu.eurise.core.designsystem.icon.SuiteBubble
+import eu.eurise.core.designsystem.icon.SuiteDrawingCanvas
+import eu.eurise.core.designsystem.icon.SuiteSeries
+import eu.eurise.core.designsystem.icon.shimmer
+import eu.eurise.core.designsystem.icon.softTint
 import eu.eurise.postazione.PostazioneModel
 import eu.eurise.postazione.R
 import eu.eurise.postazione.data.Gruppi
 import eu.eurise.postazione.data.Gruppo
+import eu.eurise.postazione.data.Icona
 import eu.eurise.postazione.data.Scheda
 import eu.eurise.postazione.data.Siti
 import eu.eurise.postazione.data.Telefono
@@ -171,7 +177,7 @@ fun Ventaglio(model: PostazioneModel, g: Gruppo, col: Colori, largo: Boolean, on
             if (lista.isEmpty()) Text(stringResource(R.string.gruppo_vuoto), color = col.sotto, fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp))
             lista.forEachIndexed { i, chiave ->
                 Voce(col, onClick = { if (model.apri(chiave)) onChiudi() }) {
-                    if (Siti.eSito(chiave)) IconaSito(model.nomeDi(chiave), a.tinta, 40.dp) else IconaApp(model.telefono, chiave, 40.dp)
+                    if (Siti.eSito(chiave)) IconaSito(model.nomeDi(chiave), a.tinta, 40.dp, col.notte) else IconaApp(model.telefono, chiave, 40.dp, col.notte)
                     Text(model.nomeDi(chiave), color = col.inchiostro, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(start = 12.dp))
                     Icon(
@@ -199,20 +205,35 @@ private fun Voce(col: Colori, onClick: () -> Unit, contenuto: @Composable androi
     )
 }
 
-/** L'icona vera dell'app, letta da Android fuori dal thread principale e tenuta in memoria. */
+/**
+ * L'icona di un'app nella fisionomia della suite: bolla chiara di giorno e scura di notte, dentro il disegno nel colore
+ * dell'app (il nostro per le app di Eurise, il simbolo dell'app per le altre). Letta fuori dal thread principale.
+ */
 @Composable
-fun IconaApp(telefono: Telefono, chiave: String, misura: Dp) {
+fun IconaApp(telefono: Telefono, chiave: String, misura: Dp, notte: Boolean) {
     val px = with(LocalDensity.current) { misura.roundToPx() }
-    val bmp by produceState<ImageBitmap?>(null, chiave, px) { value = withContext(Dispatchers.IO) { telefono.icona(chiave, px) } }
-    val b = bmp
-    if (b != null) Image(b, null, Modifier.size(misura))
-    else Box(Modifier.size(misura).background(Color(0x22888888), CircleShape))
+    val icona by produceState<Icona?>(null, chiave, px) { value = withContext(Dispatchers.IO) { telefono.icona(chiave, px) } }
+    val serie = if (notte) SuiteSeries.Dark else SuiteSeries.Light
+    SuiteBubble(serie, misura, CircleShape, emptyList(), Color.White, flat = true) {
+        when (val i = icona) {
+            is Icona.Nostra -> SuiteDrawingCanvas(i.disegno, serie, Modifier.size(misura))
+            is Icona.Simbolo -> Image(i.sagoma, null, Modifier.size(misura * 0.8f).softTint(shimmer(i.colore ?: senzaColore(notte), notte)))
+            is Icona.Intera -> Image(i.immagine, null, Modifier.size(misura * 0.86f).clip(CircleShape))
+            null -> Unit
+        }
+    }
 }
 
-/** Un sito messo in un gruppo: l'iniziale sul colore del gruppo. */
+/** Per le icone in bianco e nero, che un colore loro non l'hanno: inchiostro di giorno, carta di notte. */
+private fun senzaColore(notte: Boolean) = if (notte) Color(0xFFD5D9E0) else Color(0xFF3A3D45)
+
+/** Un sito messo in un gruppo: l'iniziale nel colore del gruppo, nella stessa bolla delle app. */
 @Composable
-fun IconaSito(nome: String, tinta: Color, misura: Dp) {
-    Box(Modifier.size(misura).background(tinta, CircleShape), contentAlignment = Alignment.Center) {
-        Text((nome.firstOrNull() ?: '?').uppercase(), color = Color.White, fontSize = (misura.value * 0.42f).sp, fontWeight = FontWeight.Bold)
+fun IconaSito(nome: String, tinta: Color, misura: Dp, notte: Boolean) {
+    SuiteBubble(if (notte) SuiteSeries.Dark else SuiteSeries.Light, misura, CircleShape, emptyList(), Color.White, flat = true) {
+        Text(
+            (nome.firstOrNull() ?: '?').uppercase(), color = shimmer(tinta, notte)[1],
+            fontSize = (misura.value * 0.42f).sp, fontWeight = FontWeight.Bold,
+        )
     }
 }

@@ -7,9 +7,13 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.LruCache
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
+import eu.eurise.core.designsystem.icon.AppSymbols
+import eu.eurise.core.designsystem.icon.SuiteDrawings
+import eu.eurise.core.designsystem.icon.SuiteKeys
 import java.text.Collator
 import java.util.Locale
 
@@ -20,10 +24,21 @@ data class App(val chiave: String, val nome: String) {
     val iniziale: Char get() = nome.firstOrNull()?.uppercaseChar()?.takeIf { it.isLetter() } ?: '#'
 }
 
+/**
+ * L'icona di un'app come la mostra la Postazione (tavola «Le icone a bolle», 26 novembre 2026): fuori chiaro di giorno e
+ * scuro di notte, dentro il disegno nel colore dell'app. Le nostre hanno il disegno della suite; le altre il loro simbolo
+ * nel colore che le contraddistingue; se il simbolo non si riesce a staccare, l'icona com'è dentro la stessa bolla.
+ */
+sealed interface Icona {
+    class Nostra(val disegno: SuiteDrawings.Drawing) : Icona
+    class Simbolo(val sagoma: ImageBitmap, val colore: Color?) : Icona
+    class Intera(val immagine: ImageBitmap) : Icona
+}
+
 /** Le app del telefono e le loro icone, solo con le API di Android (nessuna lettura di dati delle app). */
 class Telefono(private val context: Context) {
     private val pm: PackageManager = context.packageManager
-    private val icone = LruCache<String, ImageBitmap>(160)
+    private val icone = LruCache<String, Icona>(160)
 
     fun app(): List<App> {
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
@@ -53,12 +68,18 @@ class Telefono(private val context: Context) {
         }.toMap()
     }
 
-    fun icona(chiave: String, px: Int): ImageBitmap? {
+    /** Da chiamare fuori dal thread principale: legge l'icona che Android già mostra e ne ricava simbolo e colore. */
+    fun icona(chiave: String, px: Int): Icona? {
         icone.get("$chiave@$px")?.let { return it }
         val cn = ComponentName.unflattenFromString(chiave) ?: return null
-        val bmp = runCatching { pm.getActivityIcon(cn).toBitmap(px, px).asImageBitmap() }.getOrNull() ?: return null
-        icone.put("$chiave@$px", bmp)
-        return bmp
+        val letta = SuiteKeys.drawing(cn.packageName, cn.className)?.let { Icona.Nostra(it) } ?: runCatching {
+            val originale = pm.getActivityIcon(cn)
+            val simbolo = AppSymbols.of(originale, px)
+            if (simbolo != null) Icona.Simbolo(simbolo.bitmap, AppSymbols.dominantColor(originale) ?: simbolo.color)
+            else Icona.Intera(originale.toBitmap(px, px).asImageBitmap())
+        }.getOrNull() ?: return null
+        icone.put("$chiave@$px", letta)
+        return letta
     }
 
     fun apri(chiave: String): Boolean {

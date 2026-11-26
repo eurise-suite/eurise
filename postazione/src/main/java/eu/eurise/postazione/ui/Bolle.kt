@@ -88,7 +88,7 @@ fun RigaAvviso(model: PostazioneModel, a: Avviso, col: Colori) {
         Modifier.fillMaxWidth().clickable { if (!Ascolto.apri(context, a) && chiave != null) model.apri(chiave) }.padding(vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (chiave != null) IconaApp(model.telefono, chiave, 36.dp)
+        if (chiave != null) IconaApp(model.telefono, chiave, 36.dp, col.notte)
         else Box(Modifier.size(36.dp).background(col.riquadro, CircleShape), contentAlignment = Alignment.Center) {
             Icon(EuriseIcons.chat(), null, Modifier.size(18.dp), tint = col.sotto)
         }
