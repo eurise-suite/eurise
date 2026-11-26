@@ -52,6 +52,28 @@ object PostazioneContract {
     /** Int: quante attività sono passate a domani. */
     const val KEY_MOVED = "moved"
 
+    /**
+     * «Mettile lì»: le attività [EXTRA_IDS] (al più [MAX_TASKS]) prendono un orario, una ogni 25 minuti da [EXTRA_START]
+     * (entro un giorno e mezzo da adesso). Risposta [KEY_MOVED].
+     */
+    const val METHOD_SCHEDULE = "schedule"
+    /** LongArray: id delle attività, nell'ordine. */
+    const val EXTRA_IDS = "ids"
+    /** Long: inizio dello spazio libero, millisecondi. */
+    const val EXTRA_START = "start"
+
+    /**
+     * Le ultime notizie dalle fonti scelte nell'app Eurise. Le legge l'app Eurise con le sue regole (servizio «Notizie»
+     * del centro privacy: spento, non torna nulla); la Postazione non va in rete. Array paralleli, al più [MAX_NEWS].
+     */
+    const val METHOD_NEWS = "news"
+    const val KEY_N_TITLE = "nTitle"
+    const val KEY_N_SOURCE = "nSource"
+    const val KEY_N_LINK = "nLink"
+    /** LongArray: ora di pubblicazione, millisecondi. */
+    const val KEY_N_WHEN = "nWhen"
+    const val MAX_NEWS = 4
+
     const val MAX_EVENTS = 5
     const val MAX_TASKS = 4
     const val HOURS = 36

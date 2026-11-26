@@ -11,6 +11,8 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -25,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -74,7 +77,7 @@ private val Giorno = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.ITALIAN)
 
 @Composable
 fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
-    val col = colori(isSystemInDarkTheme())
+    val col = colori(isSystemInDarkTheme(), model.accento)
     var ventaglio by remember { mutableStateOf<Gruppo?>(null) }
     var cassetto by remember { mutableStateOf(false) }
     var cercaSubito by remember { mutableStateOf(false) }
@@ -92,35 +95,53 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
     val scheda = model.scheda
     val apriCassetto: (Boolean) -> Unit = { cerca -> cercaSubito = cerca; scegliPer = null; cassetto = true }
 
-    Box(Modifier.fillMaxSize().background(col.fondo)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(col.fondo)) {
         CieloDiFondo(cielo)
-        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(bottom = 116.dp)) {
-            Testata(model, suCielo, Modifier.pointerInput(Unit) { scorriSu { apriCassetto(false) } })
-            Linguette(model, scheda, col, suCielo)
-            Foglio(model, scheda, col, Modifier.weight(1f))
+        // Telefono: barra in basso. Tablet e schermi larghi: binario dal lato della mano e foglio a due colonne.
+        val largo = maxWidth >= 840.dp
+        val onGruppo: (Gruppo) -> Unit = { g ->
+            val prima = model.gruppi[g]?.firstOrNull()
+            if (prima == null || !model.apri(prima)) ventaglio = g
         }
-        // Il richiamo di «Tutte le app» sopra la barra: un tocco o uno scorrimento verso l'alto.
-        Column(
-            Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 98.dp)
-                .clickable { apriCassetto(false) }.pointerInput(Unit) { scorriSu { apriCassetto(false) } },
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Icon(EuriseIcons.chevronUp(), null, Modifier.size(16.dp), tint = suCielo.copy(alpha = 0.8f))
-            Text(stringResource(R.string.tutte_le_app), color = suCielo.copy(alpha = 0.85f), fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
+        if (largo) {
+            Row(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+                val binario: @Composable () -> Unit = {
+                    Binario(model, scheda, col, onGruppo, { ventaglio = it }, { apriCassetto(true) }, { model.alfred() }, { apriCassetto(false) })
+                }
+                if (model.mancino) binario()
+                Column(Modifier.weight(1f).padding(bottom = 14.dp)) {
+                    Testata(model, suCielo, Modifier)
+                    Linguette(model, scheda, col, suCielo)
+                    Foglio(model, scheda, col, true, Modifier.weight(1f))
+                }
+                if (!model.mancino) binario()
+            }
+        } else {
+            Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(bottom = 116.dp)) {
+                Testata(model, suCielo, Modifier.pointerInput(Unit) { scorriSu { apriCassetto(false) } })
+                Linguette(model, scheda, col, suCielo)
+                Foglio(model, scheda, col, false, Modifier.weight(1f))
+            }
+            // Il richiamo di «Tutte le app» sopra la barra: un tocco o uno scorrimento verso l'alto.
+            Column(
+                Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 98.dp)
+                    .clickable { apriCassetto(false) }.pointerInput(Unit) { scorriSu { apriCassetto(false) } },
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(EuriseIcons.chevronUp(), null, Modifier.size(16.dp), tint = suCielo.copy(alpha = 0.8f))
+                Text(stringResource(R.string.tutte_le_app), color = suCielo.copy(alpha = 0.85f), fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
+            }
+            Barra(
+                model, scheda, col,
+                onGruppo = onGruppo,
+                onVentaglio = { ventaglio = it },
+                onLente = { apriCassetto(true) },
+                onAlfred = { model.alfred() },
+                modifier = Modifier.align(Alignment.BottomCenter).pointerInput(Unit) { scorriSu { apriCassetto(false) } },
+            )
         }
-        Barra(
-            model, scheda, col,
-            onGruppo = { g ->
-                val prima = model.gruppi[g]?.firstOrNull()
-                if (prima == null || !model.apri(prima)) ventaglio = g
-            },
-            onVentaglio = { ventaglio = it },
-            onLente = { apriCassetto(true) },
-            onAlfred = { model.alfred() },
-            modifier = Modifier.align(Alignment.BottomCenter).pointerInput(Unit) { scorriSu { apriCassetto(false) } },
-        )
         ventaglio?.let { g ->
-            Ventaglio(model, g, col, onChiudi = { ventaglio = null }, onAggiungi = {
+            Ventaglio(model, g, col, largo, onChiudi = { ventaglio = null }, onAggiungi = {
                 ventaglio = null; scegliPer = g; cercaSubito = false; cassetto = true
             })
         }
@@ -237,75 +258,118 @@ private fun Linguette(model: PostazioneModel, attiva: Scheda, col: Colori, suCie
     }
 }
 
+/**
+ * Il foglio della scheda. Tre parti: in alto il «Prossimo» e la fine della giornata, poi le persone (da rispondere,
+ * musica, notizie, preferiti), poi le cose da fare. Sul telefono una sotto l'altra; sugli schermi larghi due colonne.
+ */
 @Composable
-private fun Foglio(model: PostazioneModel, scheda: Scheda, col: Colori, modifier: Modifier) {
+private fun Foglio(model: PostazioneModel, scheda: Scheda, col: Colori, largo: Boolean, modifier: Modifier) {
     val primaAttiva = scheda == Scheda.entries.first()
     val forma = RoundedCornerShape(topStart = if (primaAttiva) 0.dp else 22.dp, topEnd = 22.dp, bottomStart = 22.dp, bottomEnd = 22.dp)
-    val g = model.giornata
-    val tel = model.telefono
-    val hub = BuildConfig.HUB_PACKAGE
-    val apriCalendario = { tel.apriSuiteO(hub, "eu.eurise.hub.CalendarApp", Intent(Intent.ACTION_VIEW, CalendarContract.CONTENT_URI.buildUpon().appendPath("time").build())) }
-    LazyColumn(
-        modifier.fillMaxWidth().padding(horizontal = 10.dp).background(col.foglio, forma),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        if (!g.collegata) {
-            item { Nota(stringResource(R.string.senza_eurise), col) }
-        } else if (g.impegni.isEmpty()) {
-            item {
-                Riga(stringResource(R.string.nessun_impegno), stringResource(R.string.calendario), col) { apriCalendario() }
+    val spazi = Arrangement.spacedBy(16.dp)
+    if (largo) {
+        Row(modifier.fillMaxWidth().padding(horizontal = 10.dp).background(col.foglio, forma).padding(horizontal = 6.dp)) {
+            LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(14.dp), verticalArrangement = spazi) {
+                alto(model, scheda, col)
+                cose(model, scheda, col)
             }
-        } else {
-            item {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(g.impegni.size) { i ->
-                        val e = g.impegni[i]
-                        SchedaImpegno(e, i == 0, scheda == Scheda.Viaggio, model.adesso, col,
-                            onNaviga = { tel.avvia(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(e.luogo)))) },
-                            onRitardo = { testo, titolo ->
-                                tel.avvia(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, testo), titolo))
-                            },
-                            onApri = { apriCalendario() })
-                    }
-                }
+            LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(14.dp), verticalArrangement = spazi) {
+                persone(model, scheda, col)
             }
         }
-        val apriAttivita = { tel.apriSuiteO(hub, "eu.eurise.hub.TasksApp", null) }
-        when (scheda) {
-            Scheda.Lavoro -> {
-                if (g.collegata && model.fineGiornata) item { FineGiornata(model, col) }
-                avvisi(model, col, R.string.da_rispondere)
-                if (g.collegata) {
-                    item {
-                        val totale = g.aperte + g.fatte
-                        Intestazione(
-                            if (g.fatte > 0) stringResource(R.string.da_fare_fatte, g.fatte, totale) else stringResource(R.string.da_fare_oggi, g.aperte),
-                            stringResource(R.string.attivita), col,
-                        ) { apriAttivita() }
-                    }
-                    val ora = model.adesso.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                    val sera = model.adesso.toLocalDate().atTime(18, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                    val spazio = if (g.aperte > 0) Liberi.primo(ora, sera, g.impegni.filter { !it.tuttoIlGiorno }.map { it.inizio to it.fine }) else null
-                    if (spazio != null) item { SpazioLibero(spazio, spazio.inizio == ora, Liberi.quante(spazio, g.aperte), col) { apriAttivita() } }
-                    if (g.cose.isEmpty()) item { Text(stringResource(R.string.niente_da_fare), color = col.sotto, fontSize = 13.5.sp) }
-                    items(g.cose.size) { i -> RigaCosa(g.cose[i], col) { apriAttivita() } }
-                }
-            }
-            Scheda.Personale -> {
-                if (model.ascolto && model.brano != null) item { SchedaMusica(model, col) }
-                avvisi(model, col, R.string.messaggi)
-            }
-            Scheda.Viaggio -> {
-                item { BollaPreferiti(model, col) }
-                if (model.ascolto && model.brano != null) item { SchedaMusica(model, col) }
-            }
+    } else {
+        LazyColumn(
+            modifier.fillMaxWidth().padding(horizontal = 10.dp).background(col.foglio, forma),
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = spazi,
+        ) {
+            alto(model, scheda, col)
+            persone(model, scheda, col)
+            cose(model, scheda, col)
         }
     }
 }
 
+private fun apriCalendario(model: PostazioneModel) {
+    model.telefono.apriSuiteO(BuildConfig.HUB_PACKAGE, "eu.eurise.hub.CalendarApp", Intent(Intent.ACTION_VIEW, CalendarContract.CONTENT_URI.buildUpon().appendPath("time").build()))
+}
+
+private fun apriAttivita(model: PostazioneModel) {
+    model.telefono.apriSuiteO(BuildConfig.HUB_PACKAGE, "eu.eurise.hub.TasksApp", null)
+}
+
+private fun LazyListScope.alto(model: PostazioneModel, scheda: Scheda, col: Colori) {
+    val g = model.giornata
+    val tel = model.telefono
+    if (!g.collegata) {
+        item { Nota(stringResource(R.string.senza_eurise), col) }
+    } else if (g.impegni.isEmpty()) {
+        item { Riga(stringResource(R.string.nessun_impegno), stringResource(R.string.calendario), col) { apriCalendario(model) } }
+    } else {
+        item {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(g.impegni.size) { i ->
+                    val e = g.impegni[i]
+                    SchedaImpegno(e, i == 0, scheda == Scheda.Viaggio, model.adesso, col,
+                        onNaviga = { tel.avvia(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(e.luogo)))) },
+                        onRitardo = { testo, titolo ->
+                            tel.avvia(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, testo), titolo))
+                        },
+                        onApri = { apriCalendario(model) })
+                }
+            }
+        }
+    }
+    if (scheda == Scheda.Lavoro && g.collegata && model.fineGiornata) item { FineGiornata(model, col) }
+}
+
+private fun LazyListScope.persone(model: PostazioneModel, scheda: Scheda, col: Colori) {
+    when (scheda) {
+        Scheda.Lavoro -> avvisi(model, col, R.string.da_rispondere)
+        Scheda.Personale -> {
+            if (model.pausaFino > 0L) item { RigaPausa(model, col) }
+            if (model.ascolto && model.brano != null) item { SchedaMusica(model, col) }
+            avvisi(model, col, R.string.messaggi)
+            if (model.giornata.collegata) {
+                val notizie = model.notizie
+                if (notizie != null) {
+                    item { Text(stringResource(R.string.notizie), color = col.inchiostro, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+                    if (notizie.isEmpty()) item { Nota(stringResource(R.string.notizie_vuote), col) }
+                    items(notizie.size) { i -> RigaNotizia(model, notizie[i], col) }
+                }
+            }
+        }
+        Scheda.Viaggio -> {
+            item { BollaPreferiti(model, col) }
+            item { BollaAuto(model, col) }
+            if (model.ascolto && model.brano != null) item { SchedaMusica(model, col) }
+        }
+    }
+}
+
+private fun LazyListScope.cose(model: PostazioneModel, scheda: Scheda, col: Colori) {
+    val g = model.giornata
+    if (scheda != Scheda.Lavoro || !g.collegata) return
+    item {
+        val totale = g.aperte + g.fatte
+        Intestazione(
+            if (g.fatte > 0) stringResource(R.string.da_fare_fatte, g.fatte, totale) else stringResource(R.string.da_fare_oggi, g.aperte),
+            stringResource(R.string.attivita), col,
+        ) { apriAttivita(model) }
+    }
+    val ora = model.adesso.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    val sera = model.adesso.toLocalDate().atTime(18, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    val spazio = if (g.aperte > 0) Liberi.primo(ora, sera, g.impegni.filter { !it.tuttoIlGiorno }.map { it.inizio to it.fine }) else null
+    if (spazio != null) {
+        val quante = Liberi.quante(spazio, g.cose.size)
+        item { SpazioLibero(spazio, spazio.inizio == ora, quante, col, onMetti = if (quante > 0) ({ model.mettiNelloSpazio(spazio) }) else null) }
+    }
+    if (g.cose.isEmpty()) item { Text(stringResource(R.string.niente_da_fare), color = col.sotto, fontSize = 13.5.sp) }
+    items(g.cose.size) { i -> RigaCosa(g.cose[i], col) { apriAttivita(model) } }
+}
+
 /** «Da rispondere»: messaggi, posta e chiamate perse ancora tra le notifiche; spento, la riga per accenderlo. */
-private fun androidx.compose.foundation.lazy.LazyListScope.avvisi(model: PostazioneModel, col: Colori, titolo: Int) {
+private fun LazyListScope.avvisi(model: PostazioneModel, col: Colori, titolo: Int) {
     if (!model.ascolto) {
         item { AccendiAscolto(col) }
         return
@@ -391,12 +455,12 @@ private fun SchedaImpegno(
                         }
                     }
                     if (vicino) {
-                        val testo = stringResource(R.string.ritardo_testo, e.titolo)
-                        val titolo = stringResource(R.string.ritardo_a)
+                        val testo = stringResource(if (viaggio) R.string.arrivo_testo else R.string.ritardo_testo, e.titolo)
+                        val titolo = stringResource(if (viaggio) R.string.arrivo_a else R.string.ritardo_a)
                         Box(
                             Modifier.weight(1f).height(40.dp).background(col.foglio, RoundedCornerShape(12.dp)).clickable { onRitardo(testo, titolo) },
                             contentAlignment = Alignment.Center,
-                        ) { Text(stringResource(R.string.ritardo), color = col.inchiostro, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold) }
+                        ) { Text(stringResource(if (viaggio) R.string.avvisa else R.string.ritardo), color = col.inchiostro, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold) }
                     }
                 }
             }
@@ -443,7 +507,7 @@ private fun Riga(testo: String, link: String, col: Colori, onLink: () -> Unit) {
 }
 
 @Composable
-private fun Nota(testo: String, col: Colori) {
+internal fun Nota(testo: String, col: Colori) {
     Text(
         testo, color = col.sotto, fontSize = 13.5.sp, lineHeight = 19.sp,
         modifier = Modifier.fillMaxWidth().background(col.riquadro, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 10.dp),

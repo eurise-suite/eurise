@@ -697,3 +697,20 @@ né telemetria trovata.
   solo nelle sue impostazioni); notizie e oroscopo (passano dall'app Eurise e dal centro privacy); silenzio del lavoro la
   sera; «dove hai lasciato l'auto».
 
+### Postazione, terzo giro (26 novembre 2026, tarda notte): completata
+- **Posizione** (`ACCESS_FINE_LOCATION`/`COARSE`): solo per «Dove hai lasciato l'auto», **spento di base**, chiesto dopo
+  la spiegazione. La posizione si legge **una volta**, quando si tocca «Segna qui» (`LocationManager.getCurrentLocation`,
+  nessun servizio di Google), e resta nelle preferenze private; «Portami lì» la passa all'app di mappe scelta
+  dall'utente. Nessun ascolto in background, nessun Bluetooth.
+- **Lavoro in pausa**: con l'accesso alle notifiche acceso, «Chiudi la giornata» rimanda fino alle 8:30
+  (`snoozeNotification`) le notifiche della posta del telefono e delle app del gruppo Lavoro; mai chiamate e sveglie.
+  Le notifiche non si cancellano: Android le ripresenta a quell'ora. «Riprendi» ferma la pausa per le nuove.
+- **«Domattina»**: una risposta fissa («Ti rispondo domattina.») mandata con l'azione «Rispondi» della notifica, **solo
+  al tocco** dell'utente su quella riga; nessuna risposta automatica (scelta di sicurezza: niente messaggi mandati da
+  soli a chi scrive, numeri sconosciuti e mittenti di codici compresi).
+- **Due porte nuove** nel fornitore `…hub.postazione`, stesso controllo di firma: `schedule` («Mettile lì»: orario ad
+  al più 4 attività, entro un giorno e mezzo) e `news` (le notizie le legge l'app Eurise con il servizio «Notizie» del
+  centro privacy: spento, lista vuota; la Postazione resta senza rete). Prova delle porte: `orari` chiusa alla curiosa.
+- **Notizie**: il tocco apre il link solo se è un indirizzo web (`Siti.normalizza`).
+- Resta da fare: gli interruttori della Postazione nel centro privacy dell'app Eurise; l'oroscopo (oggi nella Scrivania).
+

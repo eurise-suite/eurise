@@ -47,6 +47,9 @@ import eu.eurise.postazione.data.Ascolto
 import eu.eurise.postazione.data.Avviso
 import eu.eurise.postazione.data.Intervallo
 import eu.eurise.postazione.data.Musica
+import eu.eurise.postazione.data.Notizia
+import eu.eurise.postazione.data.Scheda
+import eu.eurise.postazione.data.Siti
 
 /** Quello che sta suonando, con indietro, suona o pausa, avanti. C'è solo con l'accesso alle notifiche acceso. */
 @Composable
@@ -96,6 +99,112 @@ fun RigaAvviso(model: PostazioneModel, a: Avviso, col: Colori) {
             }
             Text(a.testo, color = col.sotto, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
+        // La sera, un tocco manda «Ti rispondo domattina» con l'azione «Rispondi» della notifica: mai da sola.
+        if (a.rispondi != null && (model.scheda == Scheda.Personale || model.adesso.hour >= 17)) {
+            val testo = stringResource(R.string.domattina_testo)
+            var mandata by remember(a.chiave) { mutableStateOf(false) }
+            if (!mandata) {
+                Text(
+                    stringResource(R.string.domattina), color = col.accento, fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable(onClickLabel = stringResource(R.string.domattina_desc)) { mandata = Ascolto.rispondi(context, a, testo) }
+                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                )
+            }
+        }
+    }
+}
+
+/** «Lavoro in pausa fino alle 8:30 · 3 avvisi aspettano». */
+@Composable
+fun RigaPausa(model: PostazioneModel, col: Colori) {
+    val attesa = model.inAttesa
+    Row(
+        Modifier.fillMaxWidth().background(col.riquadro, RoundedCornerShape(12.dp)).padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(EuriseIcons.bell(), null, Modifier.size(17.dp), tint = col.sotto)
+        Text(
+            stringResource(R.string.pausa_riga, orario(model.pausaFino)) + if (attesa > 0) pluralStringResource(R.plurals.pausa_attesa, attesa, attesa) else "",
+            color = col.sotto, fontSize = 13.sp, modifier = Modifier.weight(1f).padding(start = 10.dp),
+        )
+        Text(
+            stringResource(R.string.pausa_fine), color = col.accento, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+            modifier = Modifier.clickable { model.finePausa() }.padding(horizontal = 12.dp, vertical = 12.dp),
+        )
+    }
+}
+
+/** Una notizia: il tocco la apre nel browser (solo indirizzi web). */
+@Composable
+fun RigaNotizia(model: PostazioneModel, n: Notizia, col: Colori) {
+    val minuti = ((System.currentTimeMillis() - n.quando) / 60_000L).toInt().coerceAtLeast(1)
+    val sotto = when {
+        n.quando <= 0L -> n.fonte
+        minuti < 60 -> stringResource(R.string.notizia_fa_min, n.fonte, minuti)
+        minuti < 48 * 60 -> stringResource(R.string.notizia_fa_ore, n.fonte, minuti / 60)
+        else -> n.fonte
+    }
+    Column(Modifier.fillMaxWidth().clickable { Siti.normalizza(n.link)?.let { model.telefono.apriSito(it) } }.padding(vertical = 2.dp)) {
+        Text(n.titolo, color = col.inchiostro, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text(sotto, color = col.sotto, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** «Dove hai lasciato l'auto»: un tocco segna il punto, «Portami lì» lo apre nelle mappe. */
+@Composable
+fun BollaAuto(model: PostazioneModel, col: Colori) {
+    var chiedi by remember { mutableStateOf(false) }
+    val permesso = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { model.aggiorna() }
+    if (!model.posizione) {
+        RigaAccendi(stringResource(R.string.auto_spenta), col) { chiedi = true }
+    } else {
+        val auto = model.auto
+        Row(
+            Modifier.fillMaxWidth().background(col.riquadro, RoundedCornerShape(12.dp)).padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(EuriseIcons.car(), null, Modifier.size(18.dp), tint = col.accento)
+            if (auto == null) {
+                val testo = when {
+                    model.cercoAuto -> stringResource(R.string.auto_cerco)
+                    model.autoNonTrovata -> stringResource(R.string.auto_niente)
+                    else -> stringResource(R.string.auto_segna)
+                }
+                Text(
+                    testo, color = if (model.cercoAuto || model.autoNonTrovata) col.sotto else col.accento, fontSize = 13.5.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f).clickable(enabled = !model.cercoAuto) { model.segnaAuto() }.padding(horizontal = 10.dp, vertical = 12.dp),
+                )
+            } else {
+                Text(stringResource(R.string.auto_lasciata, orario(auto.quando)), color = col.inchiostro, fontSize = 13.5.sp, modifier = Modifier.weight(1f).padding(start = 10.dp))
+                Text(
+                    stringResource(R.string.auto_portami), color = col.accento, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable {
+                        val punto = auto.lat.toString() + "," + auto.lon.toString()
+                        model.telefono.avvia(Intent(Intent.ACTION_VIEW, Uri.parse("geo:$punto?q=$punto")))
+                    }.padding(horizontal = 10.dp, vertical = 12.dp),
+                )
+                Text(
+                    stringResource(R.string.auto_dimentica), color = col.sotto, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.clickable { model.dimenticaAuto() }.padding(horizontal = 10.dp, vertical = 12.dp),
+                )
+            }
+        }
+    }
+    if (chiedi) {
+        PrivacyConsentSheet(
+            title = stringResource(R.string.auto_consenso),
+            read = stringResource(R.string.auto_letto),
+            out = stringResource(R.string.auto_esce),
+            who = stringResource(R.string.auto_chi),
+            back = stringResource(R.string.auto_indietro),
+            score = 10,
+            where = Jurisdiction.Phone,
+            onDismiss = { chiedi = false },
+            onAccept = {
+                chiedi = false
+                permesso.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+            },
+        )
     }
 }
 
@@ -183,26 +292,28 @@ private fun RigaAccendi(testo: String, col: Colori, onAccendi: () -> Unit) {
     }
 }
 
-/** La scheda di fine giornata: le cose aperte passano a domani e si passa a Personale. */
+/** La scheda di fine giornata: le cose aperte passano a domani, il lavoro va in silenzio, si passa a Personale. */
 @Composable
 fun FineGiornata(model: PostazioneModel, col: Colori) {
     val aperte = model.giornata.aperte
+    var rimanda by remember { mutableStateOf(true) }
+    var silenzio by remember { mutableStateOf(true) }
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).background(col.prossimo, RoundedCornerShape(18.dp))) {
         Box(Modifier.width(5.dp).fillMaxHeight().background(col.lente, RoundedCornerShape(topStart = 18.dp, bottomStart = 18.dp)))
         Column(Modifier.weight(1f).padding(start = 13.dp, end = 14.dp, top = 13.dp, bottom = 13.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(stringResource(R.string.fine_titolo), color = col.accento, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             Text(stringResource(R.string.fine_stacca), color = col.inchiostro, fontSize = 19.sp, fontWeight = FontWeight.Bold)
-            Text(
-                if (aperte > 0) pluralStringResource(R.plurals.fine_aperte, aperte, aperte) else stringResource(R.string.fine_tutto_fatto),
-                color = col.sotto, fontSize = 13.5.sp,
-            )
+            if (aperte > 0) Spunta(pluralStringResource(R.plurals.fine_aperte, aperte, aperte), rimanda, col) { rimanda = !rimanda }
+            else Text(stringResource(R.string.fine_tutto_fatto), color = col.sotto, fontSize = 13.5.sp)
+            if (model.ascolto) Spunta(stringResource(R.string.fine_silenzio), silenzio, col) { silenzio = !silenzio }
             Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(
-                    Modifier.weight(1.5f).height(40.dp).background(col.lente, RoundedCornerShape(12.dp)).clickable { model.chiudiGiornata(true) },
+                    Modifier.weight(1.5f).height(40.dp).background(col.lente, RoundedCornerShape(12.dp))
+                        .clickable { model.chiudiGiornata(rimanda || aperte == 0, silenzio && model.ascolto) },
                     contentAlignment = Alignment.Center,
                 ) { Text(stringResource(R.string.fine_chiudi), color = Color.White, fontSize = 13.5.sp, fontWeight = FontWeight.Bold) }
                 Box(
-                    Modifier.weight(1f).height(40.dp).background(col.foglio, RoundedCornerShape(12.dp)).clickable { model.chiudiGiornata(false) },
+                    Modifier.weight(1f).height(40.dp).background(col.foglio, RoundedCornerShape(12.dp)).clickable { model.chiudiGiornata(false, false) },
                     contentAlignment = Alignment.Center,
                 ) { Text(stringResource(R.string.fine_non_oggi), color = col.inchiostro, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold) }
             }
@@ -210,16 +321,33 @@ fun FineGiornata(model: PostazioneModel, col: Colori) {
     }
 }
 
+@Composable
+private fun Spunta(testo: String, accesa: Boolean, col: Colori, onTocco: () -> Unit) {
+    Row(Modifier.fillMaxWidth().clickable { onTocco() }.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier.size(20.dp).background(if (accesa) col.lente else Brush.linearGradient(listOf(col.riga, col.riga)), RoundedCornerShape(6.dp)),
+            contentAlignment = Alignment.Center,
+        ) { if (accesa) Icon(EuriseIcons.check(), null, Modifier.size(14.dp), tint = Color.White) }
+        Text(testo, color = col.inchiostro, fontSize = 13.5.sp, modifier = Modifier.padding(start = 10.dp))
+    }
+}
+
 /** «11:00–11:50 libero: ci stanno 2 cose». */
 @Composable
-fun SpazioLibero(spazio: Intervallo, daAdesso: Boolean, cose: Int, col: Colori, onApri: () -> Unit) {
+fun SpazioLibero(spazio: Intervallo, daAdesso: Boolean, cose: Int, col: Colori, onMetti: (() -> Unit)?) {
     val testo = (if (daAdesso) stringResource(R.string.libero_ora, orario(spazio.fine)) else stringResource(R.string.libero_tra, orario(spazio.inizio), orario(spazio.fine))) +
         if (cose > 0) pluralStringResource(R.plurals.libero_cose, cose, cose) else ""
     Row(
-        Modifier.fillMaxWidth().background(col.riquadro, RoundedCornerShape(12.dp)).clickable { onApri() }.padding(horizontal = 12.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().background(col.riquadro, RoundedCornerShape(12.dp)).padding(start = 12.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(EuriseIcons.clock(), null, Modifier.size(17.dp), tint = col.accento)
-        Text(testo, color = col.inchiostro, fontSize = 13.sp, modifier = Modifier.weight(1f).padding(start = 10.dp))
+        Text(testo, color = col.inchiostro, fontSize = 13.sp, modifier = Modifier.weight(1f).padding(start = 10.dp, top = 10.dp, bottom = 10.dp))
+        if (onMetti != null) {
+            Text(
+                stringResource(R.string.mettile_li), color = col.accento, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable { onMetti() }.padding(horizontal = 12.dp, vertical = 12.dp),
+            )
+        }
     }
 }

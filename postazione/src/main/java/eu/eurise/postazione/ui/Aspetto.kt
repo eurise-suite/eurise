@@ -19,9 +19,13 @@ import eu.eurise.postazione.R
 import eu.eurise.postazione.data.Cielo
 import eu.eurise.postazione.data.Gruppo
 
+/** I tre accenti della suite (tela «Tavolozza»): Ceruleo di partenza, Petrolio più sobrio, Inchiostro e ottone più caldo. */
+enum class Accento { Ceruleo, Petrolio, Ottone }
+
+private fun sfuma(a: Long, b: Long, c: Long) = Brush.linearGradient(listOf(Color(a), Color(b), Color(c)))
+
 /** Il cangiante della lente (accento Ceruleo), lo stesso della riga del «Prossimo» e del pulsante principale. */
-val Lente = Brush.linearGradient(listOf(Color(0xFF2AA2E2), Color(0xFF1298DF), Color(0xFF003AC7)))
-val LenteNotte = Brush.linearGradient(listOf(Color(0xFF6E9AD3), Color(0xFF4F7CC0), Color(0xFF34579A)))
+val Lente = sfuma(0xFF2AA2E2, 0xFF1298DF, 0xFF003AC7)
 
 class Colori(
     val notte: Boolean,
@@ -37,13 +41,24 @@ class Colori(
     val lente: Brush,
 )
 
-fun colori(notte: Boolean) = if (notte) Colori(
-    true, Color(0xFF12161D), Color(0xFF181D25), Color(0xFF232B37), Color(0xFF212A38),
-    Color(0xFFE9EBEE), Color(0xFF9AA3B0), Color(0x12FFFFFF), Color(0xFF9DB6DE), Color(0xEB181D25), LenteNotte,
-) else Colori(
-    false, Color(0xFFF2F0EB), Color(0xFFFBFAF7), Color(0xFFF2F1EC), Color(0xFFEAF2FB),
-    Color(0xFF1C1D20), Color(0xFF62615C), Color(0x141C1D20), Color(0xFF0A5BD0), Color(0xF0FBFAF7), Lente,
-)
+/** I colori della Postazione: carta e inchiostro uguali per tutti, l'accento a scelta; di sera l'accento si spegne. */
+fun colori(notte: Boolean, accento: Accento = Accento.Ceruleo): Colori {
+    val (lente, tinta, prossimo) = when (accento) {
+        Accento.Ceruleo -> if (notte) Triple(sfuma(0xFF6E9AD3, 0xFF4F7CC0, 0xFF34579A), Color(0xFF9DB6DE), Color(0xFF212A38))
+            else Triple(Lente, Color(0xFF0A5BD0), Color(0xFFEAF2FB))
+        Accento.Petrolio -> if (notte) Triple(sfuma(0xFF5E9E9C, 0xFF3F7F84, 0xFF2B5A6A), Color(0xFF8CC3C0), Color(0xFF1F2B2E))
+            else Triple(sfuma(0xFF2BA3A0, 0xFF13858A, 0xFF0B4F6C), Color(0xFF0E6E74), Color(0xFFE6F1F0))
+        Accento.Ottone -> if (notte) Triple(sfuma(0xFFC9A35A, 0xFFA8843F, 0xFF7C6130), Color(0xFFD6B572), Color(0xFF262420))
+            else Triple(sfuma(0xFFD9A441, 0xFFB98429, 0xFF8A6420), Color(0xFF8A6420), Color(0xFFF5EEDF))
+    }
+    return if (notte) Colori(
+        true, Color(0xFF12161D), Color(0xFF181D25), Color(0xFF232B37), prossimo,
+        Color(0xFFE9EBEE), Color(0xFF9AA3B0), Color(0x12FFFFFF), tinta, Color(0xEB181D25), lente,
+    ) else Colori(
+        false, Color(0xFFF2F0EB), Color(0xFFFBFAF7), Color(0xFFF2F1EC), prossimo,
+        Color(0xFF1C1D20), Color(0xFF62615C), Color(0x141C1D20), tinta, Color(0xF0FBFAF7), lente,
+    )
+}
 
 /** Il colore del testo sopra il cielo: chiaro di sera e di notte, scuro di giorno. */
 fun testoSulCielo(c: Cielo) = if (c == Cielo.Notte || c == Cielo.Tramonto) Color(0xFFF2F3F5) else Color(0xFF1B2536)

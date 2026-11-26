@@ -3,6 +3,7 @@ package eu.eurise.postazione.data
 import android.app.ActivityOptions
 import android.app.Notification
 import android.app.PendingIntent
+import android.app.RemoteInput
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -11,6 +12,7 @@ import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
 import android.os.Build
+import android.os.Bundle
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -18,7 +20,12 @@ import androidx.core.app.NotificationManagerCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /** Un messaggio, una mail o una chiamata persa ancora tra le notifiche: [apri] è ciò che farebbe il tocco sulla notifica. */
-class Avviso(val chiave: String, val pacchetto: String, val titolo: String, val testo: String, val quando: Long, val apri: PendingIntent?)
+class Avviso(
+    val chiave: String, val pacchetto: String, val titolo: String, val testo: String, val quando: Long,
+    val apri: PendingIntent?,
+    /** L'azione «Rispondi» della notifica, se l'app la offre: serve a «Rispondo domattina». */
+    val rispondi: Notification.Action? = null,
+)
 
 /** Quello che sta suonando (o è in pausa) in un'app di musica o video. */
 data class Brano(val titolo: String, val artista: String, val pacchetto: String, val suona: Boolean)
@@ -30,17 +37,35 @@ data class Brano(val titolo: String, val artista: String, val pacchetto: String,
  * viene scritto su disco e la Postazione non ha il permesso di rete.
  */
 class AscoltoService : NotificationListenerService() {
-    override fun onListenerConnected() = aggiorna()
+    override fun onListenerConnected() {
+        istanza = this
+        val prefs = getSharedPreferences("postazione", MODE_PRIVATE)
+        fino = prefs.getLong(K_FINO, 0L)
+        inPausa = prefs.getString(K_APP, null).orEmpty().lines().filter { it.isNotBlank() }.toSet()
+        aggiorna()
+    }
 
-    override fun onListenerDisconnected() { avvisi.value = emptyList() }
+    override fun onListenerDisconnected() {
+        istanza = null
+        avvisi.value = emptyList()
+    }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) = aggiorna()
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) = aggiorna()
 
-    private fun aggiorna() {
+    internal fun aggiorna() {
         val attive = runCatching { activeNotifications }.getOrNull() ?: return
-        avvisi.value = attive.mapNotNull { leggi(it) }.sortedByDescending { it.quando }.take(MAX)
+        val ora = System.currentTimeMillis()
+        val pausa = ora < fino
+        // «Lavoro in pausa»: le notifiche delle app scelte si rimandano da sole alla fine della pausa (mai chiamate e sveglie).
+        if (pausa) attive.forEach { sbn ->
+            val categoria = sbn.notification?.category
+            if (sbn.packageName in inPausa && !sbn.isOngoing && categoria != Notification.CATEGORY_CALL && categoria != Notification.CATEGORY_ALARM) {
+                runCatching { snoozeNotification(sbn.key, fino - ora) }.onSuccess { fermate.value = fermate.value + sbn.key }
+            }
+        }
+        avvisi.value = attive.filter { !(pausa && it.packageName in inPausa) }.mapNotNull { leggi(it) }.sortedByDescending { it.quando }.take(MAX)
     }
 
     private fun leggi(sbn: StatusBarNotification): Avviso? {
@@ -51,15 +76,26 @@ class AscoltoService : NotificationListenerService() {
         val titolo = n.extras?.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
         val testo = n.extras?.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
         if (titolo.isBlank() && testo.isBlank()) return null
-        return Avviso(sbn.key, sbn.packageName, titolo, testo, sbn.postTime, n.contentIntent)
+        val rispondi = n.actions?.firstOrNull { a -> a.remoteInputs?.any { it.allowFreeFormInput } == true }
+        return Avviso(sbn.key, sbn.packageName, titolo, testo, sbn.postTime, n.contentIntent, rispondi)
     }
 
     companion object {
         private const val MAX = 6
         private val CATEGORIE = setOf(Notification.CATEGORY_MESSAGE, Notification.CATEGORY_EMAIL, Notification.CATEGORY_CALL, "missed_call")
 
+        internal const val K_FINO = "pausa.fino"
+        internal const val K_APP = "pausa.app"
+
         /** Solo in memoria: si svuota quando l'accesso si spegne o l'app si chiude. */
         val avvisi = MutableStateFlow<List<Avviso>>(emptyList())
+
+        /** Le notifiche rimandate in questa pausa (le chiavi): per dire quante aspettano. */
+        val fermate = MutableStateFlow<Set<String>>(emptySet())
+
+        @Volatile internal var fino = 0L
+        @Volatile internal var inPausa: Set<String> = emptySet()
+        @Volatile internal var istanza: AscoltoService? = null
     }
 }
 
@@ -75,6 +111,35 @@ object Ascolto {
         if (runCatching { context.startActivity(preciso) }.isFailure) {
             runCatching { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         }
+    }
+
+    /**
+     * «Lavoro in pausa»: fino a [fino] le notifiche delle app [pacchetti] si rimandano da sole (Android le ripresenta
+     * a quell'ora). Con [fino] a zero la pausa finisce: le nuove arrivano subito, quelle già rimandate tornano alla loro ora.
+     */
+    fun pausa(context: Context, pacchetti: Set<String>, fino: Long) {
+        context.getSharedPreferences("postazione", Context.MODE_PRIVATE).edit()
+            .putLong(AscoltoService.K_FINO, fino).putString(AscoltoService.K_APP, pacchetti.joinToString("\n")).apply()
+        AscoltoService.fino = fino
+        AscoltoService.inPausa = pacchetti
+        AscoltoService.fermate.value = emptySet()
+        AscoltoService.istanza?.aggiorna()
+    }
+
+    fun pausaFino(context: Context): Long =
+        context.getSharedPreferences("postazione", Context.MODE_PRIVATE).getLong(AscoltoService.K_FINO, 0L)
+
+    /** Una risposta scritta da te con un tocco, mandata con l'azione «Rispondi» della notifica: mai da sola. */
+    fun rispondi(context: Context, avviso: Avviso, testo: String): Boolean {
+        val azione = avviso.rispondi ?: return false
+        val campi = azione.remoteInputs ?: return false
+        return runCatching {
+            val intent = Intent()
+            val dati = Bundle()
+            campi.forEach { dati.putCharSequence(it.resultKey, testo) }
+            RemoteInput.addResultsToIntent(campi, intent, dati)
+            azione.actionIntent.send(context, 0, intent)
+        }.isSuccess
     }
 
     /** Come toccare la notifica. */

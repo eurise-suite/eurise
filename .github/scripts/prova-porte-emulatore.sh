@@ -64,6 +64,7 @@ attesa "$r" tastiera CHIUSA "la curiosa non comanda il ripristino della Tastiera
 attesa "$r" aspetto CHIUSA "la curiosa non legge le impostazioni della suite"
 attesa "$r" giornata CHIUSA "la curiosa non legge impegni e cose da fare (Postazione)"
 attesa "$r" rimanda CHIUSA "la curiosa non sposta le cose da fare (Chiudi la giornata)"
+attesa "$r" orari CHIUSA "la curiosa non dà orari alle cose da fare (Mettile lì)"
 attesa "$r" codici CHIUSA "la curiosa non legge i codici 2FA"
 attesa "$r" ponte CHIUSA "la curiosa non collega un suo computer al Ponte"
 attesa "$r" backup CHIUSA "la curiosa non legge il backup di Password"

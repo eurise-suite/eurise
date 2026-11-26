@@ -7,6 +7,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
     <!-- Preferiti da chiamare nella scheda Viaggio: spento di base, chiesto solo accendendo la funzione dopo la spiegazione. -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- «Dove hai lasciato l'auto»: spento di base; la posizione si legge una volta, quando tocchi «Segna qui». -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Le altre app della suite: solo quelle firmate con la stessa chiave. -->
     <uses-permission android:name="${suitePermission}" />
     <permission android:name="${suitePermission}" android:protectionLevel="signature" />

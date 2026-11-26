@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -100,6 +102,45 @@ fun Barra(
     }
 }
 
+/** La barra degli schermi larghi (tablet, computer): in colonna dal lato della mano, con la lente in cima. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun Binario(
+    model: PostazioneModel, scheda: Scheda, col: Colori,
+    onGruppo: (Gruppo) -> Unit, onVentaglio: (Gruppo) -> Unit, onLente: () -> Unit, onAlfred: () -> Unit, onTutte: () -> Unit,
+) {
+    val haptic = LocalHapticFeedback.current
+    Column(
+        Modifier.padding(horizontal = 12.dp, vertical = 14.dp).width(84.dp).fillMaxHeight().background(col.barra, RoundedCornerShape(26.dp)).padding(vertical = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Box(
+            Modifier.size(52.dp).background(col.lente, RoundedCornerShape(17.dp))
+                .combinedClickable(onClick = onLente, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onAlfred() }),
+            contentAlignment = Alignment.Center,
+        ) { LenteEurise(Color.White, Modifier.size(28.dp)) }
+        Box(Modifier.width(30.dp).height(1.dp).background(col.riga))
+        Gruppi.barra(scheda).reversed().forEach { g ->
+            val a = aspetto(g)
+            Column(
+                Modifier.combinedClickable(onClick = { onGruppo(g) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onVentaglio(g) }),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    Modifier.size(46.dp).background(a.tinta.copy(alpha = if (col.notte) 0.28f else 0.12f), RoundedCornerShape(15.dp)),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(a.icona, null, Modifier.size(23.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta) }
+                Text(stringResource(a.nome), color = col.sotto, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
+            }
+        }
+        Spacer(Modifier.weight(1f))
+        Icon(
+            EuriseIcons.grid(), stringResource(R.string.tutte_le_app),
+            Modifier.size(46.dp).clickable { onTutte() }.padding(12.dp), tint = col.sotto,
+        )
+    }
+}
+
 @Composable
 private fun Divisore(col: Colori) {
     Box(Modifier.padding(horizontal = 4.dp).padding(bottom = 14.dp).width(1.dp).height(34.dp).background(col.riga))
@@ -107,7 +148,7 @@ private fun Divisore(col: Colori) {
 
 /** Il ventaglio di un gruppo: le sue app (la prima è la preferita), «Aggiungi un'app», togli. Sta sopra la barra. */
 @Composable
-fun Ventaglio(model: PostazioneModel, g: Gruppo, col: Colori, onChiudi: () -> Unit, onAggiungi: () -> Unit) {
+fun Ventaglio(model: PostazioneModel, g: Gruppo, col: Colori, largo: Boolean, onChiudi: () -> Unit, onAggiungi: () -> Unit) {
     val lista = model.gruppi[g].orEmpty()
     val a = aspetto(g)
     Box(
@@ -115,8 +156,10 @@ fun Ventaglio(model: PostazioneModel, g: Gruppo, col: Colori, onChiudi: () -> Un
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onChiudi() },
     ) {
         Column(
-            Modifier.align(if (model.mancino) Alignment.BottomStart else Alignment.BottomEnd).navigationBarsPadding()
-                .padding(start = 16.dp, end = 16.dp, bottom = 108.dp).width(270.dp),
+            // Sul telefono sopra la barra; sugli schermi larghi accanto al binario, dal lato della mano.
+            Modifier.align(if (largo) (if (model.mancino) Alignment.CenterStart else Alignment.CenterEnd) else if (model.mancino) Alignment.BottomStart else Alignment.BottomEnd)
+                .navigationBarsPadding()
+                .padding(start = if (largo) 116.dp else 16.dp, end = if (largo) 116.dp else 16.dp, bottom = if (largo) 16.dp else 108.dp).width(270.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(stringResource(a.nome), color = col.inchiostro, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp))

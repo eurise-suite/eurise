@@ -9,6 +9,11 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import eu.eurise.postazione.data.App
+import eu.eurise.postazione.data.Auto
+import eu.eurise.postazione.data.Intervallo
+import eu.eurise.postazione.data.Liberi
+import eu.eurise.postazione.data.Notizia
+import eu.eurise.postazione.data.Posto
 import eu.eurise.postazione.data.Ascolto
 import eu.eurise.postazione.data.AscoltoService
 import eu.eurise.postazione.data.Avviso
@@ -25,12 +30,14 @@ import eu.eurise.postazione.data.Schede
 import eu.eurise.postazione.data.Siti
 import eu.eurise.postazione.data.Telefono
 import eu.eurise.postazione.data.Usi
+import eu.eurise.postazione.ui.Accento
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 
 /**
  * Lo stato della Postazione. Tutto resta sul telefono: le scelte (nome, mano, gruppi, siti, scheda scelta a mano, quante
@@ -61,6 +68,21 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
     private var usi by mutableStateOf(Usi.leggi(prefs.getString(K_USI, null)))
     var recenti by mutableStateOf(prefs.getString(K_RECENTI, null).orEmpty().lines().filter { it.isNotBlank() }); private set
     private var chiusa by mutableStateOf(prefs.getString(K_CHIUSA, null))
+    var accento by mutableStateOf(runCatching { Accento.valueOf(prefs.getString(K_ACCENTO, null).orEmpty()) }.getOrDefault(Accento.Ceruleo)); private set
+
+    /** Le notizie dall'app Eurise: null finché non le ha chieste (o se l'app Eurise manca). */
+    var notizie by mutableStateOf<List<Notizia>?>(null); private set
+    private var notizieAlle = 0L
+
+    /** «Lavoro in pausa» fino a quest'ora (0 = niente pausa) e quanti avvisi aspettano. */
+    var pausaFino by mutableStateOf(0L); private set
+    var inAttesa by mutableStateOf(0); private set
+
+    /** Dove hai lasciato l'auto, e lo stato di «Segna qui». */
+    var auto by mutableStateOf(leggiAuto()); private set
+    var posizione by mutableStateOf(false); private set
+    var cercoAuto by mutableStateOf(false); private set
+    var autoNonTrovata by mutableStateOf(false); private set
 
     val scheda: Scheda get() = Schede.attiva(Schede.automatica(adesso), manuale, autoAllaScelta)
     val automatica: Boolean get() = scheda == Schede.automatica(adesso)
@@ -70,12 +92,15 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
 
     init {
         viewModelScope.launch { AscoltoService.avvisi.collect { avvisi = it } }
+        viewModelScope.launch { AscoltoService.fermate.collect { inAttesa = it.size } }
     }
 
     fun aggiorna() {
         adesso = LocalDateTime.now()
         ascolto = Ascolto.acceso(contesto)
         contatti = Preferiti.permesso(contesto)
+        posizione = Posto.permesso(contesto)
+        pausaFino = Ascolto.pausaFino(contesto).takeIf { it > System.currentTimeMillis() } ?: 0L
         viewModelScope.launch {
             val (lista, r) = withContext(Dispatchers.Default) { telefono.app() to telefono.ruoli() }
             app = lista; ruoli = r
@@ -83,12 +108,21 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
             giornata = withContext(Dispatchers.IO) { LettoreGiornata.leggi(contesto, BuildConfig.HUB_PACKAGE) }
             preferiti = withContext(Dispatchers.IO) { Preferiti.leggi(contesto) }
             leggiMusica()
+            leggiNotizie()
         }
     }
 
     fun tic() {
         adesso = LocalDateTime.now()
         viewModelScope.launch { leggiMusica() }
+    }
+
+    /** Solo con la scheda Personale davanti, e al più ogni venti minuti: le legge l'app Eurise, con le sue regole. */
+    private suspend fun leggiNotizie() {
+        val ora = System.currentTimeMillis()
+        if (scheda != Scheda.Personale || !giornata.collegata || ora - notizieAlle < 20 * 60_000L) return
+        notizieAlle = ora
+        notizie = withContext(Dispatchers.IO) { LettoreGiornata.notizie(contesto, BuildConfig.HUB_PACKAGE) }
     }
 
     private suspend fun leggiMusica() {
@@ -150,20 +184,77 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
         val auto = Schede.automatica(LocalDateTime.now())
         if (s == auto) { manuale = null; autoAllaScelta = null } else { manuale = s; autoAllaScelta = auto }
         prefs.edit().putString(K_MANUALE, manuale?.name).putString(K_AUTO, autoAllaScelta?.name).apply()
+        viewModelScope.launch { leggiNotizie() }
     }
 
-    /** «Chiudi la giornata»: con [rimanda] le cose aperte passano a domani; poi la scheda Personale. */
-    fun chiudiGiornata(rimanda: Boolean) {
+    /**
+     * «Chiudi la giornata»: con [rimanda] le cose aperte passano a domani; con [silenzio] le notifiche della posta e
+     * delle app del gruppo Lavoro si rimandano da sole fino alle 8:30; poi la scheda Personale.
+     */
+    fun chiudiGiornata(rimanda: Boolean, silenzio: Boolean) {
         chiusa = LocalDate.now().toString()
         prefs.edit().putString(K_CHIUSA, chiusa).apply()
+        if (silenzio && ascolto) {
+            val ora = LocalDateTime.now()
+            val mattina = (if (ora.hour < 8 || (ora.hour == 8 && ora.minute < 30)) ora.toLocalDate() else ora.toLocalDate().plusDays(1)).atTime(8, 30)
+            pausaFino = mattina.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            Ascolto.pausa(contesto, appDiLavoro(), pausaFino)
+        }
         viewModelScope.launch {
             if (rimanda) {
                 withContext(Dispatchers.IO) { LettoreGiornata.rimanda(contesto, BuildConfig.HUB_PACKAGE) }
                 giornata = withContext(Dispatchers.IO) { LettoreGiornata.leggi(contesto, BuildConfig.HUB_PACKAGE) }
-                scegli(Scheda.Personale)
+            }
+            if (rimanda || silenzio) scegli(Scheda.Personale)
+        }
+    }
+
+    /** Le app che vanno in pausa la sera: quelle del gruppo Lavoro e la posta del telefono. */
+    private fun appDiLavoro(): Set<String> =
+        (gruppi[Gruppo.Lavoro].orEmpty().filter { !Siti.eSito(it) }.map { it.substringBefore('/') } + listOfNotNull(ruoli["email"]))
+            .filter { it != contesto.packageName }.toSet()
+
+    fun finePausa() {
+        pausaFino = 0L
+        Ascolto.pausa(contesto, emptySet(), 0L)
+    }
+
+    /** «Mettile lì»: le prime cose da fare prendono un orario dentro lo spazio libero. */
+    fun mettiNelloSpazio(spazio: Intervallo) {
+        val ids = giornata.cose.take(Liberi.quante(spazio, giornata.aperte)).map { it.id }.toLongArray()
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { LettoreGiornata.metti(contesto, BuildConfig.HUB_PACKAGE, ids, spazio.inizio) }
+            giornata = withContext(Dispatchers.IO) { LettoreGiornata.leggi(contesto, BuildConfig.HUB_PACKAGE) }
+        }
+    }
+
+    private fun leggiAuto(): Auto? {
+        val quando = prefs.getLong(K_AUTO_QUANDO, 0L)
+        if (quando == 0L) return null
+        return Auto(Double.fromBits(prefs.getLong(K_AUTO_LAT, 0L)), Double.fromBits(prefs.getLong(K_AUTO_LON, 0L)), quando)
+    }
+
+    /** Segna il punto in cui sei come posto dell'auto. */
+    fun segnaAuto() {
+        if (cercoAuto) return
+        cercoAuto = true; autoNonTrovata = false
+        Posto.adesso(contesto) { dove ->
+            cercoAuto = false
+            if (dove == null) { autoNonTrovata = true } else {
+                val a = Auto(dove.latitude, dove.longitude, System.currentTimeMillis())
+                prefs.edit().putLong(K_AUTO_LAT, a.lat.toRawBits()).putLong(K_AUTO_LON, a.lon.toRawBits()).putLong(K_AUTO_QUANDO, a.quando).apply()
+                auto = a
             }
         }
     }
+
+    fun dimenticaAuto() {
+        prefs.edit().remove(K_AUTO_LAT).remove(K_AUTO_LON).remove(K_AUTO_QUANDO).apply()
+        auto = null
+    }
+
+    fun impostaAccento(a: Accento) { accento = a; prefs.edit().putString(K_ACCENTO, a.name).apply() }
 
     fun impostaNome(n: String) { nome = n.trim(); prefs.edit().putString(K_NOME, nome).apply() }
     fun impostaMancino(m: Boolean) { mancino = m; prefs.edit().putBoolean(K_MANCINO, m).apply() }
@@ -190,5 +281,9 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
         const val K_USI = "usi"
         const val K_RECENTI = "recenti"
         const val K_CHIUSA = "giornata.chiusa"
+        const val K_ACCENTO = "accento"
+        const val K_AUTO_LAT = "auto.lat"
+        const val K_AUTO_LON = "auto.lon"
+        const val K_AUTO_QUANDO = "auto.quando"
     }
 }

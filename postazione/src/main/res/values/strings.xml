@@ -142,4 +142,44 @@
     <string name="imp_ascolto">Da rispondere e musica (accesso alle notifiche)</string>
     <string name="imp_acceso">Acceso · tocca per spegnerlo in Android</string>
     <string name="imp_spento">Spento · tocca per accenderlo</string>
+
+    <string name="mettile_li">Mettile lì</string>
+    <string name="fine_silenzio">Posta e app di lavoro in silenzio fino alle 8:30</string>
+    <string name="fine_rimanda">Le cose aperte passano a domani</string>
+    <string name="pausa_riga">Lavoro in pausa fino alle %1$s</string>
+    <plurals name="pausa_attesa">
+        <item quantity="one"> · %1$d avviso aspetta</item>
+        <item quantity="other"> · %1$d avvisi aspettano</item>
+    </plurals>
+    <string name="pausa_fine">Riprendi</string>
+    <string name="domattina">Domattina</string>
+    <string name="domattina_testo">Ti rispondo domattina.</string>
+    <string name="domattina_desc">Rispondi «Ti rispondo domattina»</string>
+    <string name="avvisa">Avvisa</string>
+    <string name="arrivo_testo">Sto arrivando per «%1$s».</string>
+    <string name="arrivo_a">Avvisa che arrivi</string>
+
+    <string name="notizie">Notizie · dalle tue fonti</string>
+    <string name="notizie_vuote">Le notizie arrivano dall\'app Eurise: si accendono lì, tra i servizi del centro privacy.</string>
+    <string name="notizia_fa_min">%1$s · %2$d min fa</string>
+    <string name="notizia_fa_ore">%1$s · %2$d h fa</string>
+
+    <string name="auto_titolo">L\'auto</string>
+    <string name="auto_spenta">«Dove hai lasciato l\'auto» è spento.</string>
+    <string name="auto_segna">Segna qui dove lasci l\'auto</string>
+    <string name="auto_cerco">Cerco la posizione…</string>
+    <string name="auto_niente">Posizione non trovata: riprova all\'aperto.</string>
+    <string name="auto_lasciata">Lasciata alle %1$s</string>
+    <string name="auto_portami">Portami lì</string>
+    <string name="auto_dimentica">Dimentica</string>
+    <string name="auto_consenso">Dove hai lasciato l\'auto</string>
+    <string name="auto_letto">La posizione del telefono, una volta sola, nel momento in cui tocchi «Segna qui».</string>
+    <string name="auto_esce">Niente: il punto resta nella Postazione, che non ha la rete. «Portami lì» lo passa all\'app di mappe che scegli.</string>
+    <string name="auto_chi">Solo tu.</string>
+    <string name="auto_indietro">«Dimentica» cancella il punto; il permesso «Posizione» si toglie nelle impostazioni di Android.</string>
+
+    <string name="imp_accento">Accento</string>
+    <string name="acc_ceruleo">Ceruleo</string>
+    <string name="acc_petrolio">Petrolio</string>
+    <string name="acc_ottone">Ottone</string>
 </resources>

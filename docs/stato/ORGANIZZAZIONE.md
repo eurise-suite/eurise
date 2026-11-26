@@ -685,3 +685,11 @@ Centro privacy: tre servizi nuovi in `PrivacyService` (ReadModels, VoiceModels, 
   rispondo domattina», «Mettile lì» (le cose nello spazio libero), «dove hai lasciato l'auto», foto nella cartella del
   cliente, tablet, accento a scelta, icone degli animali (tela, bestiario al giro 8, non ancora approvate).
 
+## 26 novembre 2026, tarda notte: Postazione, terzo giro (dalla chat di Sicurezza)
+- Aggiunti: «Mettile lì», notizie in Personale (dall'app Eurise), lavoro in pausa la sera con «Riprendi», «Domattina»
+  al tocco, «Dove hai lasciato l'auto» a mano, «Avvisa» in Viaggio, accento a scelta (Ceruleo, Petrolio, Ottone),
+  schermi larghi (binario dal lato della mano, foglio a due colonne).
+- Fuori: oroscopo, risposta automatica (scelta di sicurezza), auto segnata da sola con il Bluetooth, foto nella cartella
+  del cliente (è della Fotocamera), icone degli animali nel codice (bestiario al giro 10, da approvare tutte).
+- Le schermate nuove non sono state viste girare: solo compilate e provate nelle porte. Prima prova vera: il proprietario.
+

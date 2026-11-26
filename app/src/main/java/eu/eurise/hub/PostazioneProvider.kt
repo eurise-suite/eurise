@@ -7,19 +7,25 @@ import android.net.Uri
 import android.os.Bundle
 import eu.eurise.core.data.EuriseData
 import eu.eurise.core.data.weather.MeteoRepository
+import eu.eurise.feature.launcher.news.NewsRepository
 import eu.eurise.core.suite.SuiteAccess
 import eu.eurise.core.suite.PostazioneContract as C
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * «La tua giornata» per Eurise Postazione ([C]): prossimi impegni e cose da fare fino a oggi. Solo per le app della suite;
  * nulla esce dal telefono. `call` arriva su un thread del Binder: leggere qui è lecito.
  */
 class PostazioneProvider : ContentProvider() {
+    /** Tenuto finché vive l'app: così la copia delle notizie (venti minuti) vale anche tra una chiamata e l'altra. */
+    private var newsRepo: NewsRepository? = null
+
     override fun onCreate() = true
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
@@ -28,7 +34,43 @@ class PostazioneProvider : ContentProvider() {
         return when (method) {
             C.METHOD_TODAY -> today(context)
             C.METHOD_POSTPONE -> postpone(context)
+            C.METHOD_SCHEDULE -> schedule(context, extras)
+            C.METHOD_NEWS -> news(context)
             else -> null
+        }
+    }
+
+    /** «Mettile lì»: un orario alle attività indicate, una ogni 25 minuti dall'inizio dello spazio libero. */
+    private fun schedule(context: android.content.Context, extras: Bundle?): Bundle {
+        val ids = extras?.getLongArray(C.EXTRA_IDS) ?: LongArray(0)
+        val start = extras?.getLong(C.EXTRA_START) ?: 0L
+        val now = System.currentTimeMillis()
+        var moved = 0
+        if (ids.isNotEmpty() && ids.size <= C.MAX_TASKS && start > now - 3_600_000L && start < now + C.HOURS * 3_600_000L) {
+            val data = EuriseData.create(context)
+            val first = Instant.ofEpochMilli(start).atZone(ZoneId.systemDefault()).toLocalDateTime().withSecond(0).withNano(0)
+            runBlocking {
+                ids.forEachIndexed { i, id ->
+                    val task = runCatching { data.tasks.get(id) }.getOrNull()
+                    if (task != null && !task.done) {
+                        val at = first.plusMinutes(25L * i)
+                        runCatching { data.tasks.update(task.copy(due = at.toLocalDate(), time = at.toLocalTime())) }.onSuccess { moved++ }
+                    }
+                }
+            }
+        }
+        return Bundle().apply { putInt(C.KEY_MOVED, moved) }
+    }
+
+    /** Le notizie le legge l'app Eurise, con il servizio «Notizie» del centro privacy: spento, la lista è vuota. */
+    private fun news(context: android.content.Context): Bundle {
+        val repo = newsRepo ?: NewsRepository(context.applicationContext).also { newsRepo = it }
+        val items = runCatching { runBlocking { withTimeoutOrNull(12_000L) { repo.latest() } } }.getOrNull().orEmpty().take(C.MAX_NEWS)
+        return Bundle().apply {
+            putStringArray(C.KEY_N_TITLE, items.map { it.title }.toTypedArray())
+            putStringArray(C.KEY_N_SOURCE, items.map { it.source }.toTypedArray())
+            putStringArray(C.KEY_N_LINK, items.map { it.link }.toTypedArray())
+            putLongArray(C.KEY_N_WHEN, items.map { it.publishedAt }.toLongArray())
         }
     }
 

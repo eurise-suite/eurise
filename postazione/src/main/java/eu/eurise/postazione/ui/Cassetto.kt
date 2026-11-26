@@ -241,6 +241,13 @@ fun Impostazioni(model: PostazioneModel, onChiudi: () -> Unit) {
                     Spacer(Modifier.width(16.dp))
                     RadioButton(mancino, { mancino = true }); Text(stringResource(R.string.imp_sinistra))
                 }
+                Text(stringResource(R.string.imp_accento), fontWeight = FontWeight.SemiBold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Accento.entries.forEach { a ->
+                        RadioButton(model.accento == a, { model.impostaAccento(a) })
+                        Text(stringResource(when (a) { Accento.Ceruleo -> R.string.acc_ceruleo; Accento.Petrolio -> R.string.acc_petrolio; Accento.Ottone -> R.string.acc_ottone }), fontSize = 13.sp)
+                    }
+                }
                 Text(stringResource(R.string.imp_ascolto), fontWeight = FontWeight.SemiBold)
                 TextButton({ Ascolto.impostazioni(context) }) {
                     Text(stringResource(if (model.ascolto) R.string.imp_acceso else R.string.imp_spento))
