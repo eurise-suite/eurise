@@ -693,3 +693,18 @@ Centro privacy: tre servizi nuovi in `PrivacyService` (ReadModels, VoiceModels, 
   del cliente (è della Fotocamera), icone degli animali nel codice (bestiario al giro 10, da approvare tutte).
 - Le schermate nuove non sono state viste girare: solo compilate e provate nelle porte. Prima prova vera: il proprietario.
 
+## 26 novembre 2026, notte fonda: icone del bestiario e icone a bolle (dalla chat di Sicurezza, giro 1138)
+- **Bestiario approvato** dal proprietario (tela «Eurise · nuova interfaccia», pagina «Icone con gli animali», giro 10):
+  icone di avvio nuove in tutti gli APK e disegni nuovi nei temi della Scrivania. Colori: Note prugna (il vecchio di
+  Password), Password verde acqua, Messaggi ottanio, Calendario aurora boreale, Backup blu. Parti nuove dei disegni:
+  «q», «v», «k», «H», «o» (`scripts/icone.py`, `SuiteBubbles.kt`). Mappe e motore di Office al loro prossimo giro.
+- **Icone a bolle confermate** (tavola «Le icone a bolle»): nella Postazione sono le icone di tutte le app, chiare di
+  giorno e scure di notte; le app non nostre hanno il loro simbolo nel colore dominante della loro icona, i siti
+  l'iniziale nel colore del gruppo (`IconaApp`, `IconaSito` in `postazione/.../ui/Barra.kt`, `Telefono.icona`).
+  Nella Scrivania restano i temi a scelta «Bolle chiare» e «Bolle scure», invariati.
+- **Parte comune toccata**: `SuiteDrawings.kt` (generato), `LogoMask.kt` e il suo test, la bolla e la tela dei disegni
+  (`SuiteBubbles.kt`), la lettura dei simboli e del colore (`AppSymbols.kt`) sono passati da
+  `feature/launcher/.../apps` a `core/designsystem/.../icon`. In `feature/launcher` restano `SuiteIcons.kt` (scelta per
+  tema e per voce) e `AppIcon.kt`; `SuiteIcons.Series` è diventata `SuiteSeries`. Chi tocca le icone: i disegni si
+  cambiano in `scripts/icone_disegni.json`, poi `python3 scripts/icone.py` e `python3 scripts/icone_kotlin.py`.
+- Da fare: tavola del tablet da aggiornare alle icone a bolle; «Fotocamera» ora ha il disegno anche nella Scrivania.

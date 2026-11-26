@@ -2,8 +2,8 @@
 
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
-### Per ripartire (aggiornato il 23 novembre 2026, sera)
-- **Ultimo giro pubblicato**: **1130** (26 novembre, notte: **Eurise Postazione** con le schede complete; due permessi nuovi spenti di base, accesso alle notifiche e contatti; sezioni «Postazione» in fondo). Prima: 1128 (primo APK della Postazione), 1122 (25 novembre: Flatpak di nuovo verde, tutto schermo nei documenti). **Da guardare**: «Vulnerabilità note» è rosso su `prova-sicurezza` dal 26 mattina per CVE-2026-137063 (media, 6.8) in `third_party/leptonica`: nessuna correzione disponibile, da valutare (usata solo dall'OCR dello Scanner). Prossimo: «Di' Alfred» aspetta la scelta del
+### Per ripartire (aggiornato il 26 novembre 2026, notte fonda)
+- **Ultimo giro pubblicato**: **1138** (26 novembre, notte fonda: **Postazione completa** con le **icone a bolle** per tutte le app, anche non nostre, e le **icone nuove del bestiario** su tutti gli APK; nessun permesso nuovo in questo giro; sezioni «Postazione» in fondo). Prima: 1133 (Postazione completata e bestiario, porte `giornata`, `rimanda`, `orari` provate sull'emulatore), 1130 (schede complete; accesso alle notifiche e contatti spenti di base). Ancora prima: 1128 (primo APK della Postazione), 1122 (25 novembre: Flatpak di nuovo verde, tutto schermo nei documenti). **Da guardare**: «Vulnerabilità note» è rosso su `prova-sicurezza` dal 26 mattina per CVE-2026-137063 (media, 6.8) in `third_party/leptonica`: nessuna correzione disponibile, da valutare (usata solo dall'OCR dello Scanner). Prossimo: «Di' Alfred» aspetta la scelta del
   proprietario sul modello (prove in `docs/stato/ALFRED.md`); Password Famiglia aspetta le tavole; zxing 3.5.4 aspetta un
   passo nel flusso delle impronte.
 - **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
@@ -714,3 +714,26 @@ né telemetria trovata.
 - **Notizie**: il tocco apre il link solo se è un indirizzo web (`Siti.normalizza`).
 - Resta da fare: gli interruttori della Postazione nel centro privacy dell'app Eurise; l'oroscopo (oggi nella Scrivania).
 
+### Postazione, quarto giro (26 novembre 2026, notte fonda): icone a bolle e bestiario (giro 1138)
+- **Nessun permesso nuovo, nessun cambio di firma o di pacchetto**: gli APK si installano sopra quelli di prima. Il giro
+  cambia solo disegni e codice di presentazione.
+- **Icone del bestiario** (approvate dal proprietario): nuove icone di avvio in tutti gli APK (`scripts/icone_disegni.json`
+  → `scripts/icone.py`). Sono risorse: nessuna voce di manifesto toccata. Mappe e il motore di Office le prendono al
+  loro prossimo giro (si compilano a parte).
+- **Icone a bolle nella Postazione** (tavola «Le icone a bolle», confermata): ogni app in una bolla chiara di giorno e
+  scura di notte, con il disegno nel suo colore. Per le app non nostre la Postazione legge **solo l'icona che Android già
+  mostra** (`PackageManager.getActivityIcon` sulle app che vede con `<queries>`): simbolo monocromatico, sagoma o logo
+  staccato dal fondo, e il colore dominante. Nessun dato delle app, nessuna rete (la Postazione resta senza `INTERNET`),
+  niente salvato su disco: le icone stanno in memoria (`LruCache`).
+- **Correzione dentro un'altra area** (Organizzazione, Scrivania): disegni, bolla e lettura dei simboli spostati da
+  `feature/launcher/.../apps` a `core/designsystem/.../icon` (`SuiteDrawings`, `SuiteBubbles`, `AppSymbols`, `LogoMask`
+  con il suo test) per non copiarli; la Scrivania li usa da lì e non cambia aspetto. `scripts/icone_kotlin.py` scrive
+  nel posto nuovo. Annotato in `docs/stato/ORGANIZZAZIONE.md`.
+- **Prova sull'emulatore**: le porte del giro 1133 (`giornata`, `rimanda`, `orari` chiuse alla curiosa, aperte
+  all'amica) e di nuovo sul giro 1138; questo giro non tocca permessi né fornitori. **Prova dell'avvio** (giro 1135, lo
+  stesso codice senza l'unione della Fotocamera): tutte le app partono, la Postazione in circa 0,8 s a freddo, nessun arresto.
+- **Due progetti sulla stessa pre-release**: il giro 1133 pubblicato da qui è stato coperto dieci minuti dopo dal 1134
+  della Fotocamera (partito da `brand` senza le ultime cose della Postazione). Il 1138 unisce `brand` e contiene tutti e
+  due i lavori. Da ricordare: prima di pubblicare, unire `origin/brand` e guardare il nome della pre-release.
+- Resta da fare: gli interruttori della Postazione nel centro privacy dell'app Eurise; l'oroscopo; le schermate nuove
+  non sono ancora state viste girare (solo compilate e provate nelle porte).
