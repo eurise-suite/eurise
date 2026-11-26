@@ -81,6 +81,7 @@ import eu.eurise.camera.CameraActivity
 import eu.eurise.camera.CameraModel
 import eu.eurise.camera.R
 import eu.eurise.camera.data.MediaOut
+import eu.eurise.camera.data.Foglio
 import eu.eurise.camera.data.Qr
 import eu.eurise.camera.data.Ritocco
 import eu.eurise.core.designsystem.component.Jurisdiction
@@ -271,20 +272,31 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
     var qr by remember { mutableStateOf<String?>(null) }
     var qrDismissed by remember { mutableStateOf<String?>(null) }
+    // Documento: il foglio trovato in due occhiate di fila nello stesso posto, e lo Scanner dell'app Eurise se c'è.
+    var sheet by remember { mutableStateOf<Foglio.Quad?>(null) }
+    val docScanner = remember(setup.locked, setup.capture) { if (setup.locked || setup.capture) null else model.scannerIntent() }
     val scanning = mode == Mode.Photo && recording == null && model.night.value == null && !review && confirm == null &&
         model.before.value == null
     LaunchedEffect(scanning, previewView) {
-        qr = null
+        qr = null; sheet = null
         val view = previewView
         if (!scanning || view == null) return@LaunchedEffect
         var seen = 0L
+        var candidate: Foglio.Quad? = null
+        var misses = 0
         while (true) {
             delay(700)
             val frame = view.bitmap ?: continue
-            val text = withContext(Dispatchers.Default) { readQr(frame) }
+            val (text, quad) = withContext(Dispatchers.Default) { lookAt(frame, docScanner != null) }
             val now = System.currentTimeMillis()
             if (text != null && text != qrDismissed) { qr = text; seen = now }
             else if (now - seen > 3000) qr = null
+            if (quad != null) {
+                misses = 0
+                val before = candidate
+                candidate = quad
+                if (before != null && before.distance(quad) < 0.06f) sheet = quad
+            } else if (++misses >= 2) { candidate = null; sheet = null }
         }
     }
 
@@ -323,6 +335,20 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
             model.before.value?.let { Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop, alpha = 0.45f) }
             if (model.before.value != null) {
                 BeforeChip(Modifier.align(Alignment.TopStart).padding(12.dp)) { model.clearBefore() }
+            }
+            sheet?.let { quad ->
+                if (qr == null && docScanner != null) {
+                    androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+                        val path = androidx.compose.ui.graphics.Path().apply {
+                            moveTo(quad.x[0] * size.width, quad.y[0] * size.height)
+                            for (i in 1 until 4) lineTo(quad.x[i] * size.width, quad.y[i] * size.height)
+                            close()
+                        }
+                        drawPath(path, Accent.copy(alpha = 0.18f))
+                        drawPath(path, Accent, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.5.dp.toPx()))
+                    }
+                    DocChip(Modifier.align(Alignment.Center)) { runCatching { context.startActivity(docScanner) } }
+                }
             }
             qr?.let { text ->
                 QrChip(
@@ -684,15 +710,45 @@ private fun clock(ms: Long): String {
 private fun has(context: Context, permission: String) =
     ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
-/** Il codice QR nel mirino, ridotto a 720 pixel di lato lungo. */
-private fun readQr(frame: android.graphics.Bitmap): String? {
+/**
+ * Un'occhiata al mirino: il codice QR (su 720 pixel di lato lungo) e, se [doc], il foglio (su 160 pixel di lato corto).
+ */
+private fun lookAt(frame: android.graphics.Bitmap, doc: Boolean): Pair<String?, Foglio.Quad?> {
     val k = 720f / maxOf(frame.width, frame.height)
     val small = if (k < 1f) android.graphics.Bitmap.createScaledBitmap(frame, (frame.width * k).toInt(), (frame.height * k).toInt(), true) else frame
+    if (small !== frame) frame.recycle()
     val px = IntArray(small.width * small.height)
     small.getPixels(px, 0, small.width, 0, 0, small.width, small.height)
-    if (small !== frame) small.recycle()
-    frame.recycle()
-    return Qr.decode(px, small.width, small.height)
+    val text = Qr.decode(px, small.width, small.height)
+    var quad: Foglio.Quad? = null
+    if (doc && text == null) {
+        val q = 160f / minOf(small.width, small.height)
+        val tiny = android.graphics.Bitmap.createScaledBitmap(small, (small.width * q).toInt().coerceAtLeast(16), (small.height * q).toInt().coerceAtLeast(16), true)
+        val tw = tiny.width; val th = tiny.height
+        val tp = IntArray(tw * th)
+        tiny.getPixels(tp, 0, tw, 0, 0, tw, th)
+        tiny.recycle()
+        for (i in tp.indices) { val c = tp[i]; tp[i] = ((c shr 16 and 0xFF) * 77 + (c shr 8 and 0xFF) * 150 + (c and 0xFF) * 29) shr 8 }
+        quad = Foglio.find(tp, tw, th)
+    }
+    small.recycle()
+    return text to quad
+}
+
+/** Il foglio è nel mirino: il tocco apre lo Scanner dell'app Eurise (ritaglio, raddrizzamento, PDF). */
+@Composable
+private fun DocChip(modifier: Modifier, onClick: () -> Unit) {
+    Row(
+        modifier.clip(RoundedCornerShape(22.dp)).background(Accent)
+            .pointerInput(Unit) { detectTapGestures { onClick() } }
+            .semantics { role = Role.Button }
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(EuriseIcons.scanner(), null, tint = OnAccent, modifier = Modifier.size(18.dp))
+        Text(stringResource(R.string.doc_scan), color = OnAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 8.dp))
+    }
 }
 
 /** Apre un indirizzo web (solo http e https) o copia: il testo, o la password di un Wi-Fi (come dato sensibile). */

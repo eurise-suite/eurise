@@ -235,3 +235,41 @@ class QrTest {
         assertEquals("seg;reta", qr.wifiPassword("WIFI:S:Casa;T:WPA;P:seg\\;reta;;"))
     }
 }
+
+class FoglioTest {
+    private val w = 160
+    private val h = 213
+
+    /** Un foglio chiaro storto su un tavolo scuro, con un po' di rumore. */
+    private fun paper(inside: (Int, Int) -> Boolean): IntArray {
+        val r = java.util.Random(7)
+        return IntArray(w * h) { i -> (if (inside(i % w, i / w)) 230 else 45) + r.nextInt(21) - 10 }
+    }
+
+    private fun inQuad(x: Int, y: Int, xs: IntArray, ys: IntArray): Boolean {
+        var sign = 0
+        for (i in 0 until 4) {
+            val j = (i + 1) % 4
+            val c = (xs[j] - xs[i]) * (y - ys[i]) - (ys[j] - ys[i]) * (x - xs[i])
+            val s = if (c > 0) 1 else if (c < 0) -1 else 0
+            if (s != 0) { if (sign == 0) sign = s else if (s != sign) return false }
+        }
+        return true
+    }
+
+    @Test
+    fun findsATiltedSheet() {
+        val xs = intArrayOf(40, 130, 120, 30); val ys = intArrayOf(50, 60, 180, 170)
+        val q = eu.eurise.camera.data.Foglio.find(paper { x, y -> inQuad(x, y, xs, ys) }, w, h)!!
+        assert(kotlin.math.abs(q.x[0] - 40f / w) < 0.03f && kotlin.math.abs(q.y[2] - 180f / h) < 0.03f) { q.x.toList() + q.y.toList() }
+    }
+
+    @Test
+    fun wallsAndFlatScenesAreNotSheets() {
+        // Tutto chiaro, o una zona chiara che tocca il bordo (muro, anta): niente.
+        assertNull(eu.eurise.camera.data.Foglio.find(paper { _, _ -> true }, w, h))
+        assertNull(eu.eurise.camera.data.Foglio.find(paper { x, _ -> x > 60 }, w, h))
+        // Un cerchio chiaro non è un foglio.
+        assertNull(eu.eurise.camera.data.Foglio.find(paper { x, y -> (x - 80) * (x - 80) + (y - 106) * (y - 106) < 55 * 55 }, w, h))
+    }
+}

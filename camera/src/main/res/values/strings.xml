@@ -80,6 +80,7 @@
     <string name="qr_password_copied">Password del Wi-Fi copiata</string>
     <string name="qr_wifi_open">Rete senza password</string>
     <string name="qr_no_app">Nessuna app per aprire il sito</string>
+    <string name="doc_scan">Documento · Scansiona</string>
     <!-- Prima/dopo -->
     <string name="before_button">Prima/dopo: scegli la foto di prima</string>
     <string name="before_on">Prima/dopo</string>
