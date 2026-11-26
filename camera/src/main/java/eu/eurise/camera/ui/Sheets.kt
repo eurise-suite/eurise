@@ -240,6 +240,21 @@ private fun DestRow(title: String, sub: String, dest: String?, state: Destinatio
             Icon(EuriseIcons.star(), stringResource(R.string.dest_star), tint = if (fav) Color(0xFFD9A93F) else MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (dest != null) {
+            val context = LocalContext.current
+            val scope = rememberCoroutineScope()
+            var making by remember { mutableStateOf(false) }
+            IconButton(enabled = !making, onClick = {
+                making = true
+                toast(context, R.string.report_making)
+                scope.launch {
+                    val share = model.report(dest)
+                    making = false
+                    if (share == null) toast(context, R.string.report_empty)
+                    else { toast(context, R.string.report_saved); runCatching { context.startActivity(share) } }
+                }
+            }) {
+                Icon(EuriseIcons.pdf(), stringResource(R.string.report_make, dest), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             IconButton(onClick = { model.update { it.remove(dest) } }) {
                 Icon(EuriseIcons.trash(), stringResource(R.string.dest_remove), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }

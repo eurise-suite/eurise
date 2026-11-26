@@ -211,3 +211,27 @@ class GpsTest {
         assertEquals("9/1,11/1,24000/1000", eu.eurise.camera.data.MediaOut.dms(-9.19))
     }
 }
+
+class QrTest {
+    private val qr = eu.eurise.camera.data.Qr
+
+    @Test
+    fun readsACodeBackFromPixels() {
+        val matrix = com.google.zxing.qrcode.QRCodeWriter().encode("https://www.comune.it/pratiche", com.google.zxing.BarcodeFormat.QR_CODE, 240, 240)
+        val px = IntArray(240 * 240) { if (matrix.get(it % 240, it / 240)) 0xFF000000.toInt() else -1 }
+        assertEquals("https://www.comune.it/pratiche", qr.decode(px, 240, 240))
+        assertNull(qr.decode(IntArray(240 * 240) { -1 }, 240, 240))
+    }
+
+    @Test
+    fun kindsAndWhatIsShown() {
+        assertEquals(eu.eurise.camera.data.Qr.Kind.Link, qr.kind("https://www.comune.it/x?y=1"))
+        assertEquals(eu.eurise.camera.data.Qr.Kind.Text, qr.kind("javascript:alert(1)"))
+        assertEquals(eu.eurise.camera.data.Qr.Kind.Text, qr.kind("intent://x#Intent;end"))
+        // Il dominio vero, anche con il trucco dell'utente prima della chiocciola.
+        assertEquals("cattivo.example", qr.host("https://banca.it@cattivo.example/login"))
+        assertEquals(eu.eurise.camera.data.Qr.Kind.Wifi, qr.kind("WIFI:T:WPA;S:Casa;P:segreta;;"))
+        assertEquals("Casa", qr.wifiName("WIFI:T:WPA;S:Casa;P:segreta;;"))
+        assertEquals("seg;reta", qr.wifiPassword("WIFI:S:Casa;T:WPA;P:seg\\;reta;;"))
+    }
+}

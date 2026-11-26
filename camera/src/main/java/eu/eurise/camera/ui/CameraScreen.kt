@@ -81,6 +81,7 @@ import eu.eurise.camera.CameraActivity
 import eu.eurise.camera.CameraModel
 import eu.eurise.camera.R
 import eu.eurise.camera.data.MediaOut
+import eu.eurise.camera.data.Qr
 import eu.eurise.camera.data.Ritocco
 import eu.eurise.core.designsystem.component.Jurisdiction
 import eu.eurise.core.designsystem.component.PrivacyConsentSheet
@@ -94,7 +95,14 @@ import java.io.File
 import java.util.Locale
 
 /** Come si apre la Fotocamera: avvio normale, dal blocco schermo, o per restituire una foto a un'altra app. */
-data class CameraSetup(val startVideo: Boolean = false, val locked: Boolean = false, val capture: Boolean = false)
+data class CameraSetup(
+    val startVideo: Boolean = false,
+    val locked: Boolean = false,
+    val capture: Boolean = false,
+    /** Dalle scorciatoie dell'icona: Selfie e Notte. */
+    val startFront: Boolean = false,
+    val startNight: Boolean = false,
+)
 
 private enum class Mode { Photo, Night, Video }
 
@@ -127,8 +135,18 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
     val scope = rememberCoroutineScope()
     val executor = remember { ContextCompat.getMainExecutor(context) }
 
-    var mode by remember { mutableStateOf(if (setup.startVideo && !setup.capture) Mode.Video else Mode.Photo) }
-    val controller = remember { CameraEngine(context) }
+    var mode by remember {
+        mutableStateOf(
+            when {
+                setup.startVideo && !setup.capture -> Mode.Video
+                setup.startNight && !setup.capture -> Mode.Night
+                else -> Mode.Photo
+            },
+        )
+    }
+    val controller = remember {
+        CameraEngine(context).also { if (setup.startFront) it.cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA }
+    }
     DisposableEffect(owner) {
         controller.bind(owner, video = !setup.capture)
         onDispose { controller.unbind() }
@@ -144,7 +162,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
 
     var flash by remember { mutableStateOf(ImageCapture.FLASH_MODE_OFF) }
     var torch by remember { mutableStateOf(false) }
-    var front by remember { mutableStateOf(false) }
+    var front by remember { mutableStateOf(setup.startFront) }
     // In Foto l'esposizione può allungarsi fino a 1/15 s invece di alzare gli ISO; in Video 30 fotogrammi fissi.
     LaunchedEffect(mode, camera) { controller.setStill(mode != Mode.Video) }
     LaunchedEffect(mode) { controller.setNight(mode == Mode.Night) }
@@ -167,6 +185,10 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
         if (result.values.any { it }) model.setLocation(true)
     }
     val askAudio = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    // Prima/dopo: la foto di prima dal selettore di Android (nessun permesso sulle foto).
+    val pickBefore = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) model.pickBefore(uri) { toast(context, R.string.before_error) }
+    }
 
     fun takePhoto() {
         if (recording != null || model.night.value == CameraModel.NightStep.Hold) return
@@ -204,7 +226,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
         val options = ImageCapture.OutputFileOptions.Builder(context.contentResolver, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, MediaOut.photo(dest))
             .setMetadata(meta).build()
         controller.takePicture(options, zoom?.zoomRatio ?: 1f, executor, object : ImageCapture.OnImageSavedCallback {
-            override fun onImageSaved(output: ImageCapture.OutputFileResults) { output.savedUri?.let { model.onShot(it, false, retouched = phone) } }
+            override fun onImageSaved(output: ImageCapture.OutputFileResults) { output.savedUri?.let { model.onShot(it, false, retouched = phone, dest = dest) } }
             override fun onError(exception: ImageCaptureException) = toast(context, R.string.error_save)
         })
     }
@@ -245,6 +267,27 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
     LaunchedEffect(Unit) { shutterKeys.collect { if (confirm == null && !review) shutter() } }
     LaunchedEffect(blink) { if (blink) { delay(90); blink = false } }
 
+    // Codici QR: un'occhiata al mirino ogni 0,7 s in Foto, sul telefono.
+    var previewView by remember { mutableStateOf<PreviewView?>(null) }
+    var qr by remember { mutableStateOf<String?>(null) }
+    var qrDismissed by remember { mutableStateOf<String?>(null) }
+    val scanning = mode == Mode.Photo && recording == null && model.night.value == null && !review && confirm == null &&
+        model.before.value == null
+    LaunchedEffect(scanning, previewView) {
+        qr = null
+        val view = previewView
+        if (!scanning || view == null) return@LaunchedEffect
+        var seen = 0L
+        while (true) {
+            delay(700)
+            val frame = view.bitmap ?: continue
+            val text = withContext(Dispatchers.Default) { readQr(frame) }
+            val now = System.currentTimeMillis()
+            if (text != null && text != qrDismissed) { qr = text; seen = now }
+            else if (now - seen > 3000) qr = null
+        }
+    }
+
     // Il mirino: 3:4 come la foto, sotto la barra in alto.
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Spacer(Modifier.height(56.dp))
@@ -255,6 +298,7 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
                         implementationMode = PreviewView.ImplementationMode.PERFORMANCE
                         scaleType = PreviewView.ScaleType.FILL_CENTER
                         controller.surface(this)
+                        previewView = this
                         // Tocca per mettere a fuoco ed esporre su quel punto (torna all'automatico dopo 5 secondi).
                         setOnTouchListener { v, e ->
                             if (e.action == android.view.MotionEvent.ACTION_UP) {
@@ -274,6 +318,18 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
                 Box(
                     Modifier.offset(with(density) { (p.x).toDp() - 32.dp }, with(density) { (p.y).toDp() - 32.dp })
                         .size(64.dp).border(1.5.dp, Color.White, CircleShape),
+                )
+            }
+            model.before.value?.let { Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop, alpha = 0.45f) }
+            if (model.before.value != null) {
+                BeforeChip(Modifier.align(Alignment.TopStart).padding(12.dp)) { model.clearBefore() }
+            }
+            qr?.let { text ->
+                QrChip(
+                    text,
+                    Modifier.align(Alignment.Center).padding(horizontal = 24.dp),
+                    onUse = { activity?.afterUnlock { useQr(context, text) } ?: useQr(context, text) },
+                    onClose = { qrDismissed = text; qr = null },
                 )
             }
             if (blink) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)))
@@ -349,7 +405,15 @@ private fun CameraScreen(setup: CameraSetup, shutterKeys: Flow<Unit>, onCaptured
                 if (model.locationOn.value) model.setLocation(false) else consent = true
             }
         }
-        RoundButton(EuriseIcons.sun(), stringResource(R.string.exposure), active = showExposure) { showExposure = !showExposure }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (!setup.capture && !setup.locked) {
+                RoundButton(EuriseIcons.history(), stringResource(R.string.before_button), active = model.before.value != null) {
+                    if (model.before.value != null) model.clearBefore()
+                    else pickBefore.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }
+            }
+            RoundButton(EuriseIcons.sun(), stringResource(R.string.exposure), active = showExposure) { showExposure = !showExposure }
+        }
     }
 
     // In basso: modalità e la fila dello scatto (specchiata per i mancini).
@@ -619,5 +683,86 @@ private fun clock(ms: Long): String {
 
 private fun has(context: Context, permission: String) =
     ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+
+/** Il codice QR nel mirino, ridotto a 720 pixel di lato lungo. */
+private fun readQr(frame: android.graphics.Bitmap): String? {
+    val k = 720f / maxOf(frame.width, frame.height)
+    val small = if (k < 1f) android.graphics.Bitmap.createScaledBitmap(frame, (frame.width * k).toInt(), (frame.height * k).toInt(), true) else frame
+    val px = IntArray(small.width * small.height)
+    small.getPixels(px, 0, small.width, 0, 0, small.width, small.height)
+    if (small !== frame) small.recycle()
+    frame.recycle()
+    return Qr.decode(px, small.width, small.height)
+}
+
+/** Apre un indirizzo web (solo http e https) o copia: il testo, o la password di un Wi-Fi (come dato sensibile). */
+private fun useQr(context: Context, text: String) {
+    when (Qr.kind(text)) {
+        Qr.Kind.Link -> runCatching {
+            context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(text.trim()))
+                .addCategory(android.content.Intent.CATEGORY_BROWSABLE))
+        }.onFailure { toast(context, R.string.qr_no_app) }
+        Qr.Kind.Wifi -> {
+            val password = Qr.wifiPassword(text)
+            if (password == null) { toast(context, R.string.qr_wifi_open); return }
+            copy(context, password, sensitive = true)
+            toast(context, R.string.qr_password_copied)
+        }
+        Qr.Kind.Text -> { copy(context, text, sensitive = false); toast(context, R.string.qr_copied) }
+    }
+}
+
+private fun copy(context: Context, text: String, sensitive: Boolean) {
+    val clip = android.content.ClipData.newPlainText("QR", text)
+    if (sensitive) clip.description.extras = android.os.PersistableBundle().apply {
+        putBoolean("android.content.extra.IS_SENSITIVE", true)
+    }
+    context.getSystemService(android.content.ClipboardManager::class.java)?.setPrimaryClip(clip)
+}
+
+/** Il codice trovato: cosa contiene (per un indirizzo, il dominio) e cosa fa il tocco. */
+@Composable
+private fun QrChip(text: String, modifier: Modifier, onUse: () -> Unit, onClose: () -> Unit) {
+    val kind = Qr.kind(text)
+    val line = when (kind) {
+        Qr.Kind.Link -> stringResource(R.string.qr_link, Qr.host(text))
+        Qr.Kind.Wifi -> stringResource(R.string.qr_wifi, Qr.wifiName(text) ?: "?")
+        Qr.Kind.Text -> stringResource(R.string.qr_text, text.replace('\n', ' ').take(40) + if (text.length > 40) "…" else "")
+    }
+    val action = stringResource(
+        when (kind) {
+            Qr.Kind.Link -> R.string.qr_open
+            Qr.Kind.Wifi -> R.string.qr_copy_password
+            Qr.Kind.Text -> R.string.qr_copy
+        },
+    )
+    Row(
+        modifier.clip(RoundedCornerShape(22.dp)).background(Ground).border(1.dp, Accent, RoundedCornerShape(22.dp))
+            .padding(start = 14.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(EuriseIcons.qr(), null, tint = Accent, modifier = Modifier.size(18.dp))
+        Text(line, color = Color.White, fontSize = 13.sp, maxLines = 1, modifier = Modifier.padding(start = 8.dp).weight(1f, fill = false))
+        androidx.compose.material3.TextButton(onClick = onUse) { Text(action, color = Accent, fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+        IconButton(onClick = onClose, modifier = Modifier.size(36.dp)) {
+            Icon(EuriseIcons.close(), stringResource(R.string.qr_dismiss), tint = Soft, modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
+/** Prima/dopo acceso: si vede la foto di prima in trasparenza; il tocco la toglie. */
+@Composable
+private fun BeforeChip(modifier: Modifier, onClose: () -> Unit) {
+    Row(
+        modifier.height(34.dp).clip(RoundedCornerShape(17.dp)).background(Veil)
+            .pointerInput(Unit) { detectTapGestures { onClose() } }.padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(EuriseIcons.history(), null, tint = Accent, modifier = Modifier.size(16.dp))
+        Text(stringResource(R.string.before_on), color = Color.White, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(start = 6.dp))
+        Icon(EuriseIcons.close(), stringResource(R.string.before_off), tint = Soft, modifier = Modifier.padding(start = 6.dp).size(14.dp))
+    }
+}
 
 internal fun toast(context: Context, text: Int) = Toast.makeText(context, text, Toast.LENGTH_SHORT).show()

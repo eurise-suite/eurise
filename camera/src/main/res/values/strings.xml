@@ -68,4 +68,38 @@
     <string name="error_save">Foto non salvata: riprova</string>
     <string name="error_no_camera">Nessuna fotocamera disponibile</string>
     <string name="saved_capture">Foto pronta per l\'app che l\'ha chiesta</string>
+    <!-- Codici QR (26 novembre 2026) -->
+    <string name="qr_link">Sito: %1$s</string>
+    <string name="qr_wifi">Wi-Fi «%1$s»</string>
+    <string name="qr_text">QR: %1$s</string>
+    <string name="qr_open">Apri</string>
+    <string name="qr_copy">Copia</string>
+    <string name="qr_copy_password">Copia password</string>
+    <string name="qr_dismiss">Ignora il codice</string>
+    <string name="qr_copied">Testo copiato</string>
+    <string name="qr_password_copied">Password del Wi-Fi copiata</string>
+    <string name="qr_wifi_open">Rete senza password</string>
+    <string name="qr_no_app">Nessuna app per aprire il sito</string>
+    <!-- Prima/dopo -->
+    <string name="before_button">Prima/dopo: scegli la foto di prima</string>
+    <string name="before_on">Prima/dopo</string>
+    <string name="before_off">Togli la foto di prima</string>
+    <string name="before_error">Questa foto non si apre</string>
+    <string name="before_label">Prima · %1$s</string>
+    <string name="after_label">Dopo · %1$s</string>
+    <!-- Rapporto fotografico -->
+    <string name="report_make">Rapporto PDF di %1$s</string>
+    <string name="report_making">Preparo il rapporto…</string>
+    <string name="report_saved">Rapporto salvato in Documenti/Eurise</string>
+    <string name="report_empty">In questa cartella non ci sono ancora foto</string>
+    <string name="report_title">Rapporto fotografico</string>
+    <string name="report_period">dal %1$s al %2$s</string>
+    <plurals name="report_count">
+        <item quantity="one">%d foto</item>
+        <item quantity="other">%d foto</item>
+    </plurals>
+    <!-- Scorciatoie dell'icona -->
+    <string name="shortcut_video">Video</string>
+    <string name="shortcut_selfie">Selfie</string>
+    <string name="shortcut_night">Notte</string>
 </resources>
