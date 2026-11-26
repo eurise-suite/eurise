@@ -3,7 +3,7 @@
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
 ### Per ripartire (aggiornato il 23 novembre 2026, sera)
-- **Ultimo giro pubblicato**: **1128** (26 novembre: primo APK di **Eurise Postazione**, la nuova schermata iniziale, a parte e senza rete; sezione «Postazione» in fondo). Prima: 1122 (25 novembre: Flatpak di nuovo verde, tutto schermo nei documenti). **Da guardare**: «Vulnerabilità note» è rosso su `prova-sicurezza` dal 26 mattina per CVE-2026-137063 (media, 6.8) in `third_party/leptonica`: nessuna correzione disponibile, da valutare (usata solo dall'OCR dello Scanner). Prossimo: «Di' Alfred» aspetta la scelta del
+- **Ultimo giro pubblicato**: **1130** (26 novembre, notte: **Eurise Postazione** con le schede complete; due permessi nuovi spenti di base, accesso alle notifiche e contatti; sezioni «Postazione» in fondo). Prima: 1128 (primo APK della Postazione), 1122 (25 novembre: Flatpak di nuovo verde, tutto schermo nei documenti). **Da guardare**: «Vulnerabilità note» è rosso su `prova-sicurezza` dal 26 mattina per CVE-2026-137063 (media, 6.8) in `third_party/leptonica`: nessuna correzione disponibile, da valutare (usata solo dall'OCR dello Scanner). Prossimo: «Di' Alfred» aspetta la scelta del
   proprietario sul modello (prove in `docs/stato/ALFRED.md`); Password Famiglia aspetta le tavole; zxing 3.5.4 aspetta un
   passo nel flusso delle impronte.
 - **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
@@ -662,7 +662,7 @@ né telemetria trovata.
 - **Porta nuova nell'app Eurise**: fornitore `…hub.postazione` (`PostazioneProvider`, contratto `PostazioneContract`):
   prossimi impegni (36 ore, al più 5) e cose da fare fino a oggi (al più 4), solo con il permesso di firma della suite
   (`SuiteAccess.callerAllowed` in `call`), niente rete. La Postazione chiama solo un fornitore della suite (`SuiteAccess.call`).
-- **Provato sull'emulatore** (Prova delle porte, giro 1128): la «curiosa» resta fuori (`giornata=CHIUSA`), l'«amica» con la
+- **Provato sull'emulatore** (Prova delle porte, giri 1128 e 1130: `giornata` e `rimanda` chiuse alla curiosa, aperte all'amica): la «curiosa» resta fuori (`giornata=CHIUSA`), l'«amica» con la
   stessa chiave entra (`giornata=APERTA`); le altre porte invariate.
 - **Dati**: nome per il saluto, mano, gruppi e scheda scelta a mano in `SharedPreferences` privati; `allowBackup=false` e
   regole `eurise_no_backup`. Nessun dato bancario o di terzi: dei gruppi si salvano solo i nomi delle attività da aprire.
@@ -670,3 +670,30 @@ né telemetria trovata.
   `firma-prova.sh` come gli altri.
 - **Da fare**: bolle di Personale e Viaggio (musica, notizie, preferiti), «Chiudi la giornata», spazi liberi, ricerca su
   contatti e file, «Aggiungi un sito come app», tablet; icone nuove della suite solo dopo l'approvazione sulla tela.
+
+### Postazione, secondo giro (26 novembre 2026, notte): schede complete, due permessi nuovi spenti di base
+- **Accesso alle notifiche** (`AscoltoService`, `NotificationListenerService`): serve a «Da rispondere» e alla musica
+  che suona. **Spento di base**; si accende dalla Postazione dopo la spiegazione (`PrivacyConsentSheet`: cosa si legge,
+  cosa esce, chi lo vede, come si torna indietro) e poi nella pagina di Android. Il servizio è esportato ma protetto da
+  `BIND_NOTIFICATION_LISTENER_SERVICE` (solo il sistema). Si guardano solo le notifiche di categoria messaggio, posta,
+  chiamata e chiamata persa; titolo, testo, ora e l'azione del tocco restano **in memoria** finché la notifica c'è, nulla
+  su disco. La Postazione resta **senza rete** (controllo in Compila APK), quindi questi dati non possono uscire.
+  Rischio accettato e da ricordare: tra i messaggi ci sono anche i codici via SMS; si vedono solo a telefono sbloccato,
+  come nella tendina. Android 13 e oltre considera questo accesso «impostazione con restrizioni» per le app installate
+  da file: va sbloccato a mano nelle informazioni dell'app.
+- **Contatti** (`READ_CONTACTS`): solo per i preferiti della scheda Viaggio; chiesto accendendo la funzione dopo la
+  spiegazione. Si leggono nome e numero dei soli contatti con la stellina; il tocco apre il tastierino (`ACTION_DIAL`),
+  nessun permesso di chiamata.
+- **Porta che scrive** nell'app Eurise: metodo `postpone` del fornitore `…hub.postazione` («Chiudi la giornata»: le
+  attività aperte fino a oggi passano a domani). Stesso controllo di firma di `today`; la Prova delle porte controlla
+  che la «curiosa» resti fuori (`rimanda=CHIUSA`).
+- **Meteo**: `today` passa gradi, cielo e prima ora di pioggia dalla copia già sul telefono dell'app Eurise
+  (`MeteoRepository.cached()`, al più di tre ore): la chiamata non fa richieste in rete.
+- **Siti nei gruppi**: solo indirizzi `http`/`https` controllati (`Siti.normalizza`, con test: niente `intent:`,
+  `file:`, `javascript:`, niente nome utente nell'indirizzo); si aprono nel Browser di Eurise se c'è.
+- **Uso delle app**: quante volte un'app è aperta *dalla Postazione* (per «Più usate» e «Recenti»), in
+  `SharedPreferences` privati; nessun permesso di statistiche d'uso.
+- **Da fare**: far comparire questi due interruttori nel centro privacy dell'app Eurise (oggi la Postazione li mostra
+  solo nelle sue impostazioni); notizie e oroscopo (passano dall'app Eurise e dal centro privacy); silenzio del lavoro la
+  sera; «dove hai lasciato l'auto».
+

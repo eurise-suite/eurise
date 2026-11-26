@@ -676,3 +676,12 @@ Centro privacy: tre servizi nuovi in `PrivacyService` (ReadModels, VoiceModels, 
   app, tablet, meteo vero nella testata (serve il fornitore del meteo), accento a scelta.
 - Dati dalla suite: `PostazioneContract` / `PostazioneProvider` nell'app Eurise (dettagli in `docs/SICUREZZA.md`).
 
+## 26 novembre 2026, notte: Postazione, secondo giro (dalla chat di Sicurezza)
+- Aggiunti: mezzo tiro (Adesso, Più usate, Recenti, poi A–Z); «Da rispondere» e musica (accesso alle notifiche, spento
+  di base); preferiti da comporre nella scheda Viaggio (contatti, spento di base); «Chiudi la giornata» dalle 17:15 nei
+  feriali (le cose aperte passano a domani, poi scheda Personale); spazio libero tra gli impegni; «Ritardo» (testo
+  pronto da mandare con l'app che scegli); meteo vero nella testata; un sito in un gruppo come app.
+- Ancora fuori: notizie e oroscopo in Personale, silenzio di posta e chat di lavoro la sera, risposta automatica «Ti
+  rispondo domattina», «Mettile lì» (le cose nello spazio libero), «dove hai lasciato l'auto», foto nella cartella del
+  cliente, tablet, accento a scelta, icone degli animali (tela, bestiario al giro 8, non ancora approvate).
+
