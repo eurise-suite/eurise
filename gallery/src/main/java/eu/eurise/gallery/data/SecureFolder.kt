@@ -10,6 +10,7 @@ import android.provider.MediaStore
 import android.util.Base64
 import android.util.Size
 import eu.eurise.core.cloud.backup.BackupCrypto
+import eu.eurise.core.suite.PrivateInbox
 import eu.eurise.gallery.logic.MediaItem
 import eu.eurise.gallery.logic.SecureMove
 import eu.eurise.gallery.logic.SecureStream
@@ -52,7 +53,87 @@ class SecureFolder private constructor(context: Context, val dirName: String = M
     val isOpen: Boolean get() = key != null
 
     /** Quante foto e video ci sono, anche a cartella chiusa (si contano i file, non si legge nulla). */
-    fun count(): Int = dir.listFiles { f -> f.name.endsWith(".meta") }?.size ?: 0
+    fun count(): Int = (dir.listFiles { f -> f.name.endsWith(".meta") }?.size ?: 0) + inboxCount()
+
+    // Foto private dalla Fotocamera (26 novembre 2026, [PrivateInbox]): una coppia di chiavi della cartella. La pubblica
+    // sta in chiaro (la Fotocamera la chiede per cifrare), la privata è cifrata con la chiave della cartella. Le buste
+    // arrivano in `secure-inbox` e si aprono, si ricifrano e si verificano quando la cartella si apre.
+    private val boxPub = File(dir, "box.pub")
+    private val boxKey = File(dir, "box.key")
+    private val inbox = File(app.filesDir, INBOX)
+
+    /** La chiave pubblica per le foto private, o null (cartella non creata, o non ancora aperta dopo l'aggiornamento). */
+    fun publicKey(): String? = if (dirName == MAIN && isSetUp && boxPub.exists()) boxPub.readText().trim().ifEmpty { null } else null
+
+    /** Le buste in attesa (si vedono come foto anche a cartella chiusa). */
+    fun inboxCount(): Int = if (dirName == MAIN) inbox.listFiles { f -> f.name.endsWith(".box") }?.size ?: 0 else 0
+
+    /** Dove la Galleria scrive la busta [id] che arriva ([HubProvider.openFile]); si conferma con [commitBox]. */
+    fun boxPart(id: String): File? = if (PrivateInbox.validId(id)) File(inbox.apply { mkdirs() }, "$id.part") else null
+
+    fun commitBox(id: String): Boolean {
+        val part = boxPart(id) ?: return false
+        if (!part.isFile || part.length() !in 64L..MAX_BOX) { part.delete(); return false }
+        val ok = part.renameTo(File(inbox, "$id.box"))
+        if (ok && key != null) Thread { afterOpen() }.start()
+        return ok
+    }
+
+    /** A cartella aperta: crea le chiavi delle foto private se mancano e porta dentro le buste arrivate. In sottofondo. */
+    private fun afterOpen() {
+        val k = key?.copyOf() ?: return
+        try {
+            if (dirName != MAIN) return
+            synchronized(boxPub) {
+                if (!boxKey.exists() || !boxPub.exists()) {
+                    val pair = PrivateInbox.newKeyPair()
+                    boxKey.outputStream().use { SecureStream.encrypt(k, "box", ByteArrayInputStream(pair.private.encoded), it) }
+                    boxPub.writeText(Base64.encodeToString(pair.public.encoded, Base64.NO_WRAP))
+                }
+                val boxes = inbox.listFiles { f -> f.name.endsWith(".box") }.orEmpty()
+                if (boxes.isEmpty()) return
+                val raw = ByteArrayOutputStream().also { o -> boxKey.inputStream().use { SecureStream.decrypt(k, "box", it, o) } }.toByteArray()
+                val own = PrivateInbox.privateKey(raw)
+                raw.fill(0)
+                for (b in boxes) {
+                    runCatching { addBytes(k, PrivateInbox.open(own, b.readBytes())) }
+                        .onSuccess { b.delete() }
+                        .onFailure { android.util.Log.w("EuriseGallery", "Busta privata non aperta: ${b.name}", it) }
+                }
+            }
+            if (key != null) reload()
+        } finally {
+            k.fill(0)
+        }
+    }
+
+    /** Come [add], da una foto arrivata in busta: cifra, rilegge e confronta, poi miniatura e dati. */
+    private fun addBytes(k: ByteArray, item: PrivateInbox.Item) {
+        val id = UUID.randomUUID().toString()
+        try {
+            data(id).outputStream().use { SecureStream.encrypt(k, id, ByteArrayInputStream(item.bytes), it) }
+            val check = MessageDigest.getInstance("SHA-256")
+            data(id).inputStream().use { SecureStream.decrypt(k, id, it, DigestOutputStream(NullOutput, check)) }
+            if (!MessageDigest.getInstance("SHA-256").digest(item.bytes).contentEquals(check.digest())) throw IOException("copia diversa")
+            runCatching {
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeByteArray(item.bytes, 0, item.bytes.size, bounds)
+                var sample = 1
+                while (maxOf(bounds.outWidth, bounds.outHeight) / sample > 512) sample *= 2
+                val small = BitmapFactory.decodeByteArray(item.bytes, 0, item.bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
+                val bytes = ByteArrayOutputStream().also { small.compress(Bitmap.CompressFormat.JPEG, 80, it) }.toByteArray()
+                small.recycle()
+                thumb(id).outputStream().use { SecureStream.encrypt(k, "$id/thumb", ByteArrayInputStream(bytes), it) }
+            }
+            val video = item.mime.startsWith("video/")
+            val json = JSONObject().put("name", item.name.ifEmpty { id }).put("taken", item.takenAt).put("video", video)
+                .put("mime", item.mime).toString().toByteArray()
+            meta(id).outputStream().use { SecureStream.encrypt(k, "$id/meta", ByteArrayInputStream(json), it) }
+        } catch (e: Exception) {
+            data(id).delete(); thumb(id).delete(); meta(id).delete()
+            throw e
+        }
+    }
 
     /** Crea la cartella e restituisce il codice di recupero, da mostrare una volta sola. */
     fun setup(passphrase: String): String {
@@ -65,6 +146,7 @@ class SecureFolder private constructor(context: Context, val dirName: String = M
         )
         key = keys.dataKey
         reload()
+        Thread { afterOpen() }.start()
         return code
     }
 
@@ -75,6 +157,7 @@ class SecureFolder private constructor(context: Context, val dirName: String = M
         val header = BackupCrypto.KeyHeader(j.getInt("it"), b("sp"), b("wp"), b("sc"), b("wc"))
         key = try { BackupCrypto.unlock(header, secret) } catch (e: BackupCrypto.WrongSecret) { return false }
         reload()
+        Thread { afterOpen() }.start()
         return true
     }
 
@@ -124,6 +207,7 @@ class SecureFolder private constructor(context: Context, val dirName: String = M
         val j = JSONObject(bioFile.readText())
         key = approved.doFinal(Base64.decode(j.getString("k"), Base64.NO_WRAP))
         reload()
+        Thread { afterOpen() }.start()
         true
     }.getOrDefault(false)
 
@@ -307,6 +391,10 @@ class SecureFolder private constructor(context: Context, val dirName: String = M
     companion object {
         private const val BIO_ALIAS = "eurise_gallery_secure_bio"
         const val MAIN = "secure"
+        /** Le buste delle foto private in arrivo dalla Fotocamera. */
+        const val INBOX = "secure-inbox"
+        /** Una busta non supera i 200 MB. */
+        private const val MAX_BOX = 200L * 1024 * 1024
         /** Il nome delle cartelle che arrivano dal backup: `secure-dal-backup`, poi `secure-dal-backup-2`… */
         const val FROM_BACKUP = "secure-dal-backup"
 
