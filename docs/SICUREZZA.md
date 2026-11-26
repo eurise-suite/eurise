@@ -3,7 +3,7 @@
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
 ### Per ripartire (aggiornato il 23 novembre 2026, sera)
-- **Ultimo giro pubblicato**: **1122** (25 novembre: Flatpak di nuovo verde, tutto schermo nei documenti; sotto). Prossimo: «Di' Alfred» aspetta la scelta del
+- **Ultimo giro pubblicato**: **1128** (26 novembre: primo APK di **Eurise Postazione**, la nuova schermata iniziale, a parte e senza rete; sezione «Postazione» in fondo). Prima: 1122 (25 novembre: Flatpak di nuovo verde, tutto schermo nei documenti). **Da guardare**: «Vulnerabilità note» è rosso su `prova-sicurezza` dal 26 mattina per CVE-2026-137063 (media, 6.8) in `third_party/leptonica`: nessuna correzione disponibile, da valutare (usata solo dall'OCR dello Scanner). Prossimo: «Di' Alfred» aspetta la scelta del
   proprietario sul modello (prove in `docs/stato/ALFRED.md`); Password Famiglia aspetta le tavole; zxing 3.5.4 aspetta un
   passo nel flusso delle impronte.
 - **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
@@ -651,3 +651,22 @@ né telemetria trovata.
   prova «chiusa» (non debuggable) per Password e per l'app Eurise; serve adattare gli script dell'emulatore che usano
   `run-as` (`prova-porte-emulatore.sh`, `prova-avvio-browser.sh`, `office/prova/prova.sh`, `prova-firma-emulatore.sh`).
   Finché si decide: debug USB spento sul telefono con le password vere.
+
+## 26 novembre 2026: Eurise Postazione (nuova schermata iniziale, APK di prova a parte)
+- **Cosa**: `postazione/`, pacchetto `eu.eurise.postazione` (`.debug` in prova). La Scrivania di oggi resta nell'app Eurise:
+  la Postazione si apre come app o si sceglie come schermata iniziale, e si toglie senza toccare nient'altro. Tele e scelte
+  nella tela «Eurise · nuova interfaccia» (pagina «Postazione»); stato in `docs/stato/ORGANIZZAZIONE.md`.
+- **Senza rete**: `INTERNET` e `ACCESS_NETWORK_STATE` tolti nel manifesto; Compila APK si ferma se rientrano (passo
+  «Postazione senza rete», come la Fotocamera). Nessun `QUERY_ALL_PACKAGES`: vede solo le app con un'icona di avvio e quelle
+  che rispondono ai compiti dichiarati in `<queries>` (telefono, SMS, posta, web, mappe, fotocamera, sveglie).
+- **Porta nuova nell'app Eurise**: fornitore `…hub.postazione` (`PostazioneProvider`, contratto `PostazioneContract`):
+  prossimi impegni (36 ore, al più 5) e cose da fare fino a oggi (al più 4), solo con il permesso di firma della suite
+  (`SuiteAccess.callerAllowed` in `call`), niente rete. La Postazione chiama solo un fornitore della suite (`SuiteAccess.call`).
+- **Provato sull'emulatore** (Prova delle porte, giro 1128): la «curiosa» resta fuori (`giornata=CHIUSA`), l'«amica» con la
+  stessa chiave entra (`giornata=APERTA`); le altre porte invariate.
+- **Dati**: nome per il saluto, mano, gruppi e scheda scelta a mano in `SharedPreferences` privati; `allowBackup=false` e
+  regole `eurise_no_backup`. Nessun dato bancario o di terzi: dei gruppi si salvano solo i nomi delle attività da aprire.
+- **Firma**: nessun cambio a permessi o firme delle app già installate (nessuna disinstallazione); l'APK passa da
+  `firma-prova.sh` come gli altri.
+- **Da fare**: bolle di Personale e Viaggio (musica, notizie, preferiti), «Chiudi la giornata», spazi liberi, ricerca su
+  contatti e file, «Aggiungi un sito come app», tablet; icone nuove della suite solo dopo l'approvazione sulla tela.

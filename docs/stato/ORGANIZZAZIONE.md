@@ -661,3 +661,18 @@ Note: la chiave delle note bloccate si apre solo dopo l'impronta o il PIN; blocc
 ## Sicurezza, 22 novembre 2026, mezzogiorno (progetto Eurise Sicurezza)
 R8 anche negli APK di prova (giro 1048): regole comuni prudenti in `proguard-suite.pro` (codice `eu.eurise` tenuto, nomi leggibili), più il `proguard-rules.pro` dell'app. Una libreria nuova che si carica per nome (riflessione, JNI) va tenuta lì; se un'app si guasta: `-Peurise.r8.senza=:modulo`. Dettagli in `docs/SICUREZZA.md`.
 Centro privacy: tre servizi nuovi in `PrivacyService` (ReadModels, VoiceModels, BrainModels), spenti di base; ReadModels e VoiceModels in `PrivacyContract.SHARED`.
+
+## 26 novembre 2026: Eurise Postazione, primo APK di prova (dalla chat di Sicurezza)
+- Nuova schermata iniziale in un APK a parte (`postazione/`, `eu.eurise.postazione`), accanto alla Scrivania che resta
+  dov'è. Tela «Eurise · nuova interfaccia» (approvazione del proprietario in chat, 26 novembre).
+- C'è: tre schede a schedario (Lavoro, Personale, Viaggio) che cambiano con l'orario (feriali 8–18 lavoro) e a mano fino
+  al cambio successivo; saluto → Agenda, data → Calendario, ora → sveglie, riga meteo → app Eurise; «Prossimo» che scorre
+  di lato con «Naviga»; cose da fare di oggi; barra a cinque gruppi con icona propria (tocco = preferita, pressione lunga =
+  ventaglio con stellina, togli, «Aggiungi un'app»), Comunica e lente fisse dal lato della mano; lente con la stellina
+  (tocco = cerca, pressione lunga = Alfred o l'assistente del telefono); tutte le app A–Z con indice e campo in basso;
+  nome e mano nelle impostazioni (ingranaggio nel cassetto).
+- Manca (prossimi giri): bolle di Personale (musica, notizie, oroscopo) e di Viaggio (preferiti, «dove hai lasciato
+  l'auto»), «Chiudi la giornata», spazi liberi, «Ritardo», mezzo tiro con le 15 app, ricerca su contatti e file, sito come
+  app, tablet, meteo vero nella testata (serve il fornitore del meteo), accento a scelta.
+- Dati dalla suite: `PostazioneContract` / `PostazioneProvider` nell'app Eurise (dettagli in `docs/SICUREZZA.md`).
+
