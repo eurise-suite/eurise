@@ -60,6 +60,18 @@ for theme in perla notte; do
   if [ "$theme" = notte ]; then settime 2100; else settime 0930; fi
   adb shell am start -n "$PKG/eu.eurise.hub.LauncherActivity" >/dev/null; sleep 6
   adb shell input keyevent KEYCODE_HOME; sleep 8; adb shell input keyevent KEYCODE_HOME; shot 1-scrivania "$theme" 8
+  # Le altre facce della Scrivania (26 novembre, per la valutazione dell'interfaccia): pagine ai lati, scorrimento in su,
+  # cassetto dal primo tasto della barra, metà inferiore della pagina principale.
+  adb shell input swipe 900 1300 150 1300 300; shot 1b-scrivania-destra "$theme"
+  adb shell input keyevent KEYCODE_HOME; sleep 2
+  adb shell input swipe 150 1300 900 1300 300; shot 1c-scrivania-sinistra "$theme"
+  adb shell input keyevent KEYCODE_HOME; sleep 2
+  adb shell input swipe 540 1500 540 700 400; shot 1d-scrivania-giu "$theme"
+  adb shell input keyevent KEYCODE_HOME; sleep 2
+  adb shell input swipe 540 2000 540 600 300; shot 1e-scorri-su "$theme"
+  adb shell input keyevent KEYCODE_HOME; sleep 2
+  adb shell input tap 108 2222; shot 1f-cassetto "$theme"
+  adb shell input keyevent KEYCODE_BACK; adb shell input keyevent KEYCODE_HOME; sleep 2
   settime 0930
   section today;      shot 2-oggi "$theme" 6
   section calendar;   shot 3-calendario "$theme"
@@ -67,6 +79,11 @@ for theme in perla notte; do
   section notes;      shot 5-note "$theme"
   section privacy;    shot 6-privacy "$theme"
   section clock;      shot 7-orologio "$theme"
+  section drive;      shot 8-file "$theme"
+  section cloud;      shot 9-cloud "$theme"
+  section backup;     shot 10-backup "$theme"
+  section weather;    shot 11-meteo "$theme"
+  section scanner;    shot 12-scanner "$theme"
 done
 adb shell cmd uimode night no
 ls -la "$OUT"
