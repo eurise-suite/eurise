@@ -232,6 +232,6 @@ class QrTest {
         assertEquals("cattivo.example", qr.host("https://banca.it@cattivo.example/login"))
         assertEquals(eu.eurise.camera.data.Qr.Kind.Wifi, qr.kind("WIFI:T:WPA;S:Casa;P:segreta;;"))
         assertEquals("Casa", qr.wifiName("WIFI:T:WPA;S:Casa;P:segreta;;"))
-        assertEquals("seg;reta", qr.wifiPassword("WIFI:S:Casa;T:WPA;P:seg\;reta;;"))
+        assertEquals("seg;reta", qr.wifiPassword("WIFI:S:Casa;T:WPA;P:seg\\;reta;;"))
     }
 }
