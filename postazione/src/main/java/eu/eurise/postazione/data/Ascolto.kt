@@ -154,7 +154,6 @@ class AscoltoService : NotificationListenerService() {
     @Suppress("DEPRECATION")
     private fun foto(n: Notification): android.graphics.Bitmap? =
         runCatching { n.extras?.getParcelable(Notification.EXTRA_PICTURE) as? android.graphics.Bitmap }.getOrNull()
-    }
 
     private val dialer: String? by lazy { runCatching { getSystemService(android.telecom.TelecomManager::class.java)?.defaultDialerPackage }.getOrNull() }
     private val sms: String? by lazy { runCatching { android.provider.Telephony.Sms.getDefaultSmsPackage(this) }.getOrNull() }

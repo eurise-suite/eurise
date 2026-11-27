@@ -747,3 +747,8 @@ Centro privacy: tre servizi nuovi in `PrivacyService` (ReadModels, VoiceModels, 
 - Righe senza scorrimento: il tocco apre il foglio con risposta (notifica, SMS, email) e Richiama/Apri, Vista, Più tardi,
   Da fare. Meteo della Postazione anche con l'app Eurise in secondo piano.
 
+## 27 novembre 2026, notte (2): comunicazioni pulite
+- Postazione: righe piccole e monocromatiche, per app come la tendina, si aprono lì con le azioni; bolla con risposta,
+  reazioni, cita, copia, foto e vocali. Togliere una chiamata la toglie dal Telefono; togliere un'email la segna letta.
+- Telefono: × e «Togli tutte» in «Da richiamare». Chat: aprire una persona segna tutto come letto; «Segna tutte come lette».
+

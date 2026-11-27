@@ -854,3 +854,15 @@ né telemetria trovata.
   eccezione scritta in CLAUDE.md, «Ergonomia»).
 - La prova delle porte ora installa anche Eurise Telefono e la curiosa lo «vede» (`<queries>`): prima la porta nuova
   risultava chiusa solo perché il Telefono mancava. Avvio a freddo della Postazione 1,27 s sull'emulatore.
+
+### Notte del 27 novembre: comunicazioni che si tolgono davvero (giro successivo al 1157)
+- **Tre porte nuove, tutte solo per la suite** (`PeopleContract.allowed`, controllato a ogni chiamata):
+  `dismissCallBack` (Telefono: «Non richiamare»), `markSeen` (Email: segna come letta un'email, anche nella casella, in un
+  thread dell'app Email) e `markRead` (Messaggi, Telefono, Email: tutto ciò che viene da una persona diventa letto).
+  Prova delle porte: la curiosa non toglie chiamate e non segna come letti gli SMS.
+- Postazione: righe come la tendina delle notifiche (per app, si aprono lì con le azioni scritte); la bolla per
+  rispondere, ascoltare un vocale, vedere una foto. Foto e audio delle notifiche si leggono solo se Android ce li lascia
+  leggere (altrimenti si apre la chat); le foto si riducono a 1080 px.
+- Telefono: × e «Togli tutte» in «Da richiamare» (`CallBackDismiss`, sul telefono; una nuova chiamata persa torna).
+- Chat: aprendo una persona i suoi SMS, le chiamate perse e le email diventano letti; «Segna tutte come lette».
+
