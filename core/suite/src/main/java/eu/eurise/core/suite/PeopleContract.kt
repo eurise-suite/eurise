@@ -28,6 +28,10 @@ object PeopleContract {
     const val METHOD_SEND = "send"
     /** Telefono: le chiamate da richiamare, la stessa lista «Da richiamare» dei Recenti (per la Postazione). */
     const val METHOD_CALLBACK = "callBack"
+    /** Telefono: «Non richiamare» ([EXTRA_ADDRESS], fino all'ora [EXTRA_SINCE]). */
+    const val METHOD_DISMISS_CALLBACK = "dismissCallBack"
+    /** Email: segna come letta l'email [EXTRA_REF] («casella:uid»), sul telefono e nella casella. */
+    const val METHOD_MARK_SEEN = "markSeen"
 
     /** Chat: chi sono io sulla Chat (per il link dell'invito) e se un contatto è già unito a una persona della Chat. */
     const val METHOD_ME = "me"
@@ -205,6 +209,15 @@ object PeopleContract {
     /** Da richiamare secondo Eurise Telefono (fuori dal thread principale); null se il Telefono non c'è o non risponde. */
     fun callBack(context: Context): List<Recent>? =
         call(context, App.Phone, METHOD_CALLBACK, null)?.let { unpackRecent(it) }
+
+    /** «Non richiamare» nel Telefono (fuori dal thread principale). */
+    fun dismissCallBack(context: Context, number: String, upTo: Long): Boolean =
+        call(context, App.Phone, METHOD_DISMISS_CALLBACK, Bundle().apply { putString(EXTRA_ADDRESS, number); putLong(EXTRA_SINCE, upTo) })
+            ?.getBoolean(EXTRA_RESULT) == true
+
+    /** Segna come letta un'email in Eurise Email (fuori dal thread principale). */
+    fun markMailSeen(context: Context, ref: String): Boolean =
+        call(context, App.Mail, METHOD_MARK_SEEN, Bundle().apply { putString(EXTRA_REF, ref) })?.getBoolean(EXTRA_RESULT) == true
 
     /** Il filo con questi numeri ed email da [app] (fuori dal thread principale). */
     fun items(context: Context, app: App, phones: List<String>, emails: List<String>, limit: Int = 200): List<Item> {

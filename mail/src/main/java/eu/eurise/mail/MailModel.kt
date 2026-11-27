@@ -633,6 +633,30 @@ internal fun offerToStudio(context: Context, known: StudioContract.Known, list: 
 object MailCache {
     fun file(context: Context, id: String) = File(context.cacheDir, "posta_$id.json")
 
+    /**
+     * Segna come letta un'email chiesta dalla Postazione («casella:uid»): subito nella copia sul telefono, poi nella casella
+     * (in un thread a parte: la rete la usa l'app Email, non la Postazione). Falso se la casella non c'è.
+     */
+    fun markSeen(context: Context, ref: String): Boolean {
+        val id = ref.substringBeforeLast(':', "")
+        val uid = ref.substringAfterLast(':').toLongOrNull() ?: return false
+        val account = AccountStore(context).load().firstOrNull { it.id == id } ?: return false
+        val list = read(context, id)
+        if (list.none { it.uid == uid }) return false
+        write(context, id, list.map { if (it.uid == uid) it.copy(seen = true) else it })
+        Thread { runCatching { MailClient(account).markSeen(uid) } }.start()
+        return true
+    }
+
+    fun write(context: Context, id: String, list: List<Summary>) {
+        val a = JSONArray()
+        list.forEach { m ->
+            a.put(JSONObject().put("uid", m.uid).put("fn", m.fromName).put("fa", m.fromAddress).put("s", m.subject).put("d", m.date)
+                .put("seen", m.seen).put("k", m.kind.name).put("ans", m.answered))
+        }
+        runCatching { file(context, id).writeText(a.toString()) }
+    }
+
     fun read(context: Context, id: String): List<Summary> = runCatching {
         val a = JSONArray(file(context, id).readText())
         (0 until a.length()).map { i ->

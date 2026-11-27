@@ -21,6 +21,8 @@ class PeopleProvider : ContentProvider() {
             when (method) {
                 P.METHOD_RECENT -> P.packRecent(recent())
                 P.METHOD_ITEMS -> P.packItems(items(extras?.getStringArray(P.EXTRA_EMAILS).orEmpty().toList(), extras?.getInt(P.EXTRA_LIMIT, 200) ?: 200))
+                // «Vista» nella Postazione: l'email si segna come letta (anche nella casella).
+                P.METHOD_MARK_SEEN -> Bundle().apply { putBoolean(P.EXTRA_RESULT, MailCache.markSeen(ctx, extras?.getString(P.EXTRA_REF).orEmpty())) }
                 else -> null
             }
         }.getOrNull()

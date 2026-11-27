@@ -67,13 +67,17 @@ object PhoneData {
      * Da richiamare: chiamate perse negli ultimi tre giorni a cui non è seguita nessuna chiamata con lo stesso numero
      * (né fatta né ricevuta). I numeri bloccati non contano.
      */
-    fun toCallBack(recents: List<CallEntry>, now: Long = System.currentTimeMillis()): List<CallEntry> {
+    fun toCallBack(
+        recents: List<CallEntry>, now: Long = System.currentTimeMillis(), dismissed: List<Pair<String, Long>> = emptyList(),
+    ): List<CallEntry> {
         val out = ArrayList<CallEntry>()
         val seen = ArrayList<String>()
         for (e in recents) { // dal più recente
             if (e.number.isBlank() || seen.any { same(it, e.number) }) continue
             seen += e.number
-            if (e.missed && !e.blocked && now - e.date < 3 * 86_400_000L) {
+            // «Non richiamare»: tolta fino a quell'ora; una nuova chiamata persa dopo torna nella lista.
+            val tolta = dismissed.filter { same(it.first, e.number) }.maxOfOrNull { it.second } ?: 0L
+            if (e.missed && !e.blocked && now - e.date < 3 * 86_400_000L && e.date > tolta) {
                 val total = recents.filter { same(it.number, e.number) && it.missed && it.date >= e.date - 86_400_000L }.sumOf { it.count }
                 out += e.copy(count = total)
             }

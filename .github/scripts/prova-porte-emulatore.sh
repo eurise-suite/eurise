@@ -63,6 +63,7 @@ attesa "$r" sms CHIUSA "la curiosa non legge gli SMS"
 # Il Telefono deve esserci: «Unknown authority» vorrebbe dire una prova vuota.
 echo "$r" | grep -q "richiamare=CHIUSA.*Unknown authority" && ko "il Telefono non è installato: la porta callBack non è provata"
 attesa "$r" richiamare CHIUSA "la curiosa non legge le chiamate da richiamare del Telefono"
+attesa "$r" nonrichiamare CHIUSA "la curiosa non toglie chiamate da «Da richiamare»"
 attesa "$r" tastiera CHIUSA "la curiosa non comanda il ripristino della Tastiera"
 attesa "$r" aspetto CHIUSA "la curiosa non legge le impostazioni della suite"
 attesa "$r" giornata CHIUSA "la curiosa non legge impegni e cose da fare (Postazione)"

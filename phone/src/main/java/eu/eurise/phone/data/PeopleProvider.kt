@@ -27,13 +27,18 @@ class PeopleProvider : ContentProvider() {
                 P.METHOD_RECENT -> P.packRecent(recent())
                 // La Postazione mostra la stessa lista «Da richiamare» dei Recenti (con il nome della Rubrica).
                 P.METHOD_CALLBACK -> P.packRecent(
-                    kotlinx.coroutines.runBlocking { PhoneData.toCallBack(PhoneData.recents(ctx, 200)) }.take(12).map { e ->
+                    kotlinx.coroutines.runBlocking { PhoneData.toCallBack(PhoneData.recents(ctx, 200), dismissed = CallBackDismiss.all(ctx)) }.take(12).map { e ->
                         P.Recent(P.Item(P.Kind.CallMissed, e.number, e.date, unread = true, name = e.contact?.name.orEmpty()), e.count)
                     },
                 )
                 P.METHOD_ITEMS -> P.packItems(items(extras?.getStringArray(P.EXTRA_PHONES).orEmpty().toList(), extras?.getInt(P.EXTRA_LIMIT, 200) ?: 200))
                 P.METHOD_RESOLVE -> PeopleLookup.resolve(ctx, extras?.getStringArray(P.EXTRA_ADDRESSES).orEmpty().toList()).let { (people, index) -> P.packPeople(people, index) }
                 P.METHOD_SEARCH -> P.packPeople(PeopleLookup.search(ctx, extras?.getString(P.EXTRA_QUERY).orEmpty()))
+                // «Vista» nella Postazione: la chiamata esce da «Da richiamare» anche qui.
+                P.METHOD_DISMISS_CALLBACK -> {
+                    CallBackDismiss.dismiss(ctx, extras?.getString(P.EXTRA_ADDRESS).orEmpty(), extras?.getLong(P.EXTRA_SINCE) ?: 0L)
+                    Bundle().apply { putBoolean(P.EXTRA_RESULT, true) }
+                }
                 // Persone e ruoli (tavola InsRuoli): Chat ed Email li leggono e li cambiano.
                 RuoliContract.METHOD_ROLES -> Bundle().apply { putString(RuoliContract.EXTRA_RESULT, Ruoli.encode(Roles.load(ctx))) }
                 RuoliContract.METHOD_SET_ROLE -> {

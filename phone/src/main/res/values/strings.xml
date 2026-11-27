@@ -8,6 +8,8 @@
     <string name="ph_become_default_ok">Usa Eurise</string>
     <string name="ph_call_back">Da richiamare</string>
     <string name="ph_call_back_action">Richiama</string>
+    <string name="ph_call_back_dismiss">Non richiamare</string>
+    <string name="ph_call_back_clear">Togli tutte</string>
     <string name="ph_missed_n">%1$d perse</string>
     <string name="ph_recents">Recenti</string>
     <string name="ph_no_recents">Nessuna chiamata.</string>

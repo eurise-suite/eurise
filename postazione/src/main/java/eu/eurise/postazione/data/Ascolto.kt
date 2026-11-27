@@ -38,6 +38,13 @@ class Avviso(
     val indirizzo: String = "",
     /** Quante (chiamate perse, email da leggere) dietro questa riga. */
     val quante: Int = 1,
+    /** I messaggi arrivati nella notifica, dal più vecchio: chi scrive (se c'è) e testo. */
+    val storia: List<Pair<String?, String>> = emptyList(),
+    /** «Segna come letto» e «Archivia» della notifica, se l'app li offre. */
+    val letto: Notification.Action? = null,
+    val archivia: Notification.Action? = null,
+    /** Il nome dell'app che ha mandato la notifica («WhatsApp», «Email»). */
+    val app: String = "",
 ) {
     val dallaSuite: Boolean get() = numero.isNotEmpty() || rifMail.isNotEmpty()
 }
@@ -108,7 +115,30 @@ class AscoltoService : NotificationListenerService() {
         val testo = n.extras?.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
         if (titolo.isBlank() && testo.isBlank()) return null
         val richiama = if (chiamata) n.actions?.firstOrNull { a -> a.remoteInputs == null && a.actionIntent != null && RICHIAMA.containsMatchIn(a.title?.toString().orEmpty()) } else null
-        return Avviso(sbn.key, sbn.packageName, titolo, testo, sbn.postTime, n.contentIntent, rispondi, chiamata, richiama, sbn.isClearable)
+        val semplici = n.actions?.filter { it.remoteInputs == null && it.actionIntent != null }.orEmpty()
+        val letto = semplici.firstOrNull { it.semanticAction == Notification.Action.SEMANTIC_ACTION_MARK_AS_READ || LETTO.containsMatchIn(it.title?.toString().orEmpty()) }
+        val archivia = semplici.firstOrNull { it.semanticAction == Notification.Action.SEMANTIC_ACTION_ARCHIVE || ARCHIVIA.containsMatchIn(it.title?.toString().orEmpty()) }
+        val app = runCatching { packageManager.getApplicationLabel(packageManager.getApplicationInfo(sbn.packageName, 0)).toString() }.getOrDefault("")
+        return Avviso(
+            sbn.key, sbn.packageName, n.extras?.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE)?.toString()?.takeIf { it.isNotBlank() } ?: titolo,
+            testo, sbn.postTime, n.contentIntent, rispondi, chiamata, richiama, sbn.isClearable,
+            storia = storia(n), letto = letto, archivia = archivia, app = app,
+        )
+    }
+
+    /** I messaggi di una notifica in stile conversazione (WhatsApp, Signal, Messaggi…), al più gli ultimi dieci. */
+    @Suppress("DEPRECATION")
+    private fun storia(n: Notification): List<Pair<String?, String>> {
+        val lista = n.extras?.getParcelableArray(Notification.EXTRA_MESSAGES) ?: return emptyList()
+        // Ogni messaggio è un Bundle con «text» e «sender» o «sender_person» (com'è scritto da MessagingStyle).
+        return runCatching {
+            lista.mapNotNull { p ->
+                val b = p as? android.os.Bundle ?: return@mapNotNull null
+                val t = b.getCharSequence("text")?.toString()?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                val chi = (b.getParcelable("sender_person") as? android.app.Person)?.name?.toString() ?: b.getCharSequence("sender")?.toString()
+                chi to t
+            }.takeLast(10)
+        }.getOrDefault(emptyList())
     }
 
     private val dialer: String? by lazy { runCatching { getSystemService(android.telecom.TelecomManager::class.java)?.defaultDialerPackage }.getOrNull() }
@@ -128,6 +158,8 @@ class AscoltoService : NotificationListenerService() {
             "eu.eurise.mail", "com.google.android.gm", "eu.faircode.email", "com.fsck.k9", "net.thunderbird", "ch.protonmail",
             "de.tutao.tutanota", "com.microsoft.office.outlook", "foundation.e.mail", "com.samsung.android.email",
         )
+        private val LETTO = Regex("(?i)letto|letta|read|gelesen|\\blu\\b")
+        private val ARCHIVIA = Regex("(?i)archiv")
         private val RICHIAMA = Regex("(?i)richiam|call ?back|chiama|rappel|zurückrufen|devolver")
 
         internal const val K_FINO = "pausa.fino"

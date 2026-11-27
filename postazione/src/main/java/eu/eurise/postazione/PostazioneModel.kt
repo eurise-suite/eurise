@@ -449,10 +449,35 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
         (lista.firstOrNull { it.startsWith("eu.eurise.messages") || it.substringBefore('/') == sms } ?: lista.firstOrNull())?.let { apri(it) }
     }
 
+    /**
+     * «Vista» (o la × sulla riga): esce dalla lista. Una chiamata esce anche da «Da richiamare» del Telefono, un'email si
+     * segna come letta in Eurise Email; una notifica si toglie (o si segna come letta, se l'app lo offre).
+     */
     fun vista(a: Avviso) {
-        if (a.dallaSuite) DallaSuite.nascondi(contesto, a, perUnOra = false) else Ascolto.vista(a)
+        when {
+            a.numero.isNotEmpty() -> {
+                DallaSuite.nascondi(contesto, a, perUnOra = false)
+                viewModelScope.launch(Dispatchers.IO) { runCatching { PeopleContract.dismissCallBack(contesto, a.numero, a.quando) } }
+            }
+            a.rifMail.isNotEmpty() -> {
+                DallaSuite.nascondi(contesto, a, perUnOra = false)
+                viewModelScope.launch(Dispatchers.IO) { runCatching { PeopleContract.markMailSeen(contesto, a.rifMail) } }
+            }
+            a.letto != null -> { runCatching { a.letto.actionIntent.send() }; Ascolto.vista(a) }
+            else -> Ascolto.vista(a)
+        }
         togliDallaLista(a)
     }
+
+    /** «Archivia» della notifica (di solito della posta). */
+    fun archivia(a: Avviso) {
+        runCatching { a.archivia?.actionIntent?.send() }
+        Ascolto.vista(a)
+        togliDallaLista(a)
+    }
+
+    /** Tutte le righe di una bolla via, con un tocco. */
+    fun vistaTutte(chiamate: Boolean) { avvisi.filter { it.chiamata == chiamate }.forEach { vista(it) } }
 
     fun piuTardi(a: Avviso) {
         if (a.dallaSuite) DallaSuite.nascondi(contesto, a, perUnOra = true) else Ascolto.piuTardi(a)
@@ -466,9 +491,10 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
     }
 
     /** «Da fare»: una cosa da fare per oggi nell'app Eurise («Richiamare Giulia»), e l'avviso si toglie. */
-    fun daFare(a: Avviso) {
+    fun daFare(a: Avviso, frase: String? = null) {
         val chi = a.titolo.ifBlank { nomeDelPacchetto(a.pacchetto) }
-        val titolo = contesto.getString(if (a.chiamata) R.string.cosa_richiamare else R.string.cosa_rispondere, chi)
+        val titolo = frase?.let { "$chi: " + it.lineSequence().first().take(90) }
+            ?: contesto.getString(if (a.chiamata) R.string.cosa_richiamare else R.string.cosa_rispondere, chi)
         vista(a)
         viewModelScope.launch {
             withContext(Dispatchers.IO) { LettoreGiornata.aggiungiCosa(contesto, BuildConfig.HUB_PACKAGE, titolo) }

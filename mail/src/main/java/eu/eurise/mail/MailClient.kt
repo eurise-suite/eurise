@@ -147,6 +147,13 @@ class MailClient(private val account: Account) {
         )
     }
 
+    /** Segna come letto senza aprirlo (dalla Postazione, «Vista»). */
+    fun markSeen(uid: Long): Boolean = inbox(Folder.READ_WRITE) { f ->
+        val m = f.getMessageByUID(uid) ?: return@inbox false
+        m.setFlag(Flags.Flag.SEEN, true)
+        true
+    }
+
     /** Apre un messaggio (lo segna come letto) con testo, HTML e allegati. */
     fun open(uid: Long): Opened? = inbox(Folder.READ_WRITE) { f ->
         val m = f.getMessageByUID(uid) ?: return@inbox null

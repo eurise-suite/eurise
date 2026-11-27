@@ -207,8 +207,14 @@ private fun HomeScreen(
     filtered: List<eu.eurise.phone.data.SpamFilter.Filtered> = emptyList(),
     search: SearchState,
 ) {
-    val callBack = remember(recents) { PhoneData.toCallBack(recents) }
     val context = LocalContext.current
+    // «Non richiamare»: la × su una riga o «Togli tutte»; tornano solo se quella persona richiama.
+    var tolte by remember { mutableStateOf(eu.eurise.phone.data.CallBackDismiss.all(context)) }
+    val callBack = remember(recents, tolte) { PhoneData.toCallBack(recents, dismissed = tolte) }
+    val togli = { list: List<CallEntry> ->
+        list.forEach { eu.eurise.phone.data.CallBackDismiss.dismiss(context, it.number, it.date) }
+        tolte = eu.eurise.phone.data.CallBackDismiss.all(context)
+    }
     // Gli avvisi per i numeri fuori dalla rubrica (elenco Eurise, call center, prefissi segnati), letti fuori dal thread principale.
     var warnings by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     LaunchedEffect(recents) {
@@ -247,7 +253,16 @@ private fun HomeScreen(
                 }
             }
             if (callBack.isNotEmpty()) {
-                item(key = "cb-label") { SectionLabel(stringResource(R.string.ph_call_back), Modifier.padding(top = 6.dp, bottom = 8.dp)) }
+                item(key = "cb-label") {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        SectionLabel(stringResource(R.string.ph_call_back), Modifier.weight(1f).padding(top = 6.dp, bottom = 8.dp))
+                        Text(
+                            stringResource(R.string.ph_call_back_clear), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(end = 12.dp).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) { togli(callBack) }
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                        )
+                    }
+                }
                 item(key = "cb") {
                     Card {
                         callBack.forEachIndexed { i, e ->
@@ -259,6 +274,10 @@ private fun HomeScreen(
                                     Text(DateUtils.getRelativeTimeSpanString(e.date).toString(), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 Pill(stringResource(R.string.ph_call_back_action)) { onCall(e.number) }
+                                Box(
+                                    Modifier.size(40.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = stringResource(R.string.ph_call_back_dismiss)) { togli(listOf(e)) },
+                                    contentAlignment = Alignment.Center,
+                                ) { Icon(EuriseIcons.close(), stringResource(R.string.ph_call_back_dismiss), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp)) }
                             }
                         }
                     }

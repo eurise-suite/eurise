@@ -369,4 +369,13 @@
     <string name="su_esce">Niente: passano solo tra le app Eurise firmate con la stessa chiave, sul telefono. La Postazione non ha la rete.</string>
     <string name="su_chi">Solo tu, sulla Postazione. Telefono ed Email non vengono cambiati.</string>
     <string name="su_indietro">Spegni l\'interruttore qui o nel centro privacy dell\'app Eurise: si ferma subito.</string>
+    <string name="av_togli">Togli</string>
+    <string name="av_non_richiamare">Non richiamare</string>
+    <string name="av_cita">Cita</string>
+    <string name="av_copia">Copia</string>
+    <string name="av_tieni">Tieni premuto un messaggio per citarlo, copiarlo o farne una cosa da fare.</string>
+    <string name="av_sms_breve">SMS</string>
+    <string name="av_leggi">Leggi</string>
+    <string name="av_archivia">Archivia</string>
+    <string name="av_letto">Segna come letto</string>
 </resources>

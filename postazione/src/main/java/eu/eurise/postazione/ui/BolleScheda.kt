@@ -23,6 +23,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -396,38 +399,45 @@ private fun nomeCorto(t: TipoBolla): Int = when (t) {
     else -> nomeBolla(t)
 }
 
+/** L'icona piccola e monocromatica di una riga: chiamata, email o messaggio (niente icone d'app colorate). */
+private fun iconaAvviso(a: Avviso): ImageVector = when {
+    a.chiamata -> EuriseIcons.phone()
+    a.rifMail.isNotEmpty() || a.pacchetto.contains("mail") || a.pacchetto.contains(".gm") || a.pacchetto.contains("email") -> EuriseIcons.mail()
+    else -> EuriseIcons.chat()
+}
+
 /**
- * Una chiamata da richiamare o un messaggio: il tocco apre il foglio con la risposta e le azioni (niente scorrimento
- * di lato, che si confondeva con quello delle pagine).
+ * Una chiamata da richiamare o un messaggio, in una riga pulita: icona piccola monocromatica, chi e quando, una riga di
+ * testo; a destra (dal lato della mano) Richiama per le chiamate e la × che la toglie. Il tocco apre la bolla con tutto.
  */
 @Composable
 private fun RigaContatto(model: PostazioneModel, a: Avviso, col: Colori) {
     var aperto by remember(a.chiave) { mutableStateOf(false) }
-    val chiave = model.app.firstOrNull { it.pacchetto == a.pacchetto }?.chiave
-    Row(
-        Modifier.fillMaxWidth().clickable { aperto = true }.padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (chiave != null) IconaApp(model.telefono, chiave, 34.dp, col.notte)
-        else Box(Modifier.size(34.dp).background(col.riquadro, CircleShape), contentAlignment = Alignment.Center) {
-            Icon(if (a.chiamata) EuriseIcons.phone() else EuriseIcons.chat(), null, Modifier.size(17.dp), tint = col.sotto)
-        }
-        Column(Modifier.weight(1f).padding(start = 12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    a.titolo + if (a.quante > 1) " · ${a.quante}" else "", color = col.inchiostro, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
-                )
-                Text(quandoBreve(a.quando, model), color = col.sotto, fontSize = 12.sp, modifier = Modifier.padding(start = 8.dp))
-            }
-            val sotto = a.testo.ifBlank { if (a.chiamata) stringResource(R.string.av_persa) else "" }
-            if (sotto.isNotBlank()) Text(sotto, color = col.sotto, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-        // Il gesto più usato a portata di pollice: richiamare.
+    val azioni: @Composable () -> Unit = {
         if (a.chiamata) Icon(
             EuriseIcons.phone(), stringResource(R.string.sw_richiama),
-            Modifier.padding(start = 6.dp).size(40.dp).background(col.prossimo, CircleShape).clickable { model.richiama(a) }.padding(10.dp), tint = col.accento,
+            Modifier.size(40.dp).clickable { model.richiama(a) }.padding(11.dp), tint = col.accento,
         )
+        Icon(
+            EuriseIcons.close(), stringResource(R.string.av_togli),
+            Modifier.size(40.dp).clickable { model.vista(a) }.padding(12.dp), tint = col.sotto,
+        )
+    }
+    Row(Modifier.fillMaxWidth().clickable { aperto = true }.padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (model.mancino) azioni()
+        Icon(iconaAvviso(a), null, Modifier.size(17.dp), tint = col.sotto)
+        Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    a.titolo + if (a.quante > 1) " · ${a.quante}" else "", color = col.inchiostro, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                )
+                Text("  " + quandoBreve(a.quando, model), color = col.sotto, fontSize = 11.5.sp, maxLines = 1)
+            }
+            val sotto = a.testo.ifBlank { if (a.chiamata) stringResource(R.string.av_persa) else "" }
+            if (sotto.isNotBlank()) Text(sotto, color = col.sotto, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        if (!model.mancino) azioni()
     }
     if (aperto) FoglioAvviso(model, a, col) { aperto = false }
 }
@@ -439,46 +449,105 @@ private fun quandoBreve(ms: Long, model: PostazioneModel): String {
 }
 
 /**
- * Il foglio di un messaggio o di una chiamata: il testo intero, la risposta scritta qui (con l'azione «Rispondi» della
- * notifica, un SMS da Messaggi o l'email da finire) e le azioni Richiama o Apri, Vista, Più tardi, Da fare. Nulla parte
- * da solo: solo con Invia.
+ * La bolla di un messaggio, di un'email o di una chiamata (come quella della Scrivania): i messaggi arrivati come in una
+ * chat (tenendone premuto uno: reazione, cita, copia, da fare), la risposta scritta qui (con «Rispondi» della notifica, un
+ * SMS da Messaggi o l'email da finire in Email) e le azioni: Richiama, SMS, Apri, Da fare, Più tardi, Archivia, Segna come
+ * letto, Togli. Nulla parte da solo.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun FoglioAvviso(model: PostazioneModel, a: Avviso, col: Colori, onChiudi: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     var testo by remember { mutableStateOf("") }
+    var cita by remember { mutableStateOf<String?>(null) }
+    var scelto by remember { mutableStateOf<Int?>(null) }
     var esito by remember { mutableStateOf<Boolean?>(null) }
+    val fuoco = remember { androidx.compose.ui.focus.FocusRequester() }
+    val manda: (String) -> Unit = { corpo ->
+        val pieno = cita?.let { "«" + it.take(80) + "»\n" + corpo } ?: corpo
+        model.rispondi(a, pieno.trim()) { ok -> esito = ok; if (ok) { model.vista(a); onChiudi() } }
+    }
+    val storia = a.storia.ifEmpty { listOfNotNull(a.testo.takeIf { it.isNotBlank() }?.let { null to it }) }
+    val scorri = androidx.compose.foundation.rememberScrollState()
+    LaunchedEffect(scorri.maxValue) { scorri.scrollTo(scorri.maxValue) }
     androidx.compose.ui.window.Dialog(onDismissRequest = onChiudi, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
         Box(Modifier.fillMaxSize().clickable(remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) { onChiudi() }) {
             Column(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().navigationBarsPadding().padding(10.dp)
+                    .heightIn(max = 640.dp)
                     .background(col.pieno, RoundedCornerShape(26.dp))
                     .clickable(remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) {}
-                    .padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val chiave = model.app.firstOrNull { it.pacchetto == a.pacchetto }?.chiave
-                    if (chiave != null) IconaApp(model.telefono, chiave, 40.dp, col.notte)
+                    Icon(iconaAvviso(a), null, Modifier.size(20.dp), tint = col.accento)
                     Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                        Text(a.titolo, color = col.inchiostro, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(a.titolo, color = col.inchiostro, fontSize = 16.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
-                            (if (a.chiamata) stringResource(R.string.av_persa) + " · " else "") + quandoBreve(a.quando, model) +
-                                if (a.quante > 1) " · " + stringResource(R.string.av_quante, a.quante) else "",
-                            color = col.sotto, fontSize = 12.5.sp,
+                            listOfNotNull(
+                                a.app.takeIf { it.isNotBlank() } ?: model.nomeDi(a.pacchetto).takeIf { it.isNotBlank() },
+                                if (a.chiamata) stringResource(R.string.av_persa) else null,
+                                quandoBreve(a.quando, model),
+                                if (a.quante > 1) stringResource(R.string.av_quante, a.quante) else null,
+                            ).joinToString(" · "),
+                            color = col.sotto, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
                     }
+                    Text(
+                        stringResource(R.string.sw_apri), color = col.accento, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable { model.apriAvviso(a); onChiudi() }.padding(8.dp),
+                    )
                 }
-                if (a.testo.isNotBlank()) Text(
-                    a.testo, color = col.inchiostro, fontSize = 14.5.sp, maxLines = 8, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth().background(col.riquadro, RoundedCornerShape(14.dp)).padding(12.dp),
-                )
+                // I messaggi, come in una chat; tenendone premuto uno, le sue azioni.
+                if (storia.isNotEmpty()) Column(
+                    Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(scorri),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    storia.forEachIndexed { i, (chi, corpo) ->
+                        val forma = RoundedCornerShape(topStart = 6.dp, topEnd = 18.dp, bottomEnd = 18.dp, bottomStart = 18.dp)
+                        Column(
+                            Modifier.padding(end = 36.dp).background(if (scelto == i) col.prossimo else col.riquadro, forma)
+                                .combinedClickable(onClick = { scelto = null }, onLongClick = { scelto = i })
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                        ) {
+                            if (!chi.isNullOrBlank()) Text(chi, color = col.accento, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(corpo, color = col.inchiostro, fontSize = 14.sp, lineHeight = 20.sp)
+                        }
+                        if (scelto == i) androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            if (a.rispondi != null) listOf("👍", "❤️", "😂", "🙏").forEach { e ->
+                                Text(e, fontSize = 18.sp, modifier = Modifier.background(col.riquadro, CircleShape).clickable { manda(e) }.padding(horizontal = 9.dp, vertical = 5.dp))
+                            }
+                            if (model.puoRispondere(a)) Gettone(EuriseIcons.reply(), stringResource(R.string.av_cita), col) {
+                                cita = corpo; scelto = null; runCatching { fuoco.requestFocus() }
+                            }
+                            Gettone(EuriseIcons.copy(), stringResource(R.string.av_copia), col) {
+                                val cm = context.getSystemService(android.content.ClipboardManager::class.java)
+                                cm?.setPrimaryClip(android.content.ClipData.newPlainText("", corpo)); scelto = null
+                            }
+                            Gettone(EuriseIcons.task(), stringResource(R.string.sw_da_fare), col) { model.daFare(a, corpo); scelto = null }
+                        }
+                    }
+                    if (scelto == null && !a.chiamata) Text(stringResource(R.string.av_tieni), color = col.sotto, fontSize = 11.sp, modifier = Modifier.padding(start = 4.dp))
+                }
                 if (model.puoRispondere(a)) {
+                    cita?.let { q ->
+                        Row(Modifier.fillMaxWidth().background(col.riquadro, RoundedCornerShape(12.dp)).padding(start = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("«$q»", color = col.sotto, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                            Icon(EuriseIcons.close(), null, Modifier.size(34.dp).clickable { cita = null }.padding(10.dp), tint = col.sotto)
+                        }
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         androidx.compose.foundation.text.BasicTextField(
                             testo, { testo = it.take(1000) },
-                            Modifier.weight(1f).background(col.riquadro, RoundedCornerShape(16.dp)).padding(horizontal = 14.dp, vertical = 13.dp),
+                            Modifier.weight(1f).focusRequester(fuoco).background(col.riquadro, RoundedCornerShape(20.dp)).padding(horizontal = 14.dp, vertical = 12.dp),
                             textStyle = androidx.compose.ui.text.TextStyle(color = col.inchiostro, fontSize = 15.sp),
-                            cursorBrush = androidx.compose.ui.graphics.SolidColor(col.accento), maxLines = 4,
+                            cursorBrush = androidx.compose.ui.graphics.SolidColor(col.accento), maxLines = 5,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Sentences,
+                                imeAction = androidx.compose.ui.text.input.ImeAction.Send,
+                            ),
+                            keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSend = { if (testo.isNotBlank()) manda(testo) }),
                             decorationBox = { campo ->
                                 Box {
                                     if (testo.isEmpty()) Text(
@@ -490,37 +559,34 @@ private fun FoglioAvviso(model: PostazioneModel, a: Avviso, col: Colori, onChiud
                             },
                         )
                         Box(
-                            Modifier.padding(start = 8.dp).size(48.dp).background(col.lente, RoundedCornerShape(16.dp))
-                                .clickable(enabled = testo.isNotBlank()) { model.rispondi(a, testo) { ok -> esito = ok; if (ok) { model.vista(a); onChiudi() } } },
+                            Modifier.padding(start = 8.dp).size(46.dp).background(col.lente, CircleShape)
+                                .clickable(enabled = testo.isNotBlank()) { manda(testo) },
                             contentAlignment = Alignment.Center,
-                        ) { Icon(EuriseIcons.send(), stringResource(R.string.ai_invia), Modifier.size(20.dp), tint = Color.White) }
+                        ) { Icon(EuriseIcons.send(), stringResource(R.string.ai_invia), Modifier.size(19.dp), tint = Color.White) }
                     }
                     if (testo.isEmpty() && !a.chiamata) {
                         val presto = stringResource(R.string.domattina_testo)
-                        Text(
-                            presto, color = col.accento, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.background(col.prossimo, RoundedCornerShape(14.dp)).clickable { testo = presto }.padding(horizontal = 12.dp, vertical = 7.dp),
-                        )
+                        Gettone(EuriseIcons.clock(), presto, col) { testo = presto }
                     }
                     if (esito == false) Text(stringResource(R.string.av_non_partita), color = Color(0xFFB3261E), fontSize = 12.5.sp)
                 }
-                // Le azioni, tutte della stessa larghezza; la principale dal lato della mano.
-                val principale: Pair<Int, () -> Unit> = if (a.chiamata) R.string.sw_richiama to { model.richiama(a) } else R.string.sw_apri to { model.apriAvviso(a) }
-                val altre = listOf<Pair<Int, () -> Unit>>(
-                    R.string.sw_vista to { model.vista(a) }, R.string.sw_dopo to { model.piuTardi(a) }, R.string.sw_da_fare to { model.daFare(a) },
-                )
-                val tutte = if (model.mancino) listOf(principale) + altre else altre + principale
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    tutte.forEach { (t, fai) ->
-                        val prima = t == principale.first
-                        Box(
-                            Modifier.weight(1f).height(46.dp)
-                                .then(if (prima) Modifier.background(col.lente, RoundedCornerShape(14.dp)) else Modifier.background(col.riquadro, RoundedCornerShape(14.dp)))
-                                .clickable { fai(); onChiudi() },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(stringResource(t), color = if (prima) Color.White else col.inchiostro, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                        }
+                // Le azioni: piccole, monocromatiche, tutte a portata di pollice.
+                androidx.compose.foundation.layout.FlowRow(
+                    Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (a.chiamata) {
+                        Gettone(EuriseIcons.phone(), stringResource(R.string.sw_richiama), col, forte = true) { model.richiama(a); onChiudi() }
+                        if (a.numero.isNotEmpty()) Gettone(EuriseIcons.message(), stringResource(R.string.av_sms_breve), col) { runCatching { fuoco.requestFocus() } }
+                    } else if (a.rifMail.isNotEmpty()) {
+                        Gettone(EuriseIcons.mail(), stringResource(R.string.av_leggi), col, forte = true) { model.apriAvviso(a); onChiudi() }
+                    }
+                    Gettone(EuriseIcons.task(), stringResource(R.string.sw_da_fare), col) { model.daFare(a); onChiudi() }
+                    Gettone(EuriseIcons.clock(), stringResource(R.string.sw_dopo), col) { model.piuTardi(a); onChiudi() }
+                    if (a.archivia != null) Gettone(EuriseIcons.folder(), stringResource(R.string.av_archivia), col) { model.archivia(a); onChiudi() }
+                    if (!a.chiamata && (a.letto != null || a.rifMail.isNotEmpty())) {
+                        Gettone(EuriseIcons.check(), stringResource(R.string.av_letto), col) { model.vista(a); onChiudi() }
+                    } else {
+                        Gettone(EuriseIcons.close(), stringResource(if (a.chiamata) R.string.av_non_richiamare else R.string.av_togli), col) { model.vista(a); onChiudi() }
                     }
                 }
             }
@@ -528,60 +594,16 @@ private fun FoglioAvviso(model: PostazioneModel, a: Avviso, col: Colori, onChiud
     }
 }
 
-class Azione(val testo: String, val icona: ImageVector, val colore: Color, val esegui: () -> Unit)
-
-/**
- * Una riga da tirare: verso destra oltre metà del tasto fa l'azione principale; verso sinistra si apre e mostra le altre,
- * che si toccano. Un tocco sulla riga aperta la richiude.
- */
+/** Un'azione della bolla: icona piccola monocromatica e nome. */
 @Composable
-fun SwipeRiga(destra: Azione?, sinistra: List<Azione>, col: Colori, contenuto: @Composable () -> Unit) {
-    val densita = LocalDensity.current
-    val tasto = with(densita) { 62.dp.toPx() }
-    val soglia = with(densita) { 96.dp.toPx() }
-    val aperta = -tasto * sinistra.size
-    val x = remember { Animatable(0f) }
-    val scope = rememberCoroutineScope()
-    Box(Modifier.fillMaxWidth().background(Color.Transparent, RoundedCornerShape(12.dp))) {
-        if (x.value > 0f && destra != null) {
-            Row(Modifier.matchParentSize().background(destra.colore, RoundedCornerShape(12.dp)).padding(start = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(destra.icona, null, Modifier.size(18.dp), tint = Color.White)
-                Text(" " + destra.testo, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-        if (x.value < 0f) {
-            Row(Modifier.matchParentSize(), horizontalArrangement = Arrangement.End) {
-                sinistra.forEach { az ->
-                    Column(
-                        Modifier.width(62.dp).fillMaxHeight().background(az.colore).clickable { scope.launch { x.animateTo(0f) }; az.esegui() },
-                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
-                    ) {
-                        Icon(az.icona, null, Modifier.size(17.dp), tint = Color.White)
-                        Text(az.testo, color = Color.White, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                    }
-                }
-            }
-        }
-        Box(
-            Modifier.offset { IntOffset(x.value.roundToInt(), 0) }.fillMaxWidth()
-                .background(if (x.value != 0f) col.fondo else Color.Transparent, RoundedCornerShape(12.dp))
-                .pointerInput(destra, sinistra.size) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            scope.launch {
-                                when {
-                                    x.value > soglia && destra != null -> { x.animateTo(0f); destra.esegui() }
-                                    x.value < aperta / 2 -> x.animateTo(aperta)
-                                    else -> x.animateTo(0f)
-                                }
-                            }
-                        },
-                    ) { change, d ->
-                        change.consume()
-                        scope.launch { x.snapTo((x.value + d).coerceIn(aperta, if (destra != null) soglia * 1.4f else 0f)) }
-                    }
-                },
-        ) { contenuto() }
+private fun Gettone(icona: ImageVector, testo: String, col: Colori, forte: Boolean = false, onClick: () -> Unit) {
+    Row(
+        Modifier.background(if (forte) col.prossimo else col.riquadro, RoundedCornerShape(16.dp)).clickable { onClick() }
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icona, null, Modifier.size(15.dp), tint = if (forte) col.accento else col.sotto)
+        Text(" " + testo, color = if (forte) col.accento else col.inchiostro, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
 }
 
