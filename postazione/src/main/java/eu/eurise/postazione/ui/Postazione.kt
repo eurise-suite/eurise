@@ -426,8 +426,10 @@ internal fun richiamo(e: Impegno, adesso: LocalDateTime, primo: Boolean): String
     return when {
         ora >= e.inizio && ora < e.fine -> stringResource(R.string.adesso)
         inizio.isAfter(adesso.toLocalDate()) -> stringResource(R.string.domani)
-        min < 60 -> testa + " · " + stringResource(R.string.tra_min, maxOf(min, 1))
-        else -> testa + " · " + stringResource(R.string.tra_ore, min / 60)
+        // Solo «tra 29 min»: con «Prossimo ·» davanti il nome dell'impegno restava tagliato (schermate del giro 1151).
+        min < 60 -> stringResource(R.string.tra_min, maxOf(min, 1))
+        min < 24 * 60 -> stringResource(R.string.tra_ore, min / 60)
+        else -> testa
     }
 }
 
