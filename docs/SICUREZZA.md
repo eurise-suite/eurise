@@ -3,7 +3,8 @@
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
 ### Per ripartire (aggiornato il 27 novembre 2026)
-- **Ultimo giro pubblicato**: **1140** (27 novembre: correzioni del proprietario dopo la prova della Postazione sul telefono e
+- **Ultimo giro pubblicato**: **1147** (27 novembre, pomeriggio: sesto giro della Postazione, vedi in fondo; porte e
+  avvio provati sull'emulatore, Postazione 0,8 s a freddo, «Vulnerabilità note» di nuovo verde). Prima: **1140** (27 novembre: correzioni del proprietario dopo la prova della Postazione sul telefono e
   Postazione completata per poterla valutare: lente che cerca ovunque, dock di sei categorie a scelta, app di ogni scheda,
   azioni su impegni, cose da fare e farmaci, oroscopo, interruttori nel centro privacy; porte nuove provate sull'emulatore;
   Mappe 147 con l'icona del bestiario; sezione «Postazione, quinto giro» in fondo; nel pomeriggio il sesto giro:
@@ -791,7 +792,7 @@ né telemetria trovata.
   `app` (fornitore, `OpenFoundActivity`, sezioni), annotate in `docs/stato/ORGANIZZAZIONE.md`.
 - Resta da fare: le tavole della Postazione sulla tela con le icone a bolle.
 
-### Postazione, sesto giro (27 novembre 2026, pomeriggio): schermate, icone originali, Leptonica
+### Postazione, sesto giro (27 novembre 2026, pomeriggio): schermate, icone originali, Leptonica (giro 1147)
 - **Schermate dall'emulatore** (prima volta che la Postazione si vede girare): `scripts/screenshots/take.sh` ora installa
   anche la Postazione e scatta Lavoro, Personale, Viaggio (anche scorse), la lente con «pr», l'elenco delle AI, le
   impostazioni, il ventaglio, «Modifica la categoria», e il tablet orizzontale; tocca per testo con uiautomator
