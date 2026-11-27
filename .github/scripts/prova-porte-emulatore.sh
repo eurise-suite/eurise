@@ -15,7 +15,7 @@ installa() { # cartella
   done
 }
 togli() {
-  for p in eu.eurise.hub.debug eu.eurise.password.debug eu.eurise.messages.debug eu.eurise.keyboard.debug eu.eurise.postazione.debug org.esempio.curiosa org.esempio.amica; do
+  for p in eu.eurise.hub.debug eu.eurise.password.debug eu.eurise.messages.debug eu.eurise.keyboard.debug eu.eurise.postazione.debug eu.eurise.phone.debug org.esempio.curiosa org.esempio.amica; do
     adb uninstall "$p" >/dev/null 2>&1 || true
   done
 }
@@ -50,7 +50,7 @@ fi
 
 echo "=== Dopo: le app compilate dal ramo ==="
 installa dopo
-for p in eu.eurise.hub.debug eu.eurise.password.debug eu.eurise.messages.debug eu.eurise.keyboard.debug eu.eurise.postazione.debug; do
+for p in eu.eurise.hub.debug eu.eurise.password.debug eu.eurise.messages.debug eu.eurise.keyboard.debug eu.eurise.postazione.debug eu.eurise.phone.debug; do
   g=$(adb shell dumpsys package "$p" | grep -m1 "eu.eurise.permission.SUITE_DEBUG: granted=" | sed 's/.*granted=//; s/[ ,].*//')
   [ "$g" = "true" ] && ok "$p ha il permesso della suite" || ko "$p senza il permesso della suite ('$g')"
 done
@@ -60,6 +60,8 @@ attesa "$r" segreti CHIUSA "la curiosa non legge i segreti affidati all'app Euri
 attesa "$r" affida CHIUSA "la curiosa non affida né rilegge segreti"
 attesa "$r" accessi CHIUSA "la curiosa non arriva alle password dei siti"
 attesa "$r" sms CHIUSA "la curiosa non legge gli SMS"
+# Il Telefono deve esserci: «Unknown authority» vorrebbe dire una prova vuota.
+echo "$r" | grep -q "richiamare=CHIUSA.*Unknown authority" && ko "il Telefono non è installato: la porta callBack non è provata"
 attesa "$r" richiamare CHIUSA "la curiosa non legge le chiamate da richiamare del Telefono"
 attesa "$r" tastiera CHIUSA "la curiosa non comanda il ripristino della Tastiera"
 attesa "$r" aspetto CHIUSA "la curiosa non legge le impostazioni della suite"
