@@ -167,7 +167,11 @@ private class AppServices(val pkg: String, val name: Int, val services: List<App
 /** Le app separate che rispondono; quelle che mancano (o sono di una versione che non lo sa fare) restano fuori. */
 private fun loadApps(context: Context): List<AppServices> {
     val debug = SuiteAccess.isDebug(context)
-    return listOf(AppHubContract.passwordPackage(debug) to R.string.pv_password, AppHubContract.galleryPackage(debug) to R.string.pv_gallery)
+    return listOf(
+        AppHubContract.passwordPackage(debug) to R.string.pv_password,
+        AppHubContract.galleryPackage(debug) to R.string.pv_gallery,
+        AppHubContract.postazionePackage(debug) to R.string.pv_postazione,
+    )
         .mapNotNull { (pkg, name) -> AppHubContract.services(context, pkg)?.let { (list, log) -> AppServices(pkg, name, list, ServiceLog.parse(log)) } }
 }
 
@@ -214,7 +218,8 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
     var appsTick by remember { mutableStateOf(0) }
     val resumed = resumeTick()
     val apps by produceState(emptyList<AppServices>(), appsTick, resumed) { value = withContext(Dispatchers.IO) { loadApps(context) } }
-    val on = states.count { it.value } + apps.sumOf { a -> a.services.count { it.on } }
+    // Le letture della Postazione restano sul telefono (non ha la rete): non sono servizi esterni accesi.
+    val on = states.count { it.value } + apps.filter { it.name != R.string.pv_postazione }.sumOf { a -> a.services.count { it.on } }
 
     LazyColumn(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentPadding = PaddingValues(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item(key = "head") {
@@ -322,9 +327,12 @@ private fun Overview(onBack: () -> Unit, onLog: () -> Unit) {
         item(key = "others") {
             SectionLabel(stringResource(R.string.pv_other_apps))
             Card {
-                // Password e Galleria: i loro servizi uno per uno, spenti anche da qui senza conferme; accenderli porta
+                // Password, Galleria e Postazione: i loro servizi uno per uno, spenti anche da qui senza conferme; accenderli porta
                 // nell'app, dove ci sono la spiegazione e il collegamento. Se l'app non risponde resta la riga di prima.
-                listOf(R.string.pv_gallery to R.string.pv_gallery_d, R.string.pv_password to R.string.pv_password_d).forEach { (name, detail) ->
+                listOf(
+                    R.string.pv_gallery to R.string.pv_gallery_d, R.string.pv_password to R.string.pv_password_d,
+                    R.string.pv_postazione to R.string.pv_postazione_d,
+                ).forEach { (name, detail) ->
                     val app = apps.firstOrNull { it.name == name }
                     if (app == null) TwoLines(stringResource(name), stringResource(detail))
                     else {

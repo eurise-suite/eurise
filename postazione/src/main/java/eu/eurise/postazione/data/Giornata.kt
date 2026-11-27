@@ -5,8 +5,20 @@ import android.net.Uri
 import eu.eurise.core.suite.PostazioneContract as C
 import eu.eurise.core.suite.SuiteAccess
 
-data class Impegno(val titolo: String, val luogo: String, val inizio: Long, val fine: Long, val tuttoIlGiorno: Boolean)
-data class Cosa(val id: Long, val titolo: String, val scadenza: Long, val scaduta: Boolean)
+/** Un impegno: [id] per aprirlo nel Calendario; [eliminabile] se il calendario si può scrivere e non si ripete. */
+data class Impegno(
+    val titolo: String, val luogo: String, val inizio: Long, val fine: Long, val tuttoIlGiorno: Boolean,
+    val id: Long = 0L, val eliminabile: Boolean = false,
+)
+
+/** Una cosa da fare; [farmaco] se è la dose di un farmaco (si prende o si salta, non va a domani). */
+data class Cosa(val id: Long, val titolo: String, val scadenza: Long, val scaduta: Boolean, val farmaco: Boolean = false)
+
+/** Una cosa trovata dalla lente nell'app Eurise. */
+data class Trovata(val tipo: String, val id: Long, val titolo: String, val dettaglio: String, val quando: Long)
+
+/** L'oroscopo dall'app Eurise: [acceso] è il servizio «Oroscopo» del centro privacy. */
+data class Oroscopo(val acceso: Boolean, val segno: Int, val segni: List<String>, val testo: String, val fonte: String, val link: String)
 
 /** Il meteo già sul telefono (copia dell'app Eurise): gradi, cielo (nome di `Sky`) e prima ora di pioggia (0 = niente). */
 data class Meteo(val gradi: Int, val cielo: String, val pioggia: Long)
@@ -34,15 +46,18 @@ object LettoreGiornata {
         val inizi = b.getLongArray(C.KEY_EV_BEGIN) ?: LongArray(0)
         val fini = b.getLongArray(C.KEY_EV_END) ?: LongArray(0)
         val interi = b.getBooleanArray(C.KEY_EV_ALLDAY) ?: BooleanArray(0)
+        val evId = b.getLongArray(C.KEY_EV_ID) ?: LongArray(0)
+        val evEdit = b.getBooleanArray(C.KEY_EV_EDIT) ?: BooleanArray(0)
         val impegni = titoli.indices.filter { it < inizi.size && it < fini.size }.map { i ->
-            Impegno(titoli[i], luoghi.getOrElse(i) { "" }, inizi[i], fini[i], interi.getOrElse(i) { false })
+            Impegno(titoli[i], luoghi.getOrElse(i) { "" }, inizi[i], fini[i], interi.getOrElse(i) { false }, evId.getOrElse(i) { 0L }, evEdit.getOrElse(i) { false })
         }
         val ids = b.getLongArray(C.KEY_TASK_ID) ?: LongArray(0)
         val cTitoli = b.getStringArray(C.KEY_TASK_TITLE) ?: emptyArray()
         val scad = b.getLongArray(C.KEY_TASK_DUE) ?: LongArray(0)
         val late = b.getBooleanArray(C.KEY_TASK_LATE) ?: BooleanArray(0)
+        val med = b.getBooleanArray(C.KEY_TASK_MED) ?: BooleanArray(0)
         val cose = ids.indices.filter { it < cTitoli.size }.map { i ->
-            Cosa(ids[i], cTitoli[i], scad.getOrElse(i) { 0L }, late.getOrElse(i) { false })
+            Cosa(ids[i], cTitoli[i], scad.getOrElse(i) { 0L }, late.getOrElse(i) { false }, med.getOrElse(i) { false })
         }
         val meteo = if (b.getBoolean(C.KEY_W_OK)) Meteo(b.getInt(C.KEY_W_TEMP), b.getString(C.KEY_W_SKY).orEmpty(), b.getLong(C.KEY_W_RAIN)) else null
         return Giornata(true, impegni, cose, b.getInt(C.KEY_TASK_OPEN), b.getInt(C.KEY_TASK_DONE), meteo)
@@ -72,5 +87,45 @@ object LettoreGiornata {
         val link = b.getStringArray(C.KEY_N_LINK) ?: emptyArray()
         val quando = b.getLongArray(C.KEY_N_WHEN) ?: LongArray(0)
         return titoli.indices.filter { it < link.size }.map { i -> Notizia(titoli[i], fonti.getOrElse(i) { "" }, link[i], quando.getOrElse(i) { 0L }) }
+    }
+
+    /** Fatta, a domani o eliminata ([C.ACT_DONE], [C.ACT_TOMORROW], [C.ACT_DELETE]); vero se l'app Eurise l'ha fatto. */
+    fun cosa(context: Context, hub: String, id: Long, azione: String): Boolean {
+        val uri = Uri.parse("content://" + C.authority(hub))
+        val extra = android.os.Bundle().apply { putLong(C.EXTRA_ID, id) }
+        return runCatching { SuiteAccess.call(context, uri, C.METHOD_TASK, azione, extra)?.getBoolean(C.KEY_OK) == true }.getOrDefault(false)
+    }
+
+    fun eliminaImpegno(context: Context, hub: String, id: Long): Boolean {
+        val uri = Uri.parse("content://" + C.authority(hub))
+        val extra = android.os.Bundle().apply { putLong(C.EXTRA_ID, id) }
+        return runCatching { SuiteAccess.call(context, uri, C.METHOD_EVENT, C.ACT_DELETE, extra)?.getBoolean(C.KEY_OK) == true }.getOrDefault(false)
+    }
+
+    /** La ricerca nell'app Eurise (impegni, cose da fare, note, documenti); vuota se l'app Eurise manca. */
+    fun cerca(context: Context, hub: String, testo: String): List<Trovata> {
+        val q = testo.trim().take(C.MAX_QUERY)
+        if (q.length < 2) return emptyList()
+        val uri = Uri.parse("content://" + C.authority(hub))
+        val b = runCatching { SuiteAccess.call(context, uri, C.METHOD_SEARCH, q, null) }.getOrNull() ?: return emptyList()
+        val tipi = b.getStringArray(C.KEY_S_KIND) ?: emptyArray()
+        val ids = b.getLongArray(C.KEY_S_ID) ?: LongArray(0)
+        val titoli = b.getStringArray(C.KEY_S_TITLE) ?: emptyArray()
+        val dett = b.getStringArray(C.KEY_S_DETAIL) ?: emptyArray()
+        val quando = b.getLongArray(C.KEY_S_WHEN) ?: LongArray(0)
+        return tipi.indices.filter { it < ids.size && it < titoli.size }.map { i ->
+            Trovata(tipi[i], ids[i], titoli[i], dett.getOrElse(i) { "" }, quando.getOrElse(i) { 0L })
+        }
+    }
+
+    /** L'oroscopo; [segno] (facoltativo) cambia il segno. Null se l'app Eurise non risponde. */
+    fun oroscopo(context: Context, hub: String, segno: Int? = null): Oroscopo? {
+        val uri = Uri.parse("content://" + C.authority(hub))
+        val extra = segno?.let { android.os.Bundle().apply { putInt(C.EXTRA_SIGN, it) } }
+        val b = runCatching { SuiteAccess.call(context, uri, C.METHOD_HOROSCOPE, null, extra) }.getOrNull() ?: return null
+        return Oroscopo(
+            b.getBoolean(C.KEY_H_ON), b.getInt(C.KEY_H_SIGN), b.getStringArray(C.KEY_H_SIGNS)?.toList().orEmpty(),
+            b.getString(C.KEY_H_TEXT).orEmpty(), b.getString(C.KEY_H_SOURCE).orEmpty(), b.getString(C.KEY_H_LINK).orEmpty(),
+        )
     }
 }

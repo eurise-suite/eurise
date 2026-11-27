@@ -22,6 +22,8 @@
     <string name="pv_other_apps">Altre app della suite</string>
     <string name="pv_gallery">Galleria</string>
     <string name="pv_gallery_d">Il cloud scelto se accendi il caricamento; OpenStreetMap, con posizione arrotondata a 10 km, se accendi i nomi dei luoghi. Si gestisce nell\'app.</string>
+    <string name="pv_postazione">Postazione</string>
+    <string name="pv_postazione_d">La schermata iniziale nuova non ha accesso a Internet. Legge le notifiche, i contatti e la posizione solo se lo accendi, e solo sul telefono. Si gestisce nell\'app.</string>
     <string name="pv_keyboard">Tastiera</string>
     <string name="pv_keyboard_d">La tastiera non ha accesso a Internet. Legge Calendario e Rubrica solo se lo permetti, e solo sul telefono. I tasti Browser e AI aprono un riquadro di Eurise con il sito che hai scelto tu (di base DuckDuckGo; nessun assistente): gli arriva solo ciò che cerchi, quando lo tocchi.</string>
     <string name="pv_voice">Voce</string>

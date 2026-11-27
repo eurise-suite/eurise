@@ -35,6 +35,19 @@
                 <data android:mimeType="application/pdf" />
             </intent-filter>
         </activity>
+        <!-- La Postazione apre qui ciò che mostra o trova (impegno, cosa da fare, nota, documento): solo app con la stessa firma. -->
+        <activity
+            android:name=".OpenFoundActivity"
+            android:exported="true"
+            android:permission="${suitePermission}"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="eu.eurise.action.OPEN_FOUND" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <!-- Scanner per le altre app della suite (Office): le pagine tornano come PDF. Solo app con la stessa firma. -->
         <activity
             android:name=".ScanForResultActivity"

@@ -40,6 +40,8 @@
         </intent>
         <intent><action android:name="android.media.action.STILL_IMAGE_CAMERA" /></intent>
         <intent><action android:name="android.intent.action.SHOW_ALARMS" /></intent>
+        <!-- La lente: «Cerca sul web» con il browser scelto. -->
+        <intent><action android:name="android.intent.action.WEB_SEARCH" /></intent>
     </queries>
 
     <application
@@ -69,6 +71,25 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Il centro privacy dell'app Eurise apre qui le impostazioni della Postazione: solo app con la stessa firma. -->
+        <activity-alias
+            android:name=".DaEurise"
+            android:targetActivity=".PostazioneActivity"
+            android:exported="true"
+            android:permission="${suitePermission}">
+            <intent-filter>
+                <action android:name="eu.eurise.action.OPEN_FROM_HUB" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- I tre interruttori della Postazione nel centro privacy: risponde solo all'app Eurise (controllo nel codice). -->
+        <provider
+            android:name=".data.CentroPrivacy"
+            android:authorities="${applicationId}.hub"
+            android:exported="true"
+            android:permission="${suitePermission}" />
 
         <!--
             «Da rispondere» e la musica che suona: accesso alle notifiche, spento di base. Solo il sistema può legarsi a

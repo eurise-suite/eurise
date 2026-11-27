@@ -48,7 +48,7 @@
     <string name="senza_eurise">Installa l\'app Eurise per vedere qui impegni e cose da fare. La Postazione funziona anche da sola.</string>
     <string name="viaggio_meta">Dove vai</string>
 
-    <string name="ventaglio_aiuto">Un tocco sul gruppo apre la preferita, quella con la stellina.</string>
+    <string name="ventaglio_aiuto">Un tocco sulla categoria apre la preferita, quella con la stellina.</string>
     <string name="aggiungi_app">Aggiungi un\'app</string>
     <string name="aggiungi_a">Aggiungi a «%1$s»</string>
     <string name="preferita">Preferita</string>
@@ -58,7 +58,7 @@
     <string name="chiudi">Chiudi</string>
 
     <string name="cassetto_titolo">Tutte le app · %1$d</string>
-    <string name="cassetto_cerca">Scrivi due lettere</string>
+    <string name="cassetto_cerca">Cerca app, persone, impegni, note, documenti, web, AI</string>
     <string name="cassetto_nessuna">Nessuna app con «%1$s»</string>
     <string name="impostazioni">Impostazioni</string>
     <string name="imp_nome">Come ti chiami (per il saluto)</string>
@@ -122,11 +122,11 @@
     <string name="contatti">Rubrica</string>
     <string name="preferiti_spenti">I preferiti da chiamare sono spenti.</string>
     <string name="preferiti_vuoti">Nessun contatto con la stellina nella rubrica.</string>
-    <string name="preferiti_titolo">Preferiti da chiamare nella scheda Viaggio</string>
-    <string name="preferiti_letto">Nome e numero dei soli contatti con la stellina nella rubrica.</string>
+    <string name="preferiti_titolo">Contatti nella Postazione</string>
+    <string name="preferiti_letto">Nome e numero dei contatti con la stellina, per i preferiti della scheda Viaggio, e dei contatti che cerchi con la lente.</string>
     <string name="preferiti_esce">Niente: restano sul telefono. Il tocco apre il tastierino con il numero già scritto; la Postazione non chiama da sola.</string>
     <string name="preferiti_chi">Solo tu.</string>
-    <string name="preferiti_indietro">Togli il permesso «Contatti» alla Postazione nelle impostazioni di Android.</string>
+    <string name="preferiti_indietro">Spegni «Contatti» nelle impostazioni della Postazione o nel centro privacy dell\'app Eurise: si ferma subito.</string>
 
     <string name="rapido_adesso">Adesso</string>
     <string name="rapido_usate">Più usate</string>
@@ -176,10 +176,87 @@
     <string name="auto_letto">La posizione del telefono, una volta sola, nel momento in cui tocchi «Segna qui».</string>
     <string name="auto_esce">Niente: il punto resta nella Postazione, che non ha la rete. «Portami lì» lo passa all\'app di mappe che scegli.</string>
     <string name="auto_chi">Solo tu.</string>
-    <string name="auto_indietro">«Dimentica» cancella il punto; il permesso «Posizione» si toglie nelle impostazioni di Android.</string>
+    <string name="auto_indietro">«Dimentica» cancella il punto; spegni «Posizione» nelle impostazioni della Postazione o nel centro privacy dell\'app Eurise.</string>
 
     <string name="imp_accento">Accento</string>
     <string name="acc_ceruleo">Ceruleo</string>
     <string name="acc_petrolio">Petrolio</string>
     <string name="acc_ottone">Ottone</string>
+    <!-- Dock: categorie a scelta (27 novembre 2026). -->
+    <string name="g_agenda">Agenda</string>
+    <string name="g_banca">Banca</string>
+    <string name="g_acquisti">Acquisti</string>
+    <string name="g_viaggi">Viaggi</string>
+    <string name="g_salute">Salute</string>
+    <string name="g_giochi">Giochi</string>
+    <string name="g_lettura">Lettura</string>
+    <string name="g_sport">Sport</string>
+    <string name="modifica_categoria">Modifica la categoria</string>
+    <string name="cat_pronte">Una categoria pronta</string>
+    <string name="cat_nome">Nome</string>
+    <string name="cat_icona">Icona</string>
+    <string name="cat_posto">Posto nella dock</string>
+
+    <!-- Le app di ogni scheda. -->
+    <string name="app_lavoro">Le tue app per il lavoro</string>
+    <string name="app_personale">Le tue app per te</string>
+    <string name="app_viaggio">Le tue app in viaggio</string>
+    <string name="app_fissa">Tienila fissa qui</string>
+    <string name="app_togli">Togli da questa scheda</string>
+
+    <!-- Impegni e cose da fare: azioni. -->
+    <string name="apri">Apri</string>
+    <string name="altro">Altro</string>
+    <string name="apri_calendario">Apri nel Calendario</string>
+    <string name="apri_attivita">Apri nelle Attività</string>
+    <string name="apri_farmaci">Apri i Farmaci</string>
+    <string name="elimina">Elimina</string>
+    <string name="elimina_impegno">Eliminare l\'impegno?</string>
+    <string name="elimina_impegno_d">«%1$s» sparisce dal calendario.</string>
+    <string name="elimina_cosa">Eliminare la cosa da fare?</string>
+    <string name="fatta">Fatta</string>
+    <string name="presa">Presa</string>
+    <string name="farmaco">Farmaco</string>
+    <string name="a_domani">A domani</string>
+    <string name="salta">Salta</string>
+    <string name="salta_dose">Saltare questa dose?</string>
+    <string name="centro_privacy">Centro privacy</string>
+
+    <!-- Oroscopo (Personale). -->
+    <string name="oroscopo">Oroscopo di oggi</string>
+    <string name="oroscopo_spento">L\'oroscopo arriva dall\'app Eurise: si accende tra i servizi del centro privacy.</string>
+    <string name="oroscopo_cambia">Cambia segno</string>
+    <string name="oroscopo_vuoto">L\'oroscopo di oggi non è ancora arrivato.</string>
+
+    <!-- La lente: ricerca ovunque. -->
+    <string name="cerca_contatti">Persone</string>
+    <string name="cerca_contatti_spenti">Le persone non si cercano: i contatti sono spenti (tocca per le impostazioni).</string>
+    <string name="chiama">Chiama</string>
+    <string name="scrivi">Scrivi</string>
+    <string name="cerca_impegni">Impegni</string>
+    <string name="cerca_cose">Cose da fare</string>
+    <string name="cerca_note">Note</string>
+    <string name="cerca_documenti">Documenti</string>
+    <string name="cerca_web">Cerca «%1$s» sul web</string>
+    <string name="cerca_web_d">Con il browser e il motore di ricerca che hai scelto</string>
+    <string name="chiedi_a">Chiedi a %1$s</string>
+    <string name="chiedi_telefono">Resta sul telefono</string>
+    <string name="chiedi_fuori">La domanda va al servizio solo quando tocchi · tieni premuto per le altre</string>
+    <string name="chiedi_altre">Le altre AI</string>
+    <string name="chiedi_titolo">A chi chiedere</string>
+    <string name="chiedi_aiuto">Il tocco chiede a quella; la stellina la fa preferita.</string>
+    <string name="ai_avviso_titolo">%1$s come preferita</string>
+    <string name="ai_avviso_letto">La domanda che scrivi nella lente, solo quando tocchi «Chiedi».</string>
+    <string name="ai_avviso_esce">La domanda va a %1$s, un servizio chiuso negli Stati Uniti, nel browser e con il tuo accesso a quel sito.</string>
+    <string name="ai_avviso_chi">%1$s, che può conservarla e usarla secondo le sue regole; le leggi statunitensi permettono alle autorità di chiederla.</string>
+    <string name="ai_avviso_indietro">Tieni premuto «Chiedi» e metti la stellina su un\'altra: Alfred resta sul telefono, Lumo e Le Chat sono europee.</string>
+
+    <!-- I tre interruttori (anche nel centro privacy dell'app Eurise). -->
+    <string name="imp_privacy">Privacy</string>
+    <string name="cp_notifiche">Notifiche</string>
+    <string name="cp_notifiche_d">«Da rispondere» e la musica che suona. Restano in memoria, mai su disco.</string>
+    <string name="cp_contatti">Contatti</string>
+    <string name="cp_contatti_d">I preferiti della scheda Viaggio e le persone nella lente.</string>
+    <string name="cp_posizione">Posizione</string>
+    <string name="cp_posizione_d">Una volta, quando segni dove hai lasciato l\'auto.</string>
 </resources>

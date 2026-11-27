@@ -15,7 +15,7 @@ installa() { # cartella
   done
 }
 togli() {
-  for p in eu.eurise.hub.debug eu.eurise.password.debug eu.eurise.messages.debug eu.eurise.keyboard.debug org.esempio.curiosa org.esempio.amica; do
+  for p in eu.eurise.hub.debug eu.eurise.password.debug eu.eurise.messages.debug eu.eurise.keyboard.debug eu.eurise.postazione.debug org.esempio.curiosa org.esempio.amica; do
     adb uninstall "$p" >/dev/null 2>&1 || true
   done
 }
@@ -50,7 +50,7 @@ fi
 
 echo "=== Dopo: le app compilate dal ramo ==="
 installa dopo
-for p in eu.eurise.hub.debug eu.eurise.password.debug eu.eurise.messages.debug eu.eurise.keyboard.debug; do
+for p in eu.eurise.hub.debug eu.eurise.password.debug eu.eurise.messages.debug eu.eurise.keyboard.debug eu.eurise.postazione.debug; do
   g=$(adb shell dumpsys package "$p" | grep -m1 "eu.eurise.permission.SUITE_DEBUG: granted=" | sed 's/.*granted=//; s/[ ,].*//')
   [ "$g" = "true" ] && ok "$p ha il permesso della suite" || ko "$p senza il permesso della suite ('$g')"
 done
@@ -65,6 +65,12 @@ attesa "$r" aspetto CHIUSA "la curiosa non legge le impostazioni della suite"
 attesa "$r" giornata CHIUSA "la curiosa non legge impegni e cose da fare (Postazione)"
 attesa "$r" rimanda CHIUSA "la curiosa non sposta le cose da fare (Chiudi la giornata)"
 attesa "$r" orari CHIUSA "la curiosa non dà orari alle cose da fare (Mettile lì)"
+attesa "$r" cerca CHIUSA "la curiosa non cerca tra impegni, note e documenti (lente della Postazione)"
+attesa "$r" fatta CHIUSA "la curiosa non chiude né elimina cose da fare"
+attesa "$r" elimina CHIUSA "la curiosa non elimina impegni"
+attesa "$r" oroscopo CHIUSA "la curiosa non fa leggere l'oroscopo all'app Eurise"
+attesa "$r" trovata CHIUSA "la curiosa non fa aprire documenti o impegni all'app Eurise"
+attesa "$r" interruttori CHIUSA "la curiosa non legge né spegne gli interruttori della Postazione"
 attesa "$r" codici CHIUSA "la curiosa non legge i codici 2FA"
 attesa "$r" ponte CHIUSA "la curiosa non collega un suo computer al Ponte"
 attesa "$r" backup CHIUSA "la curiosa non legge il backup di Password"
@@ -85,6 +91,9 @@ echo "  amica: granted=$g"
 r=$(bussa org.esempio.amica); echo "$r" | sed 's/^/  amica: /'
 attesa "$r" segreti APERTA "l'amica (stessa chiave) usa ancora i segreti"
 attesa "$r" giornata APERTA "l'amica (stessa chiave) legge la giornata, come la Postazione"
+attesa "$r" cerca APERTA "l'amica (stessa chiave) cerca con la lente, come la Postazione"
+attesa "$r" trovata APERTA "l'amica (stessa chiave) apre ciò che ha trovato, come la Postazione"
+attesa "$r" interruttori CHIUSA "nemmeno l'amica (stessa chiave) legge gli interruttori della Postazione: solo l'app Eurise"
 attesa "$r" affida UGUALE "l'amica affida un segreto all'app Eurise e lo rilegge uguale"
 attesa "$r" migra UGUALE "un segreto del vecchio file in chiaro arriva ancora, sigillato nel Keystore"
 chiaro=$(adb shell "$RUN_AS eu.eurise.hub.debug sh -c 'grep -rl EURISE-SEGRETO shared_prefs files databases 2>/dev/null'" | tr -d '\r')

@@ -42,11 +42,32 @@ public class Prova extends Activity {
             call("giornata", "content://eu.eurise.hub" + suffix + ".postazione", "today", null);
             call("rimanda", "content://eu.eurise.hub" + suffix + ".postazione", "postpone", null);
             call("orari", "content://eu.eurise.hub" + suffix + ".postazione", "schedule", null);
+            // 27 novembre 2026: la lente, le azioni su cose e impegni, l'oroscopo e l'apertura di ciò che si trova.
+            call("cerca", "content://eu.eurise.hub" + suffix + ".postazione", "search", "prova");
+            call("fatta", "content://eu.eurise.hub" + suffix + ".postazione", "task", "done");
+            call("elimina", "content://eu.eurise.hub" + suffix + ".postazione", "event", "delete");
+            call("oroscopo", "content://eu.eurise.hub" + suffix + ".postazione", "horoscope", null);
+            avvia("trovata", "eu.eurise.hub" + suffix, "eu.eurise.hub.OpenFoundActivity");
+            // Gli interruttori della Postazione: solo l'app Eurise li legge (nemmeno l'amica).
+            call("interruttori", "content://eu.eurise.postazione" + suffix + ".hub", "privacy", null);
             query("codici", "content://eu.eurise.password" + suffix + ".codes/otp?package=org.esempio.curiosa");
             ponte(suffix);
             Log.i(TAG, "fine");
             runOnUiThread(this::finish);
         }).start();
+    }
+
+    /** Avvia un'attività di un'altra app: se parte, la porta è aperta; un rifiuto di sicurezza la chiude. */
+    private void avvia(String porta, String pkg, String cls) {
+        try {
+            Intent i = new Intent("eu.eurise.action.OPEN_FOUND").setComponent(new ComponentName(pkg, cls)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+            Log.i(TAG, porta + "=APERTA partita");
+        } catch (SecurityException e) {
+            Log.i(TAG, porta + "=CHIUSA " + e.getClass().getSimpleName());
+        } catch (Exception e) {
+            Log.i(TAG, porta + "=CHIUSA " + e.getClass().getSimpleName() + " " + e.getMessage());
+        }
     }
 
     /** Un fornitore risponde (anche con un Bundle vuoto): la porta è aperta. Eccezione o null: chiusa. */

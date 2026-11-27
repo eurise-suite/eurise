@@ -1,8 +1,10 @@
 package eu.eurise.postazione
 
+import eu.eurise.postazione.data.Ai
+import eu.eurise.postazione.data.Categoria
+import eu.eurise.postazione.data.Contesto
 import eu.eurise.postazione.data.Gruppi
 import eu.eurise.postazione.data.Gruppo
-import eu.eurise.postazione.data.Scheda
 import eu.eurise.postazione.data.Siti
 import eu.eurise.postazione.data.Usi
 import org.junit.Assert.assertEquals
@@ -29,8 +31,47 @@ class GruppiTest {
         Gruppi.risolvi(Gruppo.Comunica.predefinite, installate, mapOf("dialer" to "com.android.dialer")),
     )
 
-    @Test fun comunicaSempreAccantoAllaLente() =
-        Scheda.entries.forEach { assertEquals(Gruppo.Comunica, Gruppi.barra(it).last()) }
+    @Test fun dockDiSeiConComunicaAccantoAllaLente() {
+        assertEquals(Gruppi.POSTI, Gruppi.dockIniziale.size)
+        assertEquals(Gruppo.Comunica.name, Gruppi.dockIniziale.last().id)
+    }
+
+    @Test fun dockSalvataERiletta() {
+        val dock = Gruppi.sostituisci(Gruppi.dockIniziale, "Musica", Categoria("c1", "Cantiere\tA", "tools"))
+        val riletta = Gruppi.leggiDock(Gruppi.scriviDock(dock))
+        assertEquals(listOf("Lavoro", "Foto", "Mappe", "WebAI", "c1", "Comunica"), riletta.map { it.id })
+        assertEquals("Cantiere A", riletta[4].nome)
+        assertEquals("tools", riletta[4].icona)
+        // Una dock rovinata o incompleta torna quella di partenza.
+        assertEquals(Gruppi.dockIniziale, Gruppi.leggiDock("x\ty"))
+    }
+
+    @Test fun unaCategoriaProntaGiaNellaDockNonSiDoppia() {
+        val dock = Gruppi.sostituisci(Gruppi.dockIniziale, "Musica", Categoria("Foto", "", "camera"))
+        assertEquals(6, dock.map { it.id }.distinct().size)
+    }
+
+    @Test fun spostaNellaDock() {
+        val dock = Gruppi.sposta(Gruppi.dockIniziale, "Foto", -1)
+        assertEquals(listOf("Foto", "Lavoro"), dock.take(2).map { it.id })
+        assertEquals(Gruppi.dockIniziale, Gruppi.sposta(Gruppi.dockIniziale, "Lavoro", -1))
+    }
+
+    @Test fun appDellaSchedaFissatePoiPiuUsate() {
+        val inst = listOf("a/1", "b/2", "c/3", "d/4")
+        val usi = mapOf("d/4" to 9, "c/3" to 4, "a/1" to 2)
+        assertEquals(listOf("b/2", "d/4", "a/1"), Contesto.mostra(listOf("b/2", "x/9"), usi, setOf("c/3"), inst))
+    }
+
+    @Test fun domandaNellIndirizzoDelleAi() {
+        assertEquals("https://claude.ai/new?q=due%20parole", Ai.Claude.pagina("due parole"))
+        assertEquals("https://lumo.proton.me/", Ai.Lumo.pagina("x"))
+        assertNull(Ai.Alfred.pagina("x"))
+        assertEquals(Ai.Alfred, Ai.da("sconosciuta"))
+        // Prima le libere ed europee, poi i servizi chiusi con una o due tacchette.
+        val primoChiuso = Ai.entries.indexOfFirst { it.chiuso }
+        assert(Ai.entries.drop(primoChiuso).all { it.chiuso && it.tacche <= 2 })
+    }
 
     @Test fun preferitaAggiungiTogli() {
         val l = listOf("a/1", "b/2", "c/3")

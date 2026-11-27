@@ -21,6 +21,8 @@ object AppHubContract {
 
     fun passwordPackage(debug: Boolean) = PasswordContract.passwordPackage(debug)
     fun galleryPackage(debug: Boolean) = if (debug) "eu.eurise.gallery.debug" else "eu.eurise.gallery"
+    /** La Postazione: i suoi «servizi» sono le tre letture sul telefono (notifiche, contatti, posizione), senza rete. */
+    fun postazionePackage(debug: Boolean) = if (debug) "eu.eurise.postazione.debug" else "eu.eurise.postazione"
 
     /** I servizi dell'app: [KEY_IDS], [KEY_TITLES], [KEY_DETAILS], [KEY_SCORES], [KEY_WHERE], [KEY_ON]; registro in [KEY_LOG]. */
     const val METHOD_PRIVACY = "privacy"

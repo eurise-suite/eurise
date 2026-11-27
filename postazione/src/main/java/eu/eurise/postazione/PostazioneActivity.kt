@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import eu.eurise.core.designsystem.theme.EuriseTheme
+import eu.eurise.core.suite.AppHubContract
 import eu.eurise.postazione.ui.PostazioneScreen
 import kotlinx.coroutines.flow.MutableSharedFlow
 
@@ -27,11 +28,20 @@ class PostazioneActivity : ComponentActivity() {
         // Come schermata iniziale «Indietro» non porta da nessuna parte; i pannelli aperti lo gestiscono da soli.
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) { override fun handleOnBackPressed() {} })
         setContent { EuriseTheme { PostazioneScreen(model, home) } }
+        if (savedInstanceState == null) dalCentroPrivacy(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         home.tryEmit(Unit)
+        dalCentroPrivacy(intent)
+    }
+
+    /** Il centro privacy dell'app Eurise chiede di accendere un interruttore: si aprono le impostazioni, con la spiegazione. */
+    private fun dalCentroPrivacy(intent: Intent?) {
+        if (intent?.action == AppHubContract.ACTION_OPEN && intent.getStringExtra(AppHubContract.EXTRA_PAGE) == AppHubContract.PAGE_PRIVACY) {
+            model.chiediImpostazioni()
+        }
     }
 
     override fun onResume() {

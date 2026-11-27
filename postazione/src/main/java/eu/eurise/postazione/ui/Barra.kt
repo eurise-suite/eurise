@@ -7,6 +7,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,24 +58,24 @@ import eu.eurise.core.designsystem.icon.shimmer
 import eu.eurise.core.designsystem.icon.softTint
 import eu.eurise.postazione.PostazioneModel
 import eu.eurise.postazione.R
-import eu.eurise.postazione.data.Gruppi
+import eu.eurise.postazione.data.Categoria
 import eu.eurise.postazione.data.Gruppo
 import eu.eurise.postazione.data.Icona
-import eu.eurise.postazione.data.Scheda
 import eu.eurise.postazione.data.Siti
 import eu.eurise.postazione.data.Telefono
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * La barra in basso: cinque gruppi con la loro icona (un tocco apre la preferita, tenere premuto apre il ventaglio) e la
- * lente con la stellina di Eurise dal lato della mano (un tocco cerca, tenere premuto chiama Alfred).
+ * La dock in basso: sei categorie con la loro icona, le stesse in ogni scheda (un tocco apre la preferita, tenere premuto
+ * apre il ventaglio) e la lente con la stellina di Eurise dal lato della mano (un tocco cerca ovunque, tenere premuto
+ * chiama Alfred).
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Barra(
-    model: PostazioneModel, scheda: Scheda, col: Colori,
-    onGruppo: (Gruppo) -> Unit, onVentaglio: (Gruppo) -> Unit, onLente: () -> Unit, onAlfred: () -> Unit,
+    model: PostazioneModel, col: Colori,
+    onGruppo: (String) -> Unit, onVentaglio: (String) -> Unit, onLente: () -> Unit, onAlfred: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -74,33 +84,37 @@ fun Barra(
             Modifier.combinedClickable(onClick = onLente, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onAlfred() }),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(Modifier.size(46.dp).background(col.lente, RoundedCornerShape(15.dp)), contentAlignment = Alignment.Center) {
-                LenteEurise(Color.White, Modifier.size(26.dp))
+            Box(Modifier.size(44.dp).background(col.lente, RoundedCornerShape(15.dp)), contentAlignment = Alignment.Center) {
+                LenteEurise(Color.White, Modifier.size(25.dp))
             }
-            Text(stringResource(R.string.cerca), color = col.sotto, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
+            Text(stringResource(R.string.cerca), color = col.sotto, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
         }
     }
     Row(
-        modifier.navigationBarsPadding().padding(start = 10.dp, end = 10.dp, bottom = 12.dp).fillMaxWidth().height(84.dp)
+        modifier.navigationBarsPadding().padding(start = 8.dp, end = 8.dp, bottom = 12.dp).fillMaxWidth().height(84.dp)
             .background(col.barra, RoundedCornerShape(26.dp)).padding(horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (model.mancino) { lente(); Divisore(col) }
-        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically) {
-            Gruppi.barra(scheda).forEach { g ->
-                val a = aspetto(g)
+        val voci = if (model.mancino) model.dock.reversed() else model.dock
+        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+            voci.forEach { c ->
+                val a = aspetto(c)
                 Column(
-                    Modifier.combinedClickable(
-                        onClick = { onGruppo(g) },
-                        onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onVentaglio(g) },
+                    Modifier.weight(1f).combinedClickable(
+                        onClick = { onGruppo(c.id) },
+                        onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onVentaglio(c.id) },
                     ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Box(
-                        Modifier.size(46.dp).background(a.tinta.copy(alpha = if (col.notte) 0.28f else 0.12f), RoundedCornerShape(15.dp)),
+                        Modifier.size(42.dp).background(a.tinta.copy(alpha = if (col.notte) 0.28f else 0.12f), RoundedCornerShape(14.dp)),
                         contentAlignment = Alignment.Center,
-                    ) { Icon(a.icona, null, Modifier.size(23.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta) }
-                    Text(stringResource(a.nome), color = col.sotto, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
+                    ) { Icon(a.icona, null, Modifier.size(22.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta) }
+                    Text(
+                        a.nome, color = col.sotto, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 4.dp, start = 1.dp, end = 1.dp),
+                    )
                 }
             }
         }
@@ -108,12 +122,12 @@ fun Barra(
     }
 }
 
-/** La barra degli schermi larghi (tablet, computer): in colonna dal lato della mano, con la lente in cima. */
+/** La dock degli schermi larghi (tablet, computer): in colonna dal lato della mano, con la lente in cima. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Binario(
-    model: PostazioneModel, scheda: Scheda, col: Colori,
-    onGruppo: (Gruppo) -> Unit, onVentaglio: (Gruppo) -> Unit, onLente: () -> Unit, onAlfred: () -> Unit, onTutte: () -> Unit,
+    model: PostazioneModel, col: Colori,
+    onGruppo: (String) -> Unit, onVentaglio: (String) -> Unit, onLente: () -> Unit, onAlfred: () -> Unit, onTutte: () -> Unit,
 ) {
     val haptic = LocalHapticFeedback.current
     Column(
@@ -126,17 +140,17 @@ fun Binario(
             contentAlignment = Alignment.Center,
         ) { LenteEurise(Color.White, Modifier.size(28.dp)) }
         Box(Modifier.width(30.dp).height(1.dp).background(col.riga))
-        Gruppi.barra(scheda).reversed().forEach { g ->
-            val a = aspetto(g)
+        model.dock.reversed().forEach { c ->
+            val a = aspetto(c)
             Column(
-                Modifier.combinedClickable(onClick = { onGruppo(g) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onVentaglio(g) }),
+                Modifier.combinedClickable(onClick = { onGruppo(c.id) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onVentaglio(c.id) }),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
                     Modifier.size(46.dp).background(a.tinta.copy(alpha = if (col.notte) 0.28f else 0.12f), RoundedCornerShape(15.dp)),
                     contentAlignment = Alignment.Center,
                 ) { Icon(a.icona, null, Modifier.size(23.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta) }
-                Text(stringResource(a.nome), color = col.sotto, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
+                Text(a.nome, color = col.sotto, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
             }
         }
         Spacer(Modifier.weight(1f))
@@ -152,11 +166,15 @@ private fun Divisore(col: Colori) {
     Box(Modifier.padding(horizontal = 4.dp).padding(bottom = 14.dp).width(1.dp).height(34.dp).background(col.riga))
 }
 
-/** Il ventaglio di un gruppo: le sue app (la prima è la preferita), «Aggiungi un'app», togli. Sta sopra la barra. */
+/**
+ * Il ventaglio di una categoria: le sue app (la prima è la preferita), «Aggiungi un'app», togli, e in fondo «Modifica la
+ * categoria» (nome, icona, o un'altra categoria al suo posto). Sta sopra la dock.
+ */
 @Composable
-fun Ventaglio(model: PostazioneModel, g: Gruppo, col: Colori, largo: Boolean, onChiudi: () -> Unit, onAggiungi: () -> Unit) {
-    val lista = model.gruppi[g].orEmpty()
-    val a = aspetto(g)
+fun Ventaglio(model: PostazioneModel, id: String, col: Colori, largo: Boolean, onChiudi: () -> Unit, onAggiungi: () -> Unit, onModifica: () -> Unit) {
+    val c = model.categoria(id) ?: return
+    val lista = model.gruppi[id].orEmpty()
+    val a = aspetto(c)
     Box(
         Modifier.fillMaxSize().background(col.fondo.copy(alpha = 0.72f))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onChiudi() },
@@ -165,15 +183,12 @@ fun Ventaglio(model: PostazioneModel, g: Gruppo, col: Colori, largo: Boolean, on
             // Sul telefono sopra la barra; sugli schermi larghi accanto al binario, dal lato della mano.
             Modifier.align(if (largo) (if (model.mancino) Alignment.CenterStart else Alignment.CenterEnd) else if (model.mancino) Alignment.BottomStart else Alignment.BottomEnd)
                 .navigationBarsPadding()
-                .padding(start = if (largo) 116.dp else 16.dp, end = if (largo) 116.dp else 16.dp, bottom = if (largo) 16.dp else 108.dp).width(270.dp),
+                .padding(start = if (largo) 116.dp else 16.dp, end = if (largo) 116.dp else 16.dp, bottom = if (largo) 16.dp else 108.dp).width(280.dp)
+                .heightIn(max = 560.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(stringResource(a.nome), color = col.inchiostro, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp))
+            Text(a.nome, color = col.inchiostro, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp))
             Text(stringResource(R.string.ventaglio_aiuto), color = col.sotto, fontSize = 12.5.sp, modifier = Modifier.padding(start = 6.dp, bottom = 4.dp))
-            Voce(col, onClick = onAggiungi) {
-                Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) { Icon(EuriseIcons.plus(), null, Modifier.size(22.dp), tint = col.accento) }
-                Text(stringResource(R.string.aggiungi_app), color = col.accento, fontSize = 14.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = 10.dp))
-            }
             if (lista.isEmpty()) Text(stringResource(R.string.gruppo_vuoto), color = col.sotto, fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp))
             lista.forEachIndexed { i, chiave ->
                 Voce(col, onClick = { if (model.apri(chiave)) onChiudi() }) {
@@ -182,17 +197,92 @@ fun Ventaglio(model: PostazioneModel, g: Gruppo, col: Colori, largo: Boolean, on
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(start = 12.dp))
                     Icon(
                         EuriseIcons.star(), stringResource(if (i == 0) R.string.preferita else R.string.rendi_preferita),
-                        Modifier.size(34.dp).clickable(enabled = i != 0) { model.preferita(g, chiave) }.padding(7.dp),
+                        Modifier.size(34.dp).clickable(enabled = i != 0) { model.preferita(id, chiave) }.padding(7.dp),
                         tint = if (i == 0) col.accento else col.sotto.copy(alpha = 0.5f),
                     )
                     Icon(
                         EuriseIcons.close(), stringResource(R.string.togli),
-                        Modifier.size(34.dp).clickable { model.togli(g, chiave) }.padding(8.dp), tint = col.sotto,
+                        Modifier.size(34.dp).clickable { model.togli(id, chiave) }.padding(8.dp), tint = col.sotto,
                     )
                 }
             }
+            Voce(col, onClick = onAggiungi) {
+                Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) { Icon(EuriseIcons.plus(), null, Modifier.size(22.dp), tint = col.accento) }
+                Text(stringResource(R.string.aggiungi_app), color = col.accento, fontSize = 14.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = 10.dp))
+            }
+            Voce(col, onClick = onModifica) {
+                Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) { Icon(EuriseIcons.pencil(), null, Modifier.size(20.dp), tint = col.accento) }
+                Text(stringResource(R.string.modifica_categoria), color = col.accento, fontSize = 14.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = 10.dp))
+            }
         }
     }
+}
+
+/**
+ * Modifica una categoria della dock: una categoria già pronta al suo posto (porta le sue app), oppure nome e icona a
+ * piacere; le frecce la spostano nella dock. Le app si scelgono dal ventaglio.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun EditorCategoria(model: PostazioneModel, id: String, onChiudi: () -> Unit) {
+    val c = model.categoria(id) ?: return
+    val nomePronto = c.pronta?.let { stringResource(nomeDi(it)) }.orEmpty()
+    var nome by remember { mutableStateOf(c.nome.ifBlank { nomePronto }) }
+    var icona by remember { mutableStateOf(c.icona) }
+    var pronta by remember { mutableStateOf(c.pronta) }
+    val nomiPronti = Gruppo.entries.associateWith { stringResource(nomeDi(it)) }
+    AlertDialog(
+        onDismissRequest = onChiudi,
+        title = { Text(stringResource(R.string.modifica_categoria)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(stringResource(R.string.cat_pronte), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Gruppo.entries.forEach { g ->
+                        val scelta = pronta == g
+                        Row(
+                            Modifier.clip(RoundedCornerShape(12.dp))
+                                .background(if (scelta) tintaDock(g.icona).copy(alpha = 0.18f) else Color(0x0F000000))
+                                .clickable { pronta = g; nome = nomiPronti.getValue(g); icona = g.icona }
+                                .padding(horizontal = 10.dp, vertical = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(iconaDock(g.icona), null, Modifier.size(16.dp), tint = tintaDock(g.icona))
+                            Text(nomiPronti.getValue(g), fontSize = 13.sp, fontWeight = if (scelta) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.padding(start = 6.dp))
+                        }
+                    }
+                }
+                OutlinedTextField(nome, { nome = it.take(24) }, label = { Text(stringResource(R.string.cat_nome)) }, singleLine = true)
+                Text(stringResource(R.string.cat_icona), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    IconeDock.forEach { k ->
+                        Box(
+                            Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                                .background(if (k == icona) tintaDock(k).copy(alpha = 0.22f) else Color.Transparent)
+                                .clickable { icona = k },
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(iconaDock(k), null, Modifier.size(21.dp), tint = tintaDock(k)) }
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.cat_posto), fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    TextButton({ model.spostaCategoria(id, -1) }) { Text("←") }
+                    TextButton({ model.spostaCategoria(id, 1) }) { Text("→") }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton({
+                val p = pronta
+                // Una categoria pronta tiene il suo id (e le sue app); con un nome diverso dal suo resta pronta ma rinominata.
+                val nuova = if (p != null) Categoria(p.name, nome.trim().takeIf { it != nomiPronti.getValue(p) }.orEmpty(), icona)
+                else Categoria(if (c.pronta == null) c.id else "c" + System.currentTimeMillis(), nome.trim().ifBlank { nomePronto }, icona)
+                model.modificaCategoria(id, nuova)
+                onChiudi()
+            }) { Text(stringResource(R.string.imp_fatto)) }
+        },
+        dismissButton = { TextButton(onChiudi) { Text(stringResource(R.string.annulla)) } },
+    )
 }
 
 @Composable

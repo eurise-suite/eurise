@@ -57,7 +57,14 @@ import eu.eurise.postazione.BuildConfig
 import eu.eurise.postazione.PostazioneModel
 import eu.eurise.postazione.R
 import eu.eurise.postazione.data.Cosa
-import eu.eurise.postazione.data.Gruppo
+import eu.eurise.postazione.data.Contesto
+import eu.eurise.postazione.data.Siti
+import eu.eurise.core.suite.PostazioneContract
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.TextButton
 import eu.eurise.postazione.data.Impegno
 import eu.eurise.postazione.data.Liberi
 import eu.eurise.postazione.data.Meteo
@@ -78,14 +85,17 @@ private val Giorno = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.ITALIAN)
 @Composable
 fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
     val col = colori(isSystemInDarkTheme(), model.accento)
-    var ventaglio by remember { mutableStateOf<Gruppo?>(null) }
+    var ventaglio by remember { mutableStateOf<String?>(null) }
+    var editor by remember { mutableStateOf<String?>(null) }
     var cassetto by remember { mutableStateOf(false) }
     var cercaSubito by remember { mutableStateOf(false) }
-    var sitoPer by remember { mutableStateOf<Gruppo?>(null) }
-    var scegliPer by remember { mutableStateOf<Gruppo?>(null) }
+    var sitoPer by remember { mutableStateOf<String?>(null) }
+    // Dove va l'app scelta nel cassetto: l'id di una categoria della dock, o «scheda:<nome>» per le app di una scheda.
+    var scegliPer by remember { mutableStateOf<String?>(null) }
     var impostazioni by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { home.collect { ventaglio = null; cassetto = false; scegliPer = null } }
+    LaunchedEffect(Unit) { home.collect { ventaglio = null; cassetto = false; scegliPer = null; editor = null } }
+    LaunchedEffect(model.impostazioniRichieste) { if (model.impostazioniRichieste > 0) impostazioni = true }
     LaunchedEffect(Unit) { while (true) { delay(15_000); model.tic() } }
     BackHandler(enabled = ventaglio != null) { ventaglio = null }
 
@@ -99,20 +109,20 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
         CieloDiFondo(cielo)
         // Telefono: barra in basso. Tablet e schermi larghi: binario dal lato della mano e foglio a due colonne.
         val largo = maxWidth >= 840.dp
-        val onGruppo: (Gruppo) -> Unit = { g ->
+        val onGruppo: (String) -> Unit = { g ->
             val prima = model.gruppi[g]?.firstOrNull()
             if (prima == null || !model.apri(prima)) ventaglio = g
         }
         if (largo) {
             Row(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                 val binario: @Composable () -> Unit = {
-                    Binario(model, scheda, col, onGruppo, { ventaglio = it }, { apriCassetto(true) }, { model.alfred() }, { apriCassetto(false) })
+                    Binario(model, col, onGruppo, { ventaglio = it }, { apriCassetto(true) }, { model.alfred() }, { apriCassetto(false) })
                 }
                 if (model.mancino) binario()
                 Column(Modifier.weight(1f).padding(bottom = 14.dp)) {
                     Testata(model, suCielo, Modifier)
                     Linguette(model, scheda, col, suCielo)
-                    Foglio(model, scheda, col, true, Modifier.weight(1f))
+                    Foglio(model, scheda, col, true, Modifier.weight(1f)) { scegliPer = "scheda:" + scheda.name; cercaSubito = false; cassetto = true }
                 }
                 if (!model.mancino) binario()
             }
@@ -120,7 +130,7 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(bottom = 116.dp)) {
                 Testata(model, suCielo, Modifier.pointerInput(Unit) { scorriSu { apriCassetto(false) } })
                 Linguette(model, scheda, col, suCielo)
-                Foglio(model, scheda, col, false, Modifier.weight(1f))
+                Foglio(model, scheda, col, false, Modifier.weight(1f)) { scegliPer = "scheda:" + scheda.name; cercaSubito = false; cassetto = true }
             }
             // Il richiamo di «Tutte le app» sopra la barra: un tocco o uno scorrimento verso l'alto.
             Column(
@@ -132,7 +142,7 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
                 Text(stringResource(R.string.tutte_le_app), color = suCielo.copy(alpha = 0.85f), fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
             }
             Barra(
-                model, scheda, col,
+                model, col,
                 onGruppo = onGruppo,
                 onVentaglio = { ventaglio = it },
                 onLente = { apriCassetto(true) },
@@ -143,15 +153,22 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
         ventaglio?.let { g ->
             Ventaglio(model, g, col, largo, onChiudi = { ventaglio = null }, onAggiungi = {
                 ventaglio = null; scegliPer = g; cercaSubito = false; cassetto = true
-            })
+            }, onModifica = { ventaglio = null; editor = g })
         }
+        editor?.let { g -> EditorCategoria(model, g, onChiudi = { editor = null; ventaglio = g }) }
         if (cassetto) {
             Cassetto(
                 model, col, cercaSubito, scegliPer,
                 onScelta = { chiave ->
                     val g = scegliPer
-                    if (g != null) { model.aggiungi(g, chiave); cassetto = false; scegliPer = null; ventaglio = g }
-                    else if (model.apri(chiave)) cassetto = false
+                    when {
+                        g == null -> if (model.apri(chiave)) cassetto = false
+                        g.startsWith("scheda:") -> {
+                            runCatching { Scheda.valueOf(g.removePrefix("scheda:")) }.getOrNull()?.let { model.fissaInScheda(it, chiave) }
+                            cassetto = false; scegliPer = null
+                        }
+                        else -> { model.aggiungi(g, chiave); cassetto = false; scegliPer = null; ventaglio = g }
+                    }
                 },
                 onSito = { sitoPer = scegliPer },
                 onImpostazioni = { impostazioni = true },
@@ -160,7 +177,11 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
         }
         sitoPer?.let { g ->
             NuovoSito(
-                onAggiungi = { indirizzo, nome -> model.aggiungiSito(g, indirizzo, nome).also { ok -> if (ok) { sitoPer = null; cassetto = false; scegliPer = null; ventaglio = g } } },
+                onAggiungi = { indirizzo, nome ->
+                    model.aggiungiSito(g, indirizzo, nome).also { ok ->
+                        if (ok) { sitoPer = null; cassetto = false; scegliPer = null; if (!g.startsWith("scheda:")) ventaglio = g }
+                    }
+                },
                 onChiudi = { sitoPer = null },
             )
         }
@@ -206,8 +227,9 @@ private fun Testata(model: PostazioneModel, colore: Color, modifier: Modifier) {
             adesso.format(Ora), color = colore, fontSize = 56.sp, fontWeight = FontWeight.Light,
             modifier = Modifier.clickable { tel.avvia(Intent(AlarmClock.ACTION_SHOW_ALARMS)) },
         )
+        // Il meteo apre la sezione Meteo dell'app Eurise; senza l'app Eurise, l'app che il telefono ha.
         Row(
-            Modifier.clickable { tel.apriSuiteO(hub, "eu.eurise.hub.MainActivity", tel.avviaPacchetto(hub)) },
+            Modifier.clickable { if (!model.apriSezione("weather")) tel.avviaPacchetto(hub)?.let { tel.avvia(it) } },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val meteo = model.giornata.meteo
@@ -259,11 +281,12 @@ private fun Linguette(model: PostazioneModel, attiva: Scheda, col: Colori, suCie
 }
 
 /**
- * Il foglio della scheda. Tre parti: in alto il «Prossimo» e la fine della giornata, poi le persone (da rispondere,
- * musica, notizie, preferiti), poi le cose da fare. Sul telefono una sotto l'altra; sugli schermi larghi due colonne.
+ * Il foglio della scheda. In alto il «Prossimo» e la fine della giornata, poi le app di questa scheda, poi le persone
+ * (da rispondere, musica, notizie, oroscopo, preferiti), poi le cose da fare. Sul telefono una sotto l'altra; sugli
+ * schermi larghi due colonne.
  */
 @Composable
-private fun Foglio(model: PostazioneModel, scheda: Scheda, col: Colori, largo: Boolean, modifier: Modifier) {
+private fun Foglio(model: PostazioneModel, scheda: Scheda, col: Colori, largo: Boolean, modifier: Modifier, onAggiungiApp: () -> Unit) {
     val primaAttiva = scheda == Scheda.entries.first()
     val forma = RoundedCornerShape(topStart = if (primaAttiva) 0.dp else 22.dp, topEnd = 22.dp, bottomStart = 22.dp, bottomEnd = 22.dp)
     val spazi = Arrangement.spacedBy(16.dp)
@@ -271,6 +294,7 @@ private fun Foglio(model: PostazioneModel, scheda: Scheda, col: Colori, largo: B
         Row(modifier.fillMaxWidth().padding(horizontal = 10.dp).background(col.foglio, forma).padding(horizontal = 6.dp)) {
             LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(14.dp), verticalArrangement = spazi) {
                 alto(model, scheda, col)
+                item(key = "app") { AppDellaScheda(model, scheda, col, onAggiungiApp) }
                 cose(model, scheda, col)
             }
             LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(14.dp), verticalArrangement = spazi) {
@@ -284,15 +308,72 @@ private fun Foglio(model: PostazioneModel, scheda: Scheda, col: Colori, largo: B
             verticalArrangement = spazi,
         ) {
             alto(model, scheda, col)
+            item(key = "app") { AppDellaScheda(model, scheda, col, onAggiungiApp) }
             persone(model, scheda, col)
             cose(model, scheda, col)
         }
     }
 }
 
-private fun apriCalendario(model: PostazioneModel) {
-    model.telefono.apriSuiteO(BuildConfig.HUB_PACKAGE, "eu.eurise.hub.CalendarApp", Intent(Intent.ACTION_VIEW, CalendarContract.CONTENT_URI.buildUpon().appendPath("time").build()))
+/**
+ * Le app di questa scheda: quelle fissate (di partenza o scelte) e le più aperte qui. Tenere premuto un'app la fissa o la
+ * toglie; l'ultimo posto aggiunge un'app scelta da te.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun AppDellaScheda(model: PostazioneModel, scheda: Scheda, col: Colori, onAggiungi: () -> Unit) {
+    val lista = model.appDellaScheda(scheda)
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    var menu by remember { mutableStateOf<String?>(null) }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            stringResource(when (scheda) { Scheda.Lavoro -> R.string.app_lavoro; Scheda.Personale -> R.string.app_personale; Scheda.Viaggio -> R.string.app_viaggio }),
+            color = col.inchiostro, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+        )
+        val celle = lista.map<String, String?> { it } + if (lista.size < Contesto.QUANTE) listOf(null) else emptyList()
+        celle.chunked(4).forEach { riga ->
+            Row(Modifier.fillMaxWidth()) {
+                riga.forEach { chiave ->
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.TopCenter) {
+                        if (chiave == null) {
+                            Column(Modifier.clickable { onAggiungi() }.padding(vertical = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(Modifier.size(46.dp).background(col.riquadro, CircleShape), contentAlignment = Alignment.Center) {
+                                    Icon(EuriseIcons.plus(), stringResource(R.string.aggiungi_app), Modifier.size(20.dp), tint = col.accento)
+                                }
+                                Text(stringResource(R.string.aggiungi), color = col.sotto, fontSize = 11.sp, maxLines = 1, modifier = Modifier.padding(top = 5.dp))
+                            }
+                        } else {
+                            Column(
+                                Modifier.combinedClickable(
+                                    onClick = { model.apri(chiave) },
+                                    onLongClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress); menu = chiave },
+                                ).padding(vertical = 2.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                if (Siti.eSito(chiave)) IconaSito(model.nomeDi(chiave), col.accento, 46.dp, col.notte)
+                                else IconaApp(model.telefono, chiave, 46.dp, col.notte)
+                                Text(
+                                    model.nomeDi(chiave), color = col.inchiostro, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(top = 5.dp, start = 2.dp, end = 2.dp),
+                                )
+                            }
+                            DropdownMenu(menu == chiave, onDismissRequest = { menu = null }) {
+                                if (!model.fissataInScheda(scheda, chiave)) {
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.app_fissa)) }, onClick = { model.fissaInScheda(scheda, chiave); menu = null })
+                                }
+                                DropdownMenuItem(text = { Text(stringResource(R.string.app_togli)) }, onClick = { model.togliDaScheda(scheda, chiave); menu = null })
+                            }
+                        }
+                    }
+                }
+                repeat(4 - riga.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+    }
 }
+
+private fun apriCalendario(model: PostazioneModel): Boolean =
+    model.telefono.apriSuiteO(BuildConfig.HUB_PACKAGE, "eu.eurise.hub.CalendarApp", Intent(Intent.ACTION_VIEW, CalendarContract.CONTENT_URI.buildUpon().appendPath("time").build()))
 
 private fun apriAttivita(model: PostazioneModel) {
     model.telefono.apriSuiteO(BuildConfig.HUB_PACKAGE, "eu.eurise.hub.TasksApp", null)
@@ -304,18 +385,20 @@ private fun LazyListScope.alto(model: PostazioneModel, scheda: Scheda, col: Colo
     if (!g.collegata) {
         item { Nota(stringResource(R.string.senza_eurise), col) }
     } else if (g.impegni.isEmpty()) {
-        item { Riga(stringResource(R.string.nessun_impegno), stringResource(R.string.calendario), col) { apriCalendario(model) } }
+        item { Riga(stringResource(R.string.nessun_impegno), stringResource(R.string.calendario), col) { model.apriSezione("calendar") || apriCalendario(model) } }
     } else {
         item {
+            // Le schede che scorrono hanno tutte la stessa misura: niente gradini tra una e l'altra.
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(g.impegni.size) { i ->
+                items(g.impegni.size, key = { g.impegni[it].id.toString() + ":" + g.impegni[it].inizio }) { i ->
                     val e = g.impegni[i]
                     SchedaImpegno(e, i == 0, scheda == Scheda.Viaggio, model.adesso, col,
                         onNaviga = { tel.avvia(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(e.luogo)))) },
                         onRitardo = { testo, titolo ->
                             tel.avvia(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, testo), titolo))
                         },
-                        onApri = { apriCalendario(model) })
+                        onApri = { model.apriImpegno(e) },
+                        onElimina = if (e.eliminabile) ({ model.eliminaImpegno(e) }) else null)
                 }
             }
         }
@@ -331,10 +414,13 @@ private fun LazyListScope.persone(model: PostazioneModel, scheda: Scheda, col: C
             if (model.ascolto && model.brano != null) item { SchedaMusica(model, col) }
             avvisi(model, col, R.string.messaggi)
             if (model.giornata.collegata) {
+                item(key = "oroscopo") { BollaOroscopo(model, col) }
                 val notizie = model.notizie
                 if (notizie != null) {
                     item { Text(stringResource(R.string.notizie), color = col.inchiostro, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
-                    if (notizie.isEmpty()) item { Nota(stringResource(R.string.notizie_vuote), col) }
+                    if (notizie.isEmpty()) item {
+                        Riga(stringResource(R.string.notizie_vuote), stringResource(R.string.centro_privacy), col) { model.apriSezione("privacy") }
+                    }
                     items(notizie.size) { i -> RigaNotizia(model, notizie[i], col) }
                 }
             }
@@ -347,31 +433,36 @@ private fun LazyListScope.persone(model: PostazioneModel, scheda: Scheda, col: C
     }
 }
 
+/** Le cose da fare (e i farmaci) in tutte le schede: in Lavoro sempre, nelle altre solo se ce ne sono. */
 private fun LazyListScope.cose(model: PostazioneModel, scheda: Scheda, col: Colori) {
     val g = model.giornata
-    if (scheda != Scheda.Lavoro || !g.collegata) return
+    if (!g.collegata) return
+    val visibili = g.cose.filter { it.id !in model.toccate }
+    if (scheda != Scheda.Lavoro && visibili.isEmpty()) return
     item {
         val totale = g.aperte + g.fatte
         Intestazione(
             if (g.fatte > 0) stringResource(R.string.da_fare_fatte, g.fatte, totale) else stringResource(R.string.da_fare_oggi, g.aperte),
             stringResource(R.string.attivita), col,
-        ) { apriAttivita(model) }
+        ) { if (!model.apriSezione("tasks")) apriAttivita(model) }
     }
-    val ora = model.adesso.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-    val sera = model.adesso.toLocalDate().atTime(18, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-    val spazio = if (g.aperte > 0) Liberi.primo(ora, sera, g.impegni.filter { !it.tuttoIlGiorno }.map { it.inizio to it.fine }) else null
-    if (spazio != null) {
-        val quante = Liberi.quante(spazio, g.cose.size)
-        item { SpazioLibero(spazio, spazio.inizio == ora, quante, col, onMetti = if (quante > 0) ({ model.mettiNelloSpazio(spazio) }) else null) }
+    if (scheda == Scheda.Lavoro) {
+        val ora = model.adesso.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val sera = model.adesso.toLocalDate().atTime(18, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val spazio = if (g.aperte > 0) Liberi.primo(ora, sera, g.impegni.filter { !it.tuttoIlGiorno }.map { it.inizio to it.fine }) else null
+        if (spazio != null) {
+            val quante = Liberi.quante(spazio, g.cose.count { !it.farmaco })
+            item { SpazioLibero(spazio, spazio.inizio == ora, quante, col, onMetti = if (quante > 0) ({ model.mettiNelloSpazio(spazio) }) else null) }
+        }
     }
-    if (g.cose.isEmpty()) item { Text(stringResource(R.string.niente_da_fare), color = col.sotto, fontSize = 13.5.sp) }
-    items(g.cose.size) { i -> RigaCosa(g.cose[i], col) { apriAttivita(model) } }
+    if (visibili.isEmpty()) item { Text(stringResource(R.string.niente_da_fare), color = col.sotto, fontSize = 13.5.sp) }
+    items(visibili.size, key = { "cosa:" + visibili[it].id }) { i -> RigaCosa(model, visibili[i], col) }
 }
 
 /** «Da rispondere»: messaggi, posta e chiamate perse ancora tra le notifiche; spento, la riga per accenderlo. */
 private fun LazyListScope.avvisi(model: PostazioneModel, col: Colori, titolo: Int) {
     if (!model.ascolto) {
-        item { AccendiAscolto(col) }
+        item { AccendiAscolto(col) { model.aggiorna() } }
         return
     }
     val lista = model.avvisi
@@ -426,45 +517,68 @@ private fun richiamo(e: Impegno, adesso: LocalDateTime, primo: Boolean): String 
 @Composable
 private fun SchedaImpegno(
     e: Impegno, primo: Boolean, viaggio: Boolean, adesso: LocalDateTime, col: Colori,
-    onNaviga: () -> Unit, onRitardo: (String, String) -> Unit, onApri: () -> Unit,
+    onNaviga: () -> Unit, onRitardo: (String, String) -> Unit, onApri: () -> Unit, onElimina: (() -> Unit)?,
 ) {
+    var menu by remember { mutableStateOf(false) }
+    var conferma by remember { mutableStateOf(false) }
     Row(
-        Modifier.width(if (primo) 300.dp else 250.dp).height(IntrinsicSize.Min)
+        Modifier.width(282.dp).height(170.dp)
             .background(col.prossimo, RoundedCornerShape(18.dp)).clickable { onApri() },
     ) {
-        Box(Modifier.width(5.dp).fillMaxHeight().background(col.lente, RoundedCornerShape(topStart = 18.dp, bottomStart = 18.dp)))
-        Column(Modifier.padding(start = 13.dp, end = 14.dp, top = 13.dp, bottom = 13.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(Modifier.width(5.dp).fillMaxHeight().background(if (primo) col.lente else androidx.compose.ui.graphics.SolidColor(col.riga), RoundedCornerShape(topStart = 18.dp, bottomStart = 18.dp)))
+        Column(Modifier.fillMaxHeight().padding(start = 13.dp, end = 8.dp, top = 12.dp, bottom = 12.dp)) {
             val tempo = if (e.tuttoIlGiorno) stringResource(R.string.tutto_il_giorno) else orario(e.inizio) + "–" + orario(e.fine)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(richiamo(e, adesso, primo), color = col.accento, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 Text(tempo, color = col.sotto, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
-            }
-            Text(e.titolo, color = col.inchiostro, fontSize = if (primo) 19.sp else 16.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            if (e.luogo.isNotBlank()) Text(e.luogo, color = col.sotto, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            val ora = adesso.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            val vicino = primo && !e.tuttoIlGiorno && e.inizio - ora < 90 * 60_000L
-            if (primo && (e.luogo.isNotBlank() || vicino)) {
-                Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (e.luogo.isNotBlank()) {
-                        Box(
-                            Modifier.weight(1.4f).height(40.dp).background(col.lente, RoundedCornerShape(12.dp)).clickable { onNaviga() },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(stringResource(if (viaggio) R.string.avvia_navigatore else R.string.naviga), color = Color.White, fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                    if (vicino) {
-                        val testo = stringResource(if (viaggio) R.string.arrivo_testo else R.string.ritardo_testo, e.titolo)
-                        val titolo = stringResource(if (viaggio) R.string.arrivo_a else R.string.ritardo_a)
-                        Box(
-                            Modifier.weight(1f).height(40.dp).background(col.foglio, RoundedCornerShape(12.dp)).clickable { onRitardo(testo, titolo) },
-                            contentAlignment = Alignment.Center,
-                        ) { Text(stringResource(if (viaggio) R.string.avvisa else R.string.ritardo), color = col.inchiostro, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold) }
+                Box {
+                    Icon(EuriseIcons.more(), stringResource(R.string.altro), Modifier.size(32.dp).clickable { menu = true }.padding(7.dp), tint = col.sotto)
+                    DropdownMenu(menu, onDismissRequest = { menu = false }) {
+                        DropdownMenuItem(text = { Text(stringResource(R.string.apri_calendario)) }, onClick = { menu = false; onApri() })
+                        if (e.luogo.isNotBlank()) DropdownMenuItem(text = { Text(stringResource(R.string.naviga)) }, onClick = { menu = false; onNaviga() })
+                        if (onElimina != null) DropdownMenuItem(text = { Text(stringResource(R.string.elimina)) }, onClick = { menu = false; conferma = true })
                     }
                 }
             }
+            Text(e.titolo, color = col.inchiostro, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 21.sp)
+            Text(e.luogo, color = col.sotto, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
+            Spacer(Modifier.weight(1f))
+            val ora = adesso.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val vicino = !e.tuttoIlGiorno && e.inizio - ora < 90 * 60_000L
+            Row(Modifier.padding(end = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (e.luogo.isNotBlank()) {
+                    Box(
+                        Modifier.weight(1.4f).height(38.dp).background(col.lente, RoundedCornerShape(12.dp)).clickable { onNaviga() },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(stringResource(if (viaggio) R.string.avvia_navigatore else R.string.naviga), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+                if (vicino) {
+                    val testo = stringResource(if (viaggio) R.string.arrivo_testo else R.string.ritardo_testo, e.titolo)
+                    val titolo = stringResource(if (viaggio) R.string.arrivo_a else R.string.ritardo_a)
+                    Box(
+                        Modifier.weight(1f).height(38.dp).background(col.foglio, RoundedCornerShape(12.dp)).clickable { onRitardo(testo, titolo) },
+                        contentAlignment = Alignment.Center,
+                    ) { Text(stringResource(if (viaggio) R.string.avvisa else R.string.ritardo), color = col.inchiostro, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
+                }
+                if (e.luogo.isBlank() && !vicino) {
+                    Box(
+                        Modifier.weight(1f).height(38.dp).background(col.foglio, RoundedCornerShape(12.dp)).clickable { onApri() },
+                        contentAlignment = Alignment.Center,
+                    ) { Text(stringResource(R.string.apri), color = col.inchiostro, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
+                }
+            }
         }
+    }
+    if (conferma && onElimina != null) {
+        AlertDialog(
+            onDismissRequest = { conferma = false },
+            title = { Text(stringResource(R.string.elimina_impegno)) },
+            text = { Text(stringResource(R.string.elimina_impegno_d, e.titolo)) },
+            confirmButton = { TextButton({ conferma = false; onElimina() }) { Text(stringResource(R.string.elimina)) } },
+            dismissButton = { TextButton({ conferma = false }) { Text(stringResource(R.string.annulla)) } },
+        )
     }
 }
 
@@ -479,19 +593,57 @@ internal fun Intestazione(titolo: String, link: String, col: Colori, onLink: () 
     }
 }
 
+/**
+ * Una cosa da fare (o la dose di un farmaco): il quadratino la fa (la dose la prende), il tocco la apre nelle Attività
+ * (o nei Farmaci), i tre puntini portano a domani o la eliminano (la dose si salta).
+ */
 @Composable
-private fun RigaCosa(c: Cosa, col: Colori, onApri: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable { onApri() }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.padding(horizontal = 6.dp).size(20.dp).background(Color.Transparent, RoundedCornerShape(6.dp))
-            .drawBehind { drawRoundRect(col.sotto, cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.8.dp.toPx())) })
-        Column(Modifier.weight(1f).padding(start = 8.dp)) {
-            Text(c.titolo, color = col.inchiostro, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (c.scadenza > 0) {
-                val t = Instant.ofEpochMilli(c.scadenza).atZone(ZoneId.systemDefault()).toLocalTime()
-                if (t.hour != 0 || t.minute != 0) Text(t.format(Ora), color = col.sotto, fontSize = 13.sp)
+private fun RigaCosa(model: PostazioneModel, c: Cosa, col: Colori) {
+    var menu by remember { mutableStateOf(false) }
+    var conferma by remember { mutableStateOf(false) }
+    Row(Modifier.fillMaxWidth().clickable { model.apriCosa(c) }.padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier.size(40.dp).clickable(onClickLabel = stringResource(if (c.farmaco) R.string.presa else R.string.fatta)) { model.azioneCosa(c, PostazioneContract.ACT_DONE) },
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(Modifier.size(20.dp).drawBehind {
+                drawRoundRect(col.sotto, cornerRadius = androidx.compose.ui.geometry.CornerRadius(if (c.farmaco) 10.dp.toPx() else 6.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.8.dp.toPx()))
+            })
+        }
+        Column(Modifier.weight(1f).padding(start = 4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (c.farmaco) Icon(EuriseIcons.medical(), null, Modifier.padding(end = 5.dp).size(14.dp), tint = Color(0xFFDC2626))
+                Text(c.titolo, color = col.inchiostro, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+            val t = if (c.scadenza > 0) Instant.ofEpochMilli(c.scadenza).atZone(ZoneId.systemDefault()).toLocalTime() else null
+            val sotto = listOfNotNull(
+                t?.takeIf { it.hour != 0 || it.minute != 0 }?.format(Ora),
+                if (c.farmaco) stringResource(R.string.farmaco) else null,
+            ).joinToString(" · ")
+            if (sotto.isNotEmpty()) Text(sotto, color = col.sotto, fontSize = 13.sp)
         }
         if (c.scaduta) Text(stringResource(R.string.scaduta), color = Color(0xFFB3261E), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Box {
+            Icon(EuriseIcons.more(), stringResource(R.string.altro), Modifier.size(40.dp).clickable { menu = true }.padding(11.dp), tint = col.sotto)
+            DropdownMenu(menu, onDismissRequest = { menu = false }) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(if (c.farmaco) R.string.presa else R.string.fatta)) },
+                    onClick = { menu = false; model.azioneCosa(c, PostazioneContract.ACT_DONE) },
+                )
+                if (!c.farmaco) DropdownMenuItem(text = { Text(stringResource(R.string.a_domani)) }, onClick = { menu = false; model.azioneCosa(c, PostazioneContract.ACT_TOMORROW) })
+                DropdownMenuItem(text = { Text(stringResource(if (c.farmaco) R.string.apri_farmaci else R.string.apri_attivita)) }, onClick = { menu = false; model.apriCosa(c) })
+                DropdownMenuItem(text = { Text(stringResource(if (c.farmaco) R.string.salta else R.string.elimina)) }, onClick = { menu = false; conferma = true })
+            }
+        }
+    }
+    if (conferma) {
+        AlertDialog(
+            onDismissRequest = { conferma = false },
+            title = { Text(stringResource(if (c.farmaco) R.string.salta_dose else R.string.elimina_cosa)) },
+            text = { Text(c.titolo) },
+            confirmButton = { TextButton({ conferma = false; model.azioneCosa(c, PostazioneContract.ACT_DELETE) }) { Text(stringResource(if (c.farmaco) R.string.salta else R.string.elimina)) } },
+            dismissButton = { TextButton({ conferma = false }) { Text(stringResource(R.string.annulla)) } },
+        )
     }
 }
 

@@ -17,7 +17,10 @@ data class Preferito(val nome: String, val numero: String) {
  * tastierino con il numero già scritto (la Postazione non chiama da sola e non ha il permesso di farlo).
  */
 object Preferiti {
-    fun permesso(context: Context): Boolean =
+    /** Permesso di Android e interruttore della Postazione ([Uso.Contatti]). */
+    fun permesso(context: Context): Boolean = concesso(context) && Uso.Contatti.acceso(context)
+
+    fun concesso(context: Context): Boolean =
         context.checkSelfPermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
 
     /** Da chiamare fuori dal thread principale. */

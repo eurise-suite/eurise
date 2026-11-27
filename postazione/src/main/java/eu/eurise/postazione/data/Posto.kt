@@ -17,7 +17,10 @@ data class Auto(val lat: Double, val lon: Double, val quando: Long)
  * preferenze private della Postazione (che non ha la rete).
  */
 object Posto {
-    fun permesso(context: Context): Boolean =
+    /** Permesso di Android e interruttore della Postazione ([Uso.Posizione]). */
+    fun permesso(context: Context): Boolean = concesso(context) && Uso.Posizione.acceso(context)
+
+    fun concesso(context: Context): Boolean =
         context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
             context.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 

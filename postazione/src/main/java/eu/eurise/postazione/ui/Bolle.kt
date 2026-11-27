@@ -50,6 +50,11 @@ import eu.eurise.postazione.data.Musica
 import eu.eurise.postazione.data.Notizia
 import eu.eurise.postazione.data.Scheda
 import eu.eurise.postazione.data.Siti
+import eu.eurise.postazione.data.Uso
+import eu.eurise.postazione.data.Posto
+import eu.eurise.postazione.data.Preferiti
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 
 /** Quello che sta suonando, con indietro, suona o pausa, avanti. C'è solo con l'accesso alle notifiche acceso. */
 @Composable
@@ -153,6 +158,7 @@ fun RigaNotizia(model: PostazioneModel, n: Notizia, col: Colori) {
 /** «Dove hai lasciato l'auto»: un tocco segna il punto, «Portami lì» lo apre nelle mappe. */
 @Composable
 fun BollaAuto(model: PostazioneModel, col: Colori) {
+    val context = LocalContext.current
     var chiedi by remember { mutableStateOf(false) }
     val permesso = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { model.aggiorna() }
     if (!model.posizione) {
@@ -202,7 +208,9 @@ fun BollaAuto(model: PostazioneModel, col: Colori) {
             onDismiss = { chiedi = false },
             onAccept = {
                 chiedi = false
-                permesso.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                Uso.Posizione.accendi(context)
+                if (Posto.concesso(context)) model.aggiorna()
+                else permesso.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
             },
         )
     }
@@ -210,7 +218,7 @@ fun BollaAuto(model: PostazioneModel, col: Colori) {
 
 /** «Da rispondere» e musica sono spenti: una riga per accenderli, dopo la spiegazione. */
 @Composable
-fun AccendiAscolto(col: Colori) {
+fun AccendiAscolto(col: Colori, onAcceso: () -> Unit = {}) {
     val context = LocalContext.current
     var chiedi by remember { mutableStateOf(false) }
     RigaAccendi(stringResource(R.string.ascolto_spento), col) { chiedi = true }
@@ -224,7 +232,11 @@ fun AccendiAscolto(col: Colori) {
             score = 10,
             where = Jurisdiction.Phone,
             onDismiss = { chiedi = false },
-            onAccept = { chiedi = false; Ascolto.impostazioni(context) },
+            onAccept = {
+                chiedi = false
+                Uso.Notifiche.accendi(context)
+                if (Ascolto.permesso(context)) onAcceso() else Ascolto.impostazioni(context)
+            },
         )
     }
 }
@@ -273,7 +285,11 @@ fun BollaPreferiti(model: PostazioneModel, col: Colori) {
             score = 10,
             where = Jurisdiction.Phone,
             onDismiss = { chiedi = false },
-            onAccept = { chiedi = false; permesso.launch(Manifest.permission.READ_CONTACTS) },
+            onAccept = {
+                chiedi = false
+                Uso.Contatti.accendi(context)
+                if (Preferiti.concesso(context)) model.aggiorna() else permesso.launch(Manifest.permission.READ_CONTACTS)
+            },
         )
     }
 }
@@ -348,6 +364,55 @@ fun SpazioLibero(spazio: Intervallo, daAdesso: Boolean, cose: Int, col: Colori, 
                 stringResource(R.string.mettile_li), color = col.accento, fontSize = 13.sp, fontWeight = FontWeight.Bold,
                 modifier = Modifier.clickable { onMetti() }.padding(horizontal = 12.dp, vertical = 12.dp),
             )
+        }
+    }
+}
+
+/**
+ * L'oroscopo di oggi (Personale): lo legge l'app Eurise con il servizio «Oroscopo» del centro privacy, spento di base.
+ * Spento, la riga porta al centro privacy; il nome del segno si tocca per cambiarlo (lo stesso della Scrivania).
+ */
+@Composable
+fun BollaOroscopo(model: PostazioneModel, col: Colori) {
+    val o = model.oroscopo ?: return
+    if (!o.acceso) {
+        Row(
+            Modifier.fillMaxWidth().background(col.riquadro, RoundedCornerShape(12.dp)).padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.oroscopo_spento), color = col.sotto, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.weight(1f))
+            Text(
+                stringResource(R.string.centro_privacy), color = col.accento, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable { model.apriSezione("privacy") }.padding(horizontal = 12.dp, vertical = 12.dp),
+            )
+        }
+        return
+    }
+    var segni by remember { mutableStateOf(false) }
+    Column(
+        Modifier.fillMaxWidth().background(col.riquadro, RoundedCornerShape(18.dp))
+            .clickable(enabled = o.link.isNotBlank()) { Siti.normalizza(o.link)?.let { model.telefono.apriSito(it) } }
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.oroscopo), color = col.inchiostro, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Box {
+                Row(Modifier.clickable { segni = true }.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(o.segni.getOrNull(o.segno).orEmpty(), color = col.accento, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Icon(EuriseIcons.chevronDown(), stringResource(R.string.oroscopo_cambia), Modifier.size(14.dp), tint = col.accento)
+                }
+                DropdownMenu(segni, onDismissRequest = { segni = false }) {
+                    o.segni.forEachIndexed { i, nome ->
+                        DropdownMenuItem(text = { Text(nome, fontWeight = if (i == o.segno) FontWeight.Bold else FontWeight.Normal) }, onClick = { segni = false; model.cambiaSegno(i) })
+                    }
+                }
+            }
+        }
+        if (o.testo.isBlank()) Text(stringResource(R.string.oroscopo_vuoto), color = col.sotto, fontSize = 13.sp)
+        else {
+            Text(o.testo, color = col.inchiostro, fontSize = 13.5.sp, lineHeight = 19.sp, maxLines = 6, overflow = TextOverflow.Ellipsis)
+            if (o.fonte.isNotBlank()) Text(o.fonte, color = col.sotto, fontSize = 12.sp)
         }
     }
 }

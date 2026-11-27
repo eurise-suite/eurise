@@ -55,6 +55,8 @@ class AscoltoService : NotificationListenerService() {
     override fun onNotificationRemoved(sbn: StatusBarNotification?) = aggiorna()
 
     internal fun aggiorna() {
+        // Spento dalla Postazione o dal centro privacy: nulla in memoria, anche se Android tiene ancora l'accesso.
+        if (!Uso.Notifiche.acceso(this)) { avvisi.value = emptyList(); return }
         val attive = runCatching { activeNotifications }.getOrNull() ?: return
         val ora = System.currentTimeMillis()
         val pausa = ora < fino
@@ -100,7 +102,10 @@ class AscoltoService : NotificationListenerService() {
 }
 
 object Ascolto {
-    fun acceso(context: Context): Boolean =
+    /** Accesso dato da Android e interruttore della Postazione acceso ([Uso.Notifiche]). */
+    fun acceso(context: Context): Boolean = permesso(context) && Uso.Notifiche.acceso(context)
+
+    fun permesso(context: Context): Boolean =
         runCatching { NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName) }.getOrDefault(false)
 
     /** La pagina di Android dove l'accesso si accende e si spegne. */

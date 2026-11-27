@@ -1,27 +1,71 @@
 package eu.eurise.postazione.data
 
 /**
- * I gruppi della barra in basso: un'icona sola per gruppo, un tocco apre la preferita (la prima), tenere premuto apre il
- * ventaglio con tutte e con «Aggiungi un'app». Ogni gruppo funziona anche senza la suite: se un'app Eurise manca, prende
- * quella che il telefono usa per quel compito (telefono, SMS, posta, browser, mappe, fotocamera).
+ * Le categorie già pronte della dock: un'icona sola per categoria, un tocco apre la preferita (la prima), tenere premuto
+ * apre il ventaglio con tutte, «Aggiungi un'app» e «Modifica la categoria». Ogni categoria funziona anche senza la suite:
+ * se un'app Eurise manca, prende quella che il telefono usa per quel compito (telefono, SMS, posta, browser, mappe…).
  */
-enum class Gruppo(val predefinite: List<String>) {
-    Lavoro(listOf("eu.eurise.office", "eu.eurise.hub/eu.eurise.hub.NotesApp", "eu.eurise.hub/eu.eurise.hub.FileApp")),
-    Foto(listOf("eu.eurise.camera|@camera", "eu.eurise.gallery")),
-    Mappe(listOf("eu.eurise.maps|@maps")),
-    WebAI(listOf("eu.eurise.ai", "eu.eurise.browser|@browser")),
-    Comunica(listOf("eu.eurise.phone|@dialer", "eu.eurise.messages|@sms", "eu.eurise.chat", "eu.eurise.mail|@email")),
-    Musica(listOf("org.schabi.newpipe", "com.spotify.music", "com.google.android.youtube", "@music")),
-    Casa(emptyList()),
-    Appunti(listOf("eu.eurise.hub/eu.eurise.hub.NotesApp", "eu.eurise.hub/eu.eurise.hub.ScannerApp")),
+enum class Gruppo(val icona: String, val predefinite: List<String>) {
+    Lavoro("work", listOf("eu.eurise.office", "eu.eurise.hub/eu.eurise.hub.NotesApp", "eu.eurise.hub/eu.eurise.hub.FileApp")),
+    Foto("camera", listOf("eu.eurise.camera|@camera", "eu.eurise.gallery")),
+    Mappe("map", listOf("eu.eurise.maps|@maps")),
+    WebAI("globe", listOf("eu.eurise.browser|@browser", "eu.eurise.ai")),
+    Musica("music", listOf("org.schabi.newpipe", "com.spotify.music", "com.google.android.youtube", "@music")),
+    Comunica("chat", listOf("eu.eurise.phone|@dialer", "eu.eurise.messages|@sms", "eu.eurise.chat", "eu.eurise.mail|@email")),
+    Casa("home", emptyList()),
+    Appunti("note", listOf("eu.eurise.hub/eu.eurise.hub.NotesApp", "eu.eurise.hub/eu.eurise.hub.ScannerApp")),
+    Agenda("calendar", listOf("eu.eurise.hub/eu.eurise.hub.CalendarApp", "eu.eurise.hub/eu.eurise.hub.TasksApp", "eu.eurise.hub/eu.eurise.hub.AgendaApp")),
+    Banca("bank", emptyList()),
+    Acquisti("cart", emptyList()),
+    Viaggi("plane", listOf("eu.eurise.maps|@maps")),
+    Salute("medical", emptyList()),
+    Giochi("game", emptyList()),
+    Lettura("book", listOf("eu.eurise.read")),
+    Sport("fitness", emptyList()),
+}
+
+/**
+ * Una categoria della dock: [id] è il nome di un [Gruppo] già pronto o `c` più un numero per quelle fatte a mano; [nome]
+ * vuoto vuol dire il nome della categoria pronta; [icona] è una chiave delle icone della dock.
+ */
+data class Categoria(val id: String, val nome: String, val icona: String) {
+    val pronta: Gruppo? get() = Gruppo.entries.firstOrNull { it.name == id }
 }
 
 object Gruppi {
-    /** La barra di ogni scheda: Comunica è sempre la quinta, accanto alla lente, così la mano impara dov'è. */
-    fun barra(scheda: Scheda): List<Gruppo> = when (scheda) {
-        Scheda.Lavoro -> listOf(Gruppo.Lavoro, Gruppo.Foto, Gruppo.Mappe, Gruppo.WebAI, Gruppo.Comunica)
-        Scheda.Personale -> listOf(Gruppo.Musica, Gruppo.Casa, Gruppo.Foto, Gruppo.WebAI, Gruppo.Comunica)
-        Scheda.Viaggio -> listOf(Gruppo.Mappe, Gruppo.Foto, Gruppo.Appunti, Gruppo.Musica, Gruppo.Comunica)
+    /** Quante categorie stanno nella dock accanto alla lente. */
+    const val POSTI = 6
+
+    /**
+     * La dock di partenza, la stessa in ogni scheda: le icone non cambiano posto, così la mano impara dove sono.
+     * Comunica è l'ultima, accanto alla lente.
+     */
+    val dockIniziale: List<Categoria> = listOf(Gruppo.Lavoro, Gruppo.Foto, Gruppo.Mappe, Gruppo.WebAI, Gruppo.Musica, Gruppo.Comunica)
+        .map { Categoria(it.name, "", it.icona) }
+
+    /** La dock salvata (una categoria per riga: id, nome, icona separati da tabulazioni); quella di partenza se manca. */
+    fun leggiDock(testo: String?): List<Categoria> {
+        val lette = testo.orEmpty().lines().mapNotNull { riga ->
+            val p = riga.split('\t')
+            if (p.size < 3 || p[0].isBlank()) null else Categoria(p[0].trim(), p[1].trim().take(24), p[2].trim())
+        }.distinctBy { it.id }.take(POSTI)
+        return if (lette.size == POSTI) lette else dockIniziale
+    }
+
+    fun scriviDock(dock: List<Categoria>): String =
+        dock.joinToString("\n") { listOf(it.id, it.nome.replace('\t', ' ').replace('\n', ' '), it.icona).joinToString("\t") }
+
+    /** La dock con la categoria [vecchia] sostituita da [nuova] (stesso posto). */
+    fun sostituisci(dock: List<Categoria>, vecchia: String, nuova: Categoria): List<Categoria> =
+        if (nuova.id != vecchia && dock.any { it.id == nuova.id }) dock.map { if (it.id == vecchia) nuova.copy(id = "c" + System.currentTimeMillis()) else it }
+        else dock.map { if (it.id == vecchia) nuova else it }
+
+    /** Sposta la categoria [id] di [verso] posti (−1 a sinistra, +1 a destra). */
+    fun sposta(dock: List<Categoria>, id: String, verso: Int): List<Categoria> {
+        val i = dock.indexOfFirst { it.id == id }
+        val j = i + verso
+        if (i < 0 || j !in dock.indices) return dock
+        return dock.toMutableList().apply { add(j, removeAt(i)) }
     }
 
     /**
@@ -106,4 +150,34 @@ object Usi {
     /** Le [n] più usate tra quelle installate, nell'ordine dell'uso; a parità resta l'ordine alfabetico di [installate]. */
     fun piuUsate(usi: Map<String, Int>, installate: List<String>, n: Int): List<String> =
         installate.filter { (usi[it] ?: 0) > 0 }.sortedByDescending { usi[it] ?: 0 }.take(n)
+}
+
+/**
+ * Le app di una scheda (Lavoro, Personale, Viaggio): prima quelle fissate (di partenza o scelte da te), poi le più aperte
+ * mentre quella scheda era davanti, senza quelle che hai tolto. Tutto resta sul telefono.
+ */
+object Contesto {
+    const val QUANTE = 8
+
+    fun predefinite(scheda: Scheda): List<String> = when (scheda) {
+        Scheda.Lavoro -> listOf(
+            "eu.eurise.mail|@email", "eu.eurise.office", "eu.eurise.hub/eu.eurise.hub.CalendarApp", "eu.eurise.hub/eu.eurise.hub.TasksApp",
+            "eu.eurise.hub/eu.eurise.hub.NotesApp", "eu.eurise.hub/eu.eurise.hub.FileApp", "eu.eurise.hub/eu.eurise.hub.ScannerApp", "eu.eurise.chat",
+        )
+        Scheda.Personale -> listOf(
+            "eu.eurise.messages|@sms", "eu.eurise.gallery", "eu.eurise.browser|@browser", "eu.eurise.chat",
+            "@music", "eu.eurise.read", "eu.eurise.hub/eu.eurise.hub.AgendaApp", "eu.eurise.ai",
+        )
+        Scheda.Viaggio -> listOf(
+            "eu.eurise.maps|@maps", "eu.eurise.camera|@camera", "eu.eurise.phone|@dialer", "eu.eurise.messages|@sms",
+            "@music", "eu.eurise.hub/eu.eurise.hub.NotesApp", "eu.eurise.gallery", "eu.eurise.browser|@browser",
+        )
+    }
+
+    /** Le app da mostrare: [fissate] nell'ordine, poi le [usi] più alte tra le installate, al più [QUANTE]. */
+    fun mostra(fissate: List<String>, usi: Map<String, Int>, nascoste: Set<String>, installate: List<String>): List<String> {
+        val fisse = fissate.filter { it in installate || Siti.eSito(it) }
+        val altre = Usi.piuUsate(usi, installate, QUANTE * 2).filter { it !in fisse && it !in nascoste }
+        return (fisse + altre).distinct().take(QUANTE)
+    }
 }

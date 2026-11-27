@@ -52,14 +52,14 @@ jobs:
           run-id: ${{ steps.giro.outputs.id }}
           github-token: ${{ github.token }}
           path: artefatti
-          pattern: "eurise-{debug,password-debug,messaggi-debug,tastiera-debug}-*"
+          pattern: "eurise-{debug,password-debug,messaggi-debug,tastiera-debug,postazione-debug}-*"
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           run-id: ${{ steps.giro.outputs.prima }}
           github-token: ${{ github.token }}
           path: scaricati
-          pattern: "eurise-{debug,password-debug,messaggi-debug,tastiera-debug}-*"
+          pattern: "eurise-{debug,password-debug,messaggi-debug,tastiera-debug,postazione-debug}-*"
 
       - name: APK «prima», «dopo» e le due app di prova
         env:
@@ -74,7 +74,7 @@ jobs:
             for f in $(find "$1" -name '*.apk'); do
               pkg=$("$bt/aapt2" dump packagename "$f" 2>/dev/null || true)
               case "$pkg" in
-                eu.eurise.hub.debug|eu.eurise.password.debug|eu.eurise.messages.debug|eu.eurise.keyboard.debug) cp "$f" "$2/$pkg.apk";;
+                eu.eurise.hub.debug|eu.eurise.password.debug|eu.eurise.messages.debug|eu.eurise.keyboard.debug|eu.eurise.postazione.debug) cp "$f" "$2/$pkg.apk";;
               esac
             done
             ls -la "$2"

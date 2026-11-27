@@ -170,6 +170,15 @@ fun EuriseHub(data: EuriseData, request: HubRequest? = null) {
             section == "new_voice_note" -> navController.openNote(null, voice = true)
             section == "new_task" -> { goTo(Section.Tasks); newTaskRequests++ }
             section.startsWith("person:") -> navController.openPerson(section.removePrefix("person:"))
+            // Dalla Postazione: un impegno («event:<id>:<inizio>») o una cosa da fare («task:<id>»).
+            section.startsWith("event:") -> {
+                val parts = section.removePrefix("event:").split(':').mapNotNull { it.toLongOrNull() }
+                parts.getOrNull(0)?.let { navController.openEvent(it, parts.getOrNull(1)?.takeIf { b -> b > 0 }, null) }
+            }
+            section.startsWith("task:") -> section.removePrefix("task:").toLongOrNull()?.let {
+                taskToOpen = it
+                goTo(Section.Tasks)
+            }
             section.startsWith("note:") -> section.removePrefix("note:").toLongOrNull()?.let { navController.openNote(it) }
             // "trip:uri:<content uri>", "trip:file:<percorso>", "trip:raw:<testo della carta d'imbarco>" (già codificati).
             section.startsWith("trip:") -> {

@@ -76,6 +76,38 @@ class RecentFilesRepository(private val context: Context) {
         out
     }
 
+    /**
+     * Un documento dal suo numero nella raccolta dei file ([MediaStore]), con le stesse regole di [recent]: solo i tipi di
+     * lavoro, niente cartelle nascoste o di altre app. Serve a riaprire quello che la ricerca della Postazione ha trovato.
+     */
+    suspend fun byId(id: Long): RecentFile? = withContext(Dispatchers.IO) {
+        if (!hasAccess() || id <= 0L) return@withContext null
+        val collection = MediaStore.Files.getContentUri("external")
+        val projection = arrayOf(
+            MediaStore.Files.FileColumns._ID,
+            MediaStore.Files.FileColumns.DISPLAY_NAME,
+            MediaStore.Files.FileColumns.MIME_TYPE,
+            MediaStore.Files.FileColumns.DATE_MODIFIED,
+            MediaStore.Files.FileColumns.RELATIVE_PATH,
+        )
+        val mimeClauses = WorkMimes.joinToString(" OR ") { "${MediaStore.Files.FileColumns.MIME_TYPE} LIKE ?" }
+        val selection = "${MediaStore.Files.FileColumns._ID} = ? AND ($mimeClauses)"
+        runCatching {
+            context.contentResolver.query(collection, projection, selection, (listOf(id.toString()) + WorkMimes).toTypedArray(), null)?.use { c ->
+                if (!c.moveToFirst()) return@use null
+                val path = c.getString(4).orEmpty()
+                if (path.contains("/.") || path.startsWith("Android/")) return@use null
+                RecentFile(
+                    name = c.getString(1).orEmpty(),
+                    folder = path.trimEnd('/').substringAfterLast('/').ifBlank { path },
+                    mime = c.getString(2).orEmpty(),
+                    modified = c.getLong(3) * 1000,
+                    uri = ContentUris.withAppendedId(collection, c.getLong(0)),
+                )
+            }
+        }.getOrNull()
+    }
+
     fun open(file: RecentFile) {
         val intent = Intent(Intent.ACTION_VIEW)
             .setDataAndType(file.uri, file.mime.ifBlank { "*/*" })

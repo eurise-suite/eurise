@@ -17,7 +17,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.postazione.R
 import eu.eurise.postazione.data.Cielo
+import eu.eurise.postazione.data.Categoria
 import eu.eurise.postazione.data.Gruppo
+import androidx.compose.ui.res.stringResource
 
 /** I tre accenti della suite (tela «Tavolozza»): Ceruleo di partenza, Petrolio più sobrio, Inchiostro e ottone più caldo. */
 enum class Accento { Ceruleo, Petrolio, Ottone }
@@ -106,15 +108,51 @@ fun LenteEurise(colore: Color, modifier: Modifier = Modifier) {
     }
 }
 
-class Aspetto(@StringRes val nome: Int, val icona: ImageVector, val tinta: Color)
+class Aspetto(val nome: String, val icona: ImageVector, val tinta: Color)
 
-fun aspetto(g: Gruppo): Aspetto = when (g) {
-    Gruppo.Lavoro -> Aspetto(R.string.g_lavoro, EuriseIcons.work(), Color(0xFF7A2EE0))
-    Gruppo.Foto -> Aspetto(R.string.g_foto, EuriseIcons.camera(), Color(0xFF4A4440))
-    Gruppo.Mappe -> Aspetto(R.string.g_mappe, EuriseIcons.map(), Color(0xFF1D55E6))
-    Gruppo.WebAI -> Aspetto(R.string.g_webai, EuriseIcons.globe(), Color(0xFFB0307A))
-    Gruppo.Comunica -> Aspetto(R.string.g_comunica, EuriseIcons.chat(), Color(0xFF1F9A47))
-    Gruppo.Musica -> Aspetto(R.string.g_musica, EuriseIcons.music(), Color(0xFFD2453B))
-    Gruppo.Casa -> Aspetto(R.string.g_casa, EuriseIcons.bag(), Color(0xFFB07A10))
-    Gruppo.Appunti -> Aspetto(R.string.g_appunti, EuriseIcons.note(), Color(0xFFA8742A))
+/** Le icone che si possono dare a una categoria della dock, ognuna con il suo colore (come nella Scrivania). */
+val IconeDock: List<String> = listOf(
+    "work", "camera", "map", "globe", "music", "chat", "home", "note", "calendar", "bank", "cart", "plane",
+    "medical", "game", "book", "fitness", "star", "heart", "folder", "tools", "phone", "mail", "car", "paw",
+    "gift", "school", "leaf", "coffee", "spark", "news", "image", "shield", "euro", "baby", "palette", "code",
+)
+
+fun iconaDock(chiave: String): ImageVector = when (chiave) {
+    "work" -> EuriseIcons.work(); "camera" -> EuriseIcons.camera(); "map" -> EuriseIcons.map(); "globe" -> EuriseIcons.globe()
+    "music" -> EuriseIcons.music(); "chat" -> EuriseIcons.chat(); "home" -> EuriseIcons.home(); "note" -> EuriseIcons.note()
+    "calendar" -> EuriseIcons.calendar(); "bank" -> EuriseIcons.bank(); "cart" -> EuriseIcons.cart(); "plane" -> EuriseIcons.plane()
+    "medical" -> EuriseIcons.medical(); "game" -> EuriseIcons.game(); "book" -> EuriseIcons.book(); "fitness" -> EuriseIcons.fitness()
+    "star" -> EuriseIcons.star(); "heart" -> EuriseIcons.heart(); "folder" -> EuriseIcons.folder(); "tools" -> EuriseIcons.tools()
+    "phone" -> EuriseIcons.phone(); "mail" -> EuriseIcons.mail(); "car" -> EuriseIcons.car(); "paw" -> EuriseIcons.paw()
+    "gift" -> EuriseIcons.gift(); "school" -> EuriseIcons.school(); "leaf" -> EuriseIcons.leaf(); "coffee" -> EuriseIcons.coffee()
+    "spark" -> EuriseIcons.spark(); "news" -> EuriseIcons.news(); "image" -> EuriseIcons.image(); "shield" -> EuriseIcons.shield()
+    "euro" -> EuriseIcons.euro(); "baby" -> EuriseIcons.baby(); "palette" -> EuriseIcons.palette(); "code" -> EuriseIcons.code()
+    else -> EuriseIcons.grid()
+}
+
+fun tintaDock(chiave: String): Color = Color(
+    when (chiave) {
+        "work" -> 0xFF7A2EE0; "camera" -> 0xFF4A4440; "map" -> 0xFF1D55E6; "globe" -> 0xFFB0307A; "music" -> 0xFFD2453B
+        "chat" -> 0xFF1F9A47; "home" -> 0xFFB07A10; "note" -> 0xFFA8742A; "calendar" -> 0xFFC2410C; "bank" -> 0xFF0F766E
+        "cart" -> 0xFFB45309; "plane" -> 0xFF0369A1; "medical" -> 0xFFDC2626; "game" -> 0xFF7C3AED; "book" -> 0xFF92400E
+        "fitness" -> 0xFF16A34A; "star" -> 0xFFCA8A04; "heart" -> 0xFFDB2777; "phone", "mail" -> 0xFF1F9A47
+        "car", "paw", "leaf" -> 0xFF4D7C0F; "coffee", "euro" -> 0xFF78501E; "shield", "code" -> 0xFF334155
+        else -> 0xFF475569
+    },
+)
+
+@StringRes
+fun nomeDi(g: Gruppo): Int = when (g) {
+    Gruppo.Lavoro -> R.string.g_lavoro; Gruppo.Foto -> R.string.g_foto; Gruppo.Mappe -> R.string.g_mappe
+    Gruppo.WebAI -> R.string.g_webai; Gruppo.Comunica -> R.string.g_comunica; Gruppo.Musica -> R.string.g_musica
+    Gruppo.Casa -> R.string.g_casa; Gruppo.Appunti -> R.string.g_appunti; Gruppo.Agenda -> R.string.g_agenda
+    Gruppo.Banca -> R.string.g_banca; Gruppo.Acquisti -> R.string.g_acquisti; Gruppo.Viaggi -> R.string.g_viaggi
+    Gruppo.Salute -> R.string.g_salute; Gruppo.Giochi -> R.string.g_giochi; Gruppo.Lettura -> R.string.g_lettura
+    Gruppo.Sport -> R.string.g_sport
+}
+
+@Composable
+fun aspetto(c: Categoria): Aspetto {
+    val nome = c.nome.ifBlank { c.pronta?.let { stringResource(nomeDi(it)) }.orEmpty() }
+    return Aspetto(nome, iconaDock(c.icona), tintaDock(c.icona))
 }
