@@ -33,6 +33,13 @@ class PeopleProvider : ContentProvider() {
                 }
                 P.METHOD_RESOLVE -> PeopleLookup.resolve(ctx, extras?.getStringArray(P.EXTRA_ADDRESSES).orEmpty().toList()).let { (people, index) -> P.packPeople(people, index) }
                 P.METHOD_SEARCH -> P.packPeople(PeopleLookup.search(ctx, extras?.getString(P.EXTRA_QUERY).orEmpty()))
+                // La Chat apre il filo di una persona: i suoi SMS diventano letti (solo se Messaggi è l'app degli SMS).
+                P.METHOD_MARK_READ -> Bundle().apply {
+                    val phones = extras?.getStringArray(P.EXTRA_PHONES).orEmpty().toList()
+                    val threads = runBlocking { SmsStore.threads(ctx) }.filter { t -> t.addresses.size == 1 && phones.any { SmsStore.same(it, t.addresses[0]) } }
+                    threads.forEach { t -> runBlocking { SmsStore.markRead(ctx, t.id) } }
+                    putBoolean(P.EXTRA_RESULT, threads.isNotEmpty())
+                }
                 else -> null
             }
         }.getOrNull()

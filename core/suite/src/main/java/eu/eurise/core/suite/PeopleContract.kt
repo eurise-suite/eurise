@@ -32,6 +32,9 @@ object PeopleContract {
     const val METHOD_DISMISS_CALLBACK = "dismissCallBack"
     /** Email: segna come letta l'email [EXTRA_REF] («casella:uid»), sul telefono e nella casella. */
     const val METHOD_MARK_SEEN = "markSeen"
+    /** Messaggi, Telefono, Email: tutto ciò che è da leggere con questi numeri ([EXTRA_PHONES]) o email ([EXTRA_EMAILS])
+     *  diventa letto (la Chat, aprendo il filo di una persona). */
+    const val METHOD_MARK_READ = "markRead"
 
     /** Chat: chi sono io sulla Chat (per il link dell'invito) e se un contatto è già unito a una persona della Chat. */
     const val METHOD_ME = "me"
@@ -218,6 +221,13 @@ object PeopleContract {
     /** Segna come letta un'email in Eurise Email (fuori dal thread principale). */
     fun markMailSeen(context: Context, ref: String): Boolean =
         call(context, App.Mail, METHOD_MARK_SEEN, Bundle().apply { putString(EXTRA_REF, ref) })?.getBoolean(EXTRA_RESULT) == true
+
+    /** Segna come letto in [app] tutto ciò che viene da questi numeri o indirizzi (fuori dal thread principale). */
+    fun markRead(context: Context, app: App, phones: List<String>, emails: List<String>): Boolean {
+        if (phones.isEmpty() && emails.isEmpty()) return false
+        val extras = Bundle().apply { putStringArray(EXTRA_PHONES, phones.toTypedArray()); putStringArray(EXTRA_EMAILS, emails.toTypedArray()) }
+        return call(context, app, METHOD_MARK_READ, extras)?.getBoolean(EXTRA_RESULT) == true
+    }
 
     /** Il filo con questi numeri ed email da [app] (fuori dal thread principale). */
     fun items(context: Context, app: App, phones: List<String>, emails: List<String>, limit: Int = 200): List<Item> {

@@ -170,6 +170,38 @@ class Uni(private val context: Context, private val scope: CoroutineScope, priva
         who = w.copy(roomId = w.roomId ?: w.matrix.firstNotNullOfOrNull { model.directWith(it) })
         thread = emptyList()
         loadThread()
+        markRead(w)
+    }
+
+    /**
+     * Aprendo il filo di una persona, ciò che era da leggere diventa letto anche nelle sue app: SMS (Messaggi), chiamate
+     * perse (Telefono), email (Email). Così «Non lette» si svuota davvero.
+     */
+    private fun markRead(w: People.Who) {
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                runCatching { PeopleContract.markRead(context, App.Messages, w.phones, emptyList()) }
+                runCatching { PeopleContract.markRead(context, App.Phone, w.phones, emptyList()) }
+                runCatching { PeopleContract.markRead(context, App.Mail, emptyList(), w.emails) }
+            }
+            refreshAfterRead()
+        }
+    }
+
+    private fun refreshAfterRead() { loading = false; refresh(true) }
+
+    /** «Segna tutte come lette» nella vista Non lette. */
+    fun markAllRead(rows: List<People.Row>) {
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                val phones = rows.flatMap { it.who.phones }.distinct()
+                val emails = rows.flatMap { it.who.emails }.distinct()
+                runCatching { PeopleContract.markRead(context, App.Messages, phones, emptyList()) }
+                runCatching { PeopleContract.markRead(context, App.Phone, phones, emptyList()) }
+                runCatching { PeopleContract.markRead(context, App.Mail, emptyList(), emails) }
+            }
+            refreshAfterRead()
+        }
     }
 
     fun close() { who = null; thread = emptyList() }

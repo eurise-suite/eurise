@@ -648,6 +648,22 @@ object MailCache {
         return true
     }
 
+    /** Tutte le email da leggere di questi indirizzi diventano lette (la Chat apre il filo di una persona). */
+    fun markSeenFrom(context: Context, emails: List<String>): Boolean {
+        val wanted = emails.map { it.trim().lowercase() }.filter { it.isNotBlank() }.toSet()
+        if (wanted.isEmpty()) return false
+        var any = false
+        AccountStore(context).load().forEach { account ->
+            val list = read(context, account.id)
+            val uids = list.filter { !it.seen && it.fromAddress.lowercase() in wanted }.map { it.uid }
+            if (uids.isEmpty()) return@forEach
+            any = true
+            write(context, account.id, list.map { if (it.uid in uids) it.copy(seen = true) else it })
+            Thread { uids.forEach { uid -> runCatching { MailClient(account).markSeen(uid) } } }.start()
+        }
+        return any
+    }
+
     fun write(context: Context, id: String, list: List<Summary>) {
         val a = JSONArray()
         list.forEach { m ->

@@ -938,4 +938,5 @@
     <string name="ls_peer_away">in ferie fino al %1$s</string>
     <string name="ls_team">Ferie della squadra</string>
     <string name="ls_team_two">Il %1$s siete fuori in %2$d</string>
+    <string name="ps_mark_all_read">Segna tutte come lette</string>
 </resources>

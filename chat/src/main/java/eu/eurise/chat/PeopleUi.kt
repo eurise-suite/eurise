@@ -139,6 +139,16 @@ internal fun LazyListScope.peopleItems(model: ChatModel, query: String, unreadOn
         (q.isEmpty() || name.lowercase().contains(q)) && (!unreadOnly || unread > 0)
     }.sortedByDescending { it.time }
     items(invites, key = { "i:" + it.id }) { r -> RoomRow(model, r) }
+    // Non lette: un tocco le segna tutte come lette nelle loro app (SMS, chiamate perse, email).
+    val daLeggere = mixed.filterIsInstance<Mix.Person>().map { it.row }
+    if (unreadOnly && daLeggere.isNotEmpty()) item(key = "tutte-lette") {
+        Text(
+            stringResource(R.string.ps_mark_all_read), fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) { model.uni.markAllRead(daLeggere) }
+                .padding(horizontal = 4.dp, vertical = 12.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+        )
+    }
     items(mixed, key = { m -> when (m) { is Mix.Person -> "p:" + m.row.who.key; is Mix.Group -> "g:" + m.room.id } }) { m ->
         when (m) {
             is Mix.Person -> PersonRow(model, m.row)

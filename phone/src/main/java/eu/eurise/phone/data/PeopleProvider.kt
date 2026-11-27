@@ -39,6 +39,8 @@ class PeopleProvider : ContentProvider() {
                     CallBackDismiss.dismiss(ctx, extras?.getString(P.EXTRA_ADDRESS).orEmpty(), extras?.getLong(P.EXTRA_SINCE) ?: 0L)
                     Bundle().apply { putBoolean(P.EXTRA_RESULT, true) }
                 }
+                // La Chat apre il filo di una persona: le sue chiamate perse non sono più «nuove».
+                P.METHOD_MARK_READ -> Bundle().apply { putBoolean(P.EXTRA_RESULT, markRead(extras?.getStringArray(P.EXTRA_PHONES).orEmpty().toList())) }
                 // Persone e ruoli (tavola InsRuoli): Chat ed Email li leggono e li cambiano.
                 RuoliContract.METHOD_ROLES -> Bundle().apply { putString(RuoliContract.EXTRA_RESULT, Ruoli.encode(Roles.load(ctx))) }
                 RuoliContract.METHOD_SET_ROLE -> {
@@ -49,6 +51,21 @@ class PeopleProvider : ContentProvider() {
                 else -> null
             }
         }.getOrNull()
+    }
+
+    private fun markRead(phones: List<String>): Boolean {
+        val ctx = context ?: return false
+        if (phones.isEmpty() || !PhoneData.has(ctx, Manifest.permission.WRITE_CALL_LOG)) return false
+        val ids = ArrayList<Long>()
+        ctx.contentResolver.query(
+            CallLog.Calls.CONTENT_URI, arrayOf(CallLog.Calls._ID, CallLog.Calls.NUMBER), "${CallLog.Calls.NEW} = 1", null, null,
+        )?.use { c -> while (c.moveToNext()) if (phones.any { PhoneData.same(it, c.getString(1).orEmpty()) }) ids += c.getLong(0) }
+        if (ids.isEmpty()) return false
+        val values = ContentValues().apply { put(CallLog.Calls.NEW, 0); put(CallLog.Calls.IS_READ, 1) }
+        ids.chunked(200).forEach { part ->
+            ctx.contentResolver.update(CallLog.Calls.CONTENT_URI, values, "${CallLog.Calls._ID} IN (${part.joinToString(",")})", null)
+        }
+        return true
     }
 
     private class Raw(val number: String, val type: Int, val date: Long, val duration: Long, val new: Boolean)
