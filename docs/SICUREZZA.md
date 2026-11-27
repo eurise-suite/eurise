@@ -6,7 +6,8 @@ Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che ti
 - **Ultimo giro pubblicato**: **1140** (27 novembre: correzioni del proprietario dopo la prova della Postazione sul telefono e
   Postazione completata per poterla valutare: lente che cerca ovunque, dock di sei categorie a scelta, app di ogni scheda,
   azioni su impegni, cose da fare e farmaci, oroscopo, interruttori nel centro privacy; porte nuove provate sull'emulatore;
-  Mappe 147 con l'icona del bestiario; sezione «Postazione, quinto giro» in fondo). Prima: **1138** (26 novembre, notte fonda: **Postazione completa** con le **icone a bolle** per tutte le app, anche non nostre, e le **icone nuove del bestiario** su tutti gli APK; nessun permesso nuovo in questo giro; sezioni «Postazione» in fondo). Prima: 1133 (Postazione completata e bestiario, porte `giornata`, `rimanda`, `orari` provate sull'emulatore), 1130 (schede complete; accesso alle notifiche e contatti spenti di base). Ancora prima: 1128 (primo APK della Postazione), 1122 (25 novembre: Flatpak di nuovo verde, tutto schermo nei documenti). **Da guardare**: «Vulnerabilità note» è rosso su `prova-sicurezza` dal 26 mattina per CVE-2026-137063 (media, 6.8) in `third_party/leptonica`: nessuna correzione disponibile, da valutare (usata solo dall'OCR dello Scanner). Prossimo: «Di' Alfred» aspetta la scelta del
+  Mappe 147 con l'icona del bestiario; sezione «Postazione, quinto giro» in fondo; nel pomeriggio il sesto giro:
+  schermate dall'emulatore, icone delle app non nostre originali, Leptonica aggiornata per CVE-2026-137063). Prima: **1138** (26 novembre, notte fonda: **Postazione completa** con le **icone a bolle** per tutte le app, anche non nostre, e le **icone nuove del bestiario** su tutti gli APK; nessun permesso nuovo in questo giro; sezioni «Postazione» in fondo). Prima: 1133 (Postazione completata e bestiario, porte `giornata`, `rimanda`, `orari` provate sull'emulatore), 1130 (schede complete; accesso alle notifiche e contatti spenti di base). Ancora prima: 1128 (primo APK della Postazione), 1122 (25 novembre: Flatpak di nuovo verde, tutto schermo nei documenti). CVE-2026-137063 in Leptonica corretta il 27 novembre (sezione «Postazione, sesto giro»). Prossimo: «Di' Alfred» aspetta la scelta del
   proprietario sul modello (prove in `docs/stato/ALFRED.md`); Password Famiglia aspetta le tavole; zxing 3.5.4 aspetta un
   passo nel flusso delle impronte.
 - **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
@@ -788,6 +789,23 @@ né telemetria trovata.
   schede, indirizzi delle AI).
 - **Correzioni dentro altre aree**: `feature/privacy` (riga Postazione), `feature/launcher` (`RecentFilesRepository.byId`),
   `app` (fornitore, `OpenFoundActivity`, sezioni), annotate in `docs/stato/ORGANIZZAZIONE.md`.
-- Resta da fare: vedere le schermate della Postazione girare sull'emulatore (finora solo avviata e provata nelle porte);
-  le tavole della Postazione sulla tela con le icone a bolle; il motore di Office con l'icona nuova al suo giro;
-  CVE-2026-137063 in leptonica.
+- Resta da fare: le tavole della Postazione sulla tela con le icone a bolle.
+
+### Postazione, sesto giro (27 novembre 2026, pomeriggio): schermate, icone originali, Leptonica
+- **Schermate dall'emulatore** (prima volta che la Postazione si vede girare): `scripts/screenshots/take.sh` ora installa
+  anche la Postazione e scatta Lavoro, Personale, Viaggio (anche scorse), la lente con «pr», l'elenco delle AI, le
+  impostazioni, il ventaglio, «Modifica la categoria», e il tablet orizzontale; tocca per testo con uiautomator
+  (`trova.py`), non per pixel. Le immagini sono nel ramo `schermate` (file `p*.png`). Dati di esempio con una dose di
+  farmaco. Corretti dopo averle viste: intestazione dell'impegno che andava a capo e tre puntini fuori dalla scheda sul
+  tablet; «Comunica» tagliato nella dock; scheda che si apriva scorsa a metà (ora ogni scheda ha il suo scorrimento e
+  Home la riporta in cima); titolo «Cerca ovunque» nella lente.
+- **Icone delle app non nostre originali** (scelta del proprietario: WhatsApp veniva in un verde slavato, kDrive azzurro
+  su azzurro): `AppSymbols.original` disegna fondo e primo piano dell'icona adattiva senza la maschera del telefono (i 72
+  dp centrali), allarga al bordo le piastrelle di vecchio stile con il colore del loro fondo, mette al centro i disegni su
+  trasparente; la bolla dà solo forma tonda, filo e ombra. Solo lettura delle icone che Android già mostra.
+- **CVE-2026-137063** (Leptonica 1.79.0–1.87.0, heap overflow in `l_byteaInitFromStream` con file oltre 1 GB): letta la
+  scheda nel registro CVE (cvelistV5); corretta a monte da c493a77 (20 novembre). `third_party/leptonica` portata al ramo
+  principale **c82d516** (24 novembre): 188 correzioni dopo la 1.87.0, quasi tutte controlli su dimensioni e indici;
+  nessuna funzione tolta. OSV la segnala ancora perché la 1.88 non è uscita: eccezione in `osv-scanner.toml` fino al
+  31 marzo 2027, da togliere con la 1.88. In Eurise la funzione non si raggiunge comunque (solo pixel già decodificati).
+- **Motore di Office**: lanciato il giro 70 su `brand` (icona del bestiario, circa sei ore); si pubblica al giro dopo.

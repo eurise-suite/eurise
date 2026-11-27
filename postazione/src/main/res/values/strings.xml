@@ -228,6 +228,7 @@
     <string name="oroscopo_vuoto">L\'oroscopo di oggi non è ancora arrivato.</string>
 
     <!-- La lente: ricerca ovunque. -->
+    <string name="cerca_ovunque">Cerca ovunque</string>
     <string name="cerca_contatti">Persone</string>
     <string name="cerca_contatti_spenti">Le persone non si cercano: i contatti sono spenti (tocca per le impostazioni).</string>
     <string name="chiama">Chiama</string>

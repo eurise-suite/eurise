@@ -94,7 +94,9 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
     var scegliPer by remember { mutableStateOf<String?>(null) }
     var impostazioni by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { home.collect { ventaglio = null; cassetto = false; scegliPer = null; editor = null } }
+    // Il tasto Home chiude tutto e riporta la scheda in cima.
+    var giri by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) { home.collect { ventaglio = null; cassetto = false; scegliPer = null; editor = null; giri++ } }
     LaunchedEffect(model.impostazioniRichieste) { if (model.impostazioniRichieste > 0) impostazioni = true }
     LaunchedEffect(Unit) { while (true) { delay(15_000); model.tic() } }
     BackHandler(enabled = ventaglio != null) { ventaglio = null }
@@ -122,7 +124,7 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
                 Column(Modifier.weight(1f).padding(bottom = 14.dp)) {
                     Testata(model, suCielo, Modifier)
                     Linguette(model, scheda, col, suCielo)
-                    Foglio(model, scheda, col, true, Modifier.weight(1f)) { scegliPer = "scheda:" + scheda.name; cercaSubito = false; cassetto = true }
+                    Foglio(model, scheda, col, true, giri, Modifier.weight(1f)) { scegliPer = "scheda:" + scheda.name; cercaSubito = false; cassetto = true }
                 }
                 if (!model.mancino) binario()
             }
@@ -130,7 +132,7 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(bottom = 116.dp)) {
                 Testata(model, suCielo, Modifier.pointerInput(Unit) { scorriSu { apriCassetto(false) } })
                 Linguette(model, scheda, col, suCielo)
-                Foglio(model, scheda, col, false, Modifier.weight(1f)) { scegliPer = "scheda:" + scheda.name; cercaSubito = false; cassetto = true }
+                Foglio(model, scheda, col, false, giri, Modifier.weight(1f)) { scegliPer = "scheda:" + scheda.name; cercaSubito = false; cassetto = true }
             }
             // Il richiamo di «Tutte le app» sopra la barra: un tocco o uno scorrimento verso l'alto.
             Column(
@@ -286,24 +288,28 @@ private fun Linguette(model: PostazioneModel, attiva: Scheda, col: Colori, suCie
  * schermi larghi due colonne.
  */
 @Composable
-private fun Foglio(model: PostazioneModel, scheda: Scheda, col: Colori, largo: Boolean, modifier: Modifier, onAggiungiApp: () -> Unit) {
+private fun Foglio(model: PostazioneModel, scheda: Scheda, col: Colori, largo: Boolean, giri: Int, modifier: Modifier, onAggiungiApp: () -> Unit) {
+    // Ogni scheda ha il suo scorrimento e si apre sempre dall'inizio.
+    val stato = remember(scheda) { androidx.compose.foundation.lazy.LazyListState() }
+    val statoDestra = remember(scheda) { androidx.compose.foundation.lazy.LazyListState() }
+    LaunchedEffect(giri, scheda) { stato.scrollToItem(0); statoDestra.scrollToItem(0) }
     val primaAttiva = scheda == Scheda.entries.first()
     val forma = RoundedCornerShape(topStart = if (primaAttiva) 0.dp else 22.dp, topEnd = 22.dp, bottomStart = 22.dp, bottomEnd = 22.dp)
     val spazi = Arrangement.spacedBy(16.dp)
     if (largo) {
         Row(modifier.fillMaxWidth().padding(horizontal = 10.dp).background(col.foglio, forma).padding(horizontal = 6.dp)) {
-            LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(14.dp), verticalArrangement = spazi) {
+            LazyColumn(Modifier.weight(1f), state = stato, contentPadding = PaddingValues(14.dp), verticalArrangement = spazi) {
                 alto(model, scheda, col)
                 item(key = "app") { AppDellaScheda(model, scheda, col, onAggiungiApp) }
                 cose(model, scheda, col)
             }
-            LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(14.dp), verticalArrangement = spazi) {
+            LazyColumn(Modifier.weight(1f), state = statoDestra, contentPadding = PaddingValues(14.dp), verticalArrangement = spazi) {
                 persone(model, scheda, col)
             }
         }
     } else {
         LazyColumn(
-            modifier.fillMaxWidth().padding(horizontal = 10.dp).background(col.foglio, forma),
+            modifier.fillMaxWidth().padding(horizontal = 10.dp).background(col.foglio, forma), state = stato,
             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
             verticalArrangement = spazi,
         ) {
@@ -528,11 +534,14 @@ private fun SchedaImpegno(
         Box(Modifier.width(5.dp).fillMaxHeight().background(if (primo) col.lente else androidx.compose.ui.graphics.SolidColor(col.riga), RoundedCornerShape(topStart = 18.dp, bottomStart = 18.dp)))
         Column(Modifier.fillMaxHeight().padding(start = 13.dp, end = 8.dp, top = 12.dp, bottom = 12.dp)) {
             val tempo = if (e.tuttoIlGiorno) stringResource(R.string.tutto_il_giorno) else orario(e.inizio) + "–" + orario(e.fine)
+            // In alto il richiamo e i tre puntini, sempre su una riga; l'orario va con il luogo sotto il titolo.
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(richiamo(e, adesso, primo), color = col.accento, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                Text(tempo, color = col.sotto, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
+                Text(
+                    richiamo(e, adesso, primo), color = col.accento, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+                )
                 Box {
-                    Icon(EuriseIcons.more(), stringResource(R.string.altro), Modifier.size(32.dp).clickable { menu = true }.padding(7.dp), tint = col.sotto)
+                    Icon(EuriseIcons.more(), stringResource(R.string.altro), Modifier.size(30.dp).clickable { menu = true }.padding(6.dp), tint = col.sotto)
                     DropdownMenu(menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(text = { Text(stringResource(R.string.apri_calendario)) }, onClick = { menu = false; onApri() })
                         if (e.luogo.isNotBlank()) DropdownMenuItem(text = { Text(stringResource(R.string.naviga)) }, onClick = { menu = false; onNaviga() })
@@ -541,7 +550,10 @@ private fun SchedaImpegno(
                 }
             }
             Text(e.titolo, color = col.inchiostro, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 21.sp)
-            Text(e.luogo, color = col.sotto, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
+            Text(
+                listOf(tempo, e.luogo).filter { it.isNotBlank() }.joinToString(" · "),
+                color = col.sotto, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp),
+            )
             Spacer(Modifier.weight(1f))
             val ora = adesso.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
             val vicino = !e.tuttoIlGiorno && e.inizio - ora < 90 * 60_000L

@@ -128,7 +128,7 @@ fun Cassetto(
             Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     titoloScelta
-                        ?: if (rapido) stringResource(R.string.rapido_titolo) else stringResource(R.string.cassetto_titolo, tutte.size),
+                        ?: if (ovunque) stringResource(R.string.cerca_ovunque) else if (rapido) stringResource(R.string.rapido_titolo) else stringResource(R.string.cassetto_titolo, tutte.size),
                     color = col.inchiostro, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f),
                 )
                 Icon(EuriseIcons.gear(), stringResource(R.string.impostazioni), Modifier.size(44.dp).clickable { onImpostazioni() }.padding(11.dp), tint = col.sotto)

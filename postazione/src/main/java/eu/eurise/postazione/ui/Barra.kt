@@ -111,9 +111,11 @@ fun Barra(
                         Modifier.size(42.dp).background(a.tinta.copy(alpha = if (col.notte) 0.28f else 0.12f), RoundedCornerShape(14.dp)),
                         contentAlignment = Alignment.Center,
                     ) { Icon(a.icona, null, Modifier.size(22.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta) }
+                    // Nomi fino a nove lettere interi («Comunica»): un filo più piccoli e stretti, mai tagliati se ci stanno.
                     Text(
-                        a.nome, color = col.sotto, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 4.dp, start = 1.dp, end = 1.dp),
+                        a.nome, color = col.sotto, fontSize = if (a.nome.length > 7) 9.sp else 10.sp, letterSpacing = (-0.2).sp,
+                        fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
             }
