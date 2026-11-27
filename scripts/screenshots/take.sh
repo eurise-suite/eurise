@@ -124,7 +124,21 @@ if [ -n "$POSTAZIONE" ] && [ -f "$POSTAZIONE" ]; then
     tieni Lavoro ultimo; shot p5-ventaglio "$theme" 3
     tocca "Modifica la categoria"; shot p6-categoria "$theme" 3
     adb shell input keyevent KEYCODE_BACK; sleep 1; casa
+    # Giro 8: il cassetto per categorie a destra, le bolle da modificare, l'AI dal basso, i gesti.
+    adb shell input swipe 950 1000 120 1000 300; shot p9-cassetto "$theme" 3
+    tocca Tutte ultimo; shot p9b-cassetto-az "$theme" 3
+    casa; tieni Lavoro primo; tocca "Modifica le bolle"; shot p10-bolle "$theme" 3
+    adb shell input keyevent KEYCODE_BACK; sleep 1; casa
+    adb shell input swipe 540 2050 540 1300 250; shot p11-ai "$theme" 3
+    adb shell input keyevent KEYCODE_BACK; sleep 1; adb shell input keyevent KEYCODE_BACK; sleep 1; casa
   done
+  # Il cielo nelle altre ore: tramonto e notte.
+  adb shell cmd uimode night no
+  settime 1650; adb shell am force-stop "$PZ"; adb shell am start -n "$PZ/eu.eurise.postazione.PostazioneActivity" >/dev/null; sleep 6
+  casa; shot p12-tramonto perla 4
+  settime 2230; adb shell cmd uimode night yes; adb shell am force-stop "$PZ"; adb shell am start -n "$PZ/eu.eurise.postazione.PostazioneActivity" >/dev/null; sleep 6
+  casa; shot p13-sera notte 4
+  settime 0930
   # Schermo largo (tablet orizzontale): due colonne e la dock in colonna dal lato della mano.
   adb shell cmd uimode night no
   adb shell wm size 2560x1600; adb shell wm density 320; sleep 3

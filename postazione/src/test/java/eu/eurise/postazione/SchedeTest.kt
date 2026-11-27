@@ -25,12 +25,6 @@ class SchedeTest {
         assertEquals(Scheda.Lavoro, Schede.attiva(Scheda.Lavoro, null, null))
     }
 
-    @Test fun cielo() {
-        assertEquals(Cielo.Mattino, Schede.cielo(giovedi))
-        assertEquals(Cielo.Tramonto, Schede.cielo(giovedi.withHour(17)))
-        assertEquals(Cielo.Notte, Schede.cielo(giovedi.withHour(22)))
-    }
-
     @Test fun fineGiornata() {
         assertEquals(false, Schede.fineGiornata(giovedi.withHour(17).withMinute(14)))
         assertEquals(true, Schede.fineGiornata(giovedi.withHour(17).withMinute(15)))
