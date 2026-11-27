@@ -1547,6 +1547,14 @@ l_uint32  *datas, *lines;
     if (d != 8 && d != 16 && d != 32)
         return ERROR_INT("depth must be 8, 16 or 32 bpp", __func__, 1);
 
+        /* Clamp border values to image dimensions to prevent
+         * negative index calculations (heap buffer underflow).
+         * When bot > h or right > w, bstart/rstart would go negative. */
+    if (top > h) top = h;
+    if (bot > h) bot = h;
+    if (left > w) left = w;
+    if (right > w) right = w;
+
     datas = pixGetData(pixs);
     wpls = pixGetWpl(pixs);
     if (d == 8) {
@@ -2689,9 +2697,9 @@ l_int32    wpls, wpld;
 l_uint32  *lines, *lined;
 l_uint32  *datas, *datad;
 
-    if (!pixd && pixGetDepth(pixd) != 32)
+    if (!pixd || pixGetDepth(pixd) != 32)
         return ERROR_INT("pixd not defined or not 32 bpp", __func__, 1);
-    if (!pixs && pixGetDepth(pixs) != 32)
+    if (!pixs || pixGetDepth(pixs) != 32)
         return ERROR_INT("pixs not defined or not 32 bpp", __func__, 1);
     if (comp != COLOR_RED && comp != COLOR_GREEN &&
         comp != COLOR_BLUE && comp != L_ALPHA_CHANNEL)

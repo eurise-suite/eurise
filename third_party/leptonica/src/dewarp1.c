@@ -420,7 +420,7 @@ static l_int32 dewarpaExtendArraysToSize(L_DEWARPA *dewa, l_int32 size);
 
     /* Parameter values used in dewarpaCreate() */
 static const l_int32     InitialPtrArraySize = 20;   /* n'import quoi */
-static const l_int32     MaxPtrArraySize = 10000;
+static const l_int32     MaxPtrArraySize = 10000;    /* max number of pages */
 static const l_int32     DefaultArraySampling = 30;
 static const l_int32     MinArraySampling = 8;
 static const l_int32     DefaultMinLines = 15;
@@ -810,8 +810,8 @@ L_DEWARP  *prevdew;
 
     dew->dewa = dewa;
     pageno = dew->pageno;
-    if (pageno > MaxPtrArraySize)
-        return ERROR_INT("too many pages", __func__, 1);
+    if (pageno < 0 || pageno > MaxPtrArraySize)
+        return ERROR_INT("pageno out of bounds", __func__, 1);
     if (pageno > dewa->maxpage)
         dewa->maxpage = pageno;
     dewa->modelsready = 0;  /* force re-evaluation at application time */
@@ -867,6 +867,10 @@ dewarpaExtendArraysToSize(L_DEWARPA  *dewa,
 {
     if (!dewa)
         return ERROR_INT("dewa not defined", __func__, 1);
+    if (size <= 0)  /* belt & suspenders */
+        return ERROR_INT("size <= 0", __func__, 1);
+    if (size >= MaxPtrArraySize)
+        return ERROR_INT("size > max allowed pages; can't extend", __func__, 1);
 
     if (size > dewa->nalloc) {
         if ((dewa->dewarp = (L_DEWARP **)reallocNew((void **)&dewa->dewarp,
@@ -1475,6 +1479,8 @@ NUMA       *namodels;
         return (L_DEWARPA *)ERROR_PTR("pages not >= 1", __func__, NULL);
     if (ndewarp > MaxPtrArraySize)
         return (L_DEWARPA *)ERROR_PTR("too many pages", __func__, NULL);
+    if (maxpage < 0 || maxpage >= MaxPtrArraySize)
+        return (L_DEWARPA *)ERROR_PTR("invalid maxpage", __func__, NULL);
     if (fscanf(fp,
                "sampling = %d, redfactor = %d, minlines = %d, maxdist = %d\n",
                &sampling, &redfactor, &minlines, &maxdist) != 4)
@@ -1490,7 +1496,10 @@ NUMA       *namodels;
     if (fscanf(fp, "fullmodel = %d\n", &useboth) != 1)
         return (L_DEWARPA *)ERROR_PTR("read fail for useboth", __func__, NULL);
 
-    dewa = dewarpaCreate(maxpage + 1, sampling, redfactor, minlines, maxdist);
+    if ((dewa = dewarpaCreate(maxpage + 1, sampling, redfactor, minlines,
+                              maxdist)) == NULL)
+        return (L_DEWARPA *)ERROR_PTR("dewa not made", __func__, NULL);
+
     dewa->maxpage = maxpage;
     dewa->max_linecurv = max_linecurv;
     dewa->min_diff_linecurv = min_diff_linecurv;

@@ -524,10 +524,10 @@ PIXA  *pixas;
  * </pre>
  */
 l_ok
-jbAddPageComponents(JBCLASSER  *classer,
-                    PIX        *pixs,
-                    BOXA       *boxas,
-                    PIXA       *pixas)
+jbAddPageComponents(JBCLASSER   *classer,
+                    PIX         *pixs,
+                    BOXA        *boxas,
+                    const PIXA  *pixas)
 {
 l_int32  n;
 
@@ -582,9 +582,9 @@ l_int32  n;
  * \return  0 if OK; 1 on error
  */
 l_ok
-jbClassifyRankHaus(JBCLASSER  *classer,
-                   BOXA       *boxa,
-                   PIXA       *pixas)
+jbClassifyRankHaus(JBCLASSER   *classer,
+                   BOXA        *boxa,
+                   const PIXA  *pixas)
 {
 l_int32     n, nt, i, wt, ht, iclass, size, found, testval;
 l_int32     npages, area1, area3;
@@ -859,6 +859,12 @@ PIX     *pixt;
     if (delh > maxdiffh)
         return FALSE;
 
+        /* Non-finite or non-overlapping shifts cannot match.  Reject them
+         * before rounding to avoid an out-of-range float-to-int conversion. */
+    if (!isfinite(delx) || !isfinite(dely) ||
+        delx <= -wt || delx >= wi || dely <= -ht || dely >= hi)
+        return FALSE;
+
         /* Round difference in centroid location to nearest integer;
          * use this as a shift when doing the matching. */
     if (delx >= 0)
@@ -962,6 +968,12 @@ PIX     *pixt;
     if (delh > maxdiffh)
         return FALSE;
 
+        /* Non-finite or non-overlapping shifts cannot match.  Reject them
+         * before rounding to avoid an out-of-range float-to-int conversion. */
+    if (!isfinite(delx) || !isfinite(dely) ||
+        delx <= -wt || delx >= wi || dely <= -ht || dely >= hi)
+        return FALSE;
+
         /* Upper bounds in remaining pixels for allowable match */
     thresh1 = (l_int32)(area1 * (1. - rank) + 0.5);
     thresh3 = (l_int32)(area3 * (1. - rank) + 0.5);
@@ -1020,9 +1032,9 @@ PIX     *pixt;
  * \return  0 if OK; 1 on error
  */
 l_ok
-jbClassifyCorrelation(JBCLASSER  *classer,
-                      BOXA       *boxa,
-                      PIXA       *pixas)
+jbClassifyCorrelation(JBCLASSER   *classer,
+                      BOXA        *boxa,
+                      const PIXA  *pixas)
 {
 l_int32     n, nt, i, iclass, wt, ht, found, area, area1, area2, npages,
             overthreshold;
@@ -2249,6 +2261,12 @@ PTA       *ptac, *ptact, *ptaul;
         ptaGetPt(ptact, iclass, &x2, &y2);
         delx = x2 - x1;
         dely = y2 - y1;
+        if (!isfinite(delx) || !isfinite(dely) ||
+            fabsf(delx) > pixGetWidth(pixs) ||
+            fabsf(dely) > pixGetHeight(pixs)) {
+            LEPT_FREE(sumtab);
+            return ERROR_INT("invalid centroid delta", __func__, 1);
+        }
         if (delx >= 0)
             idelx = (l_int32)(delx + 0.5);
         else
@@ -2542,7 +2560,11 @@ BOX     *box;
     mincount = 0x7fffffff;
     for (i = -1; i <= 1; i++) {
         for (j = -1; j <= 1; j++) {
-            pixCopy(pixr, pixi);
+            if (pixCopy(pixr, pixi) == NULL) {
+                pixDestroy(&pixi);
+                pixDestroy(&pixr);
+                return ERROR_INT("pixCopy failed", __func__, 1);
+            }
             pixRasterop(pixr, j, i, w, h, PIX_SRC ^ PIX_DST, pixt, 0, 0);
             pixCountPixels(pixr, &count, sumtab);
             if (count < mincount) {

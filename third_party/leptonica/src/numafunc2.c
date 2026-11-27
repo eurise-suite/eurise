@@ -138,6 +138,7 @@
 #include <config_auto.h>
 #endif  /* HAVE_CONFIG_H */
 
+#include <limits.h>
 #include <math.h>
 #include "allheaders.h"
 
@@ -439,12 +440,12 @@ NUMA      *nad;
  * \return  0 if OK, 1 on error
  */
 l_ok
-numaSimpleStats(NUMA       *na,
-                l_int32     first,
-                l_int32     last,
-                l_float32  *pmean,
-                l_float32  *pvar,
-                l_float32  *prvar)
+numaSimpleStats(const NUMA  *na,
+                l_int32      first,
+                l_int32      last,
+                l_float32   *pmean,
+                l_float32   *pvar,
+                l_float32   *prvar)
 {
 l_int32    i, n, ni;
 l_float32  sum, sumsq, val, mean, var;
@@ -586,7 +587,8 @@ NUMA       *na1, *nad;
     if (width > n)
         L_WARNING("filter wider than input array!\n", __func__);
 
-    na1 = numaAddSpecifiedBorder(nas, wc, wc, L_MIRRORED_BORDER);
+    if ((na1 = numaAddSpecifiedBorder(nas, wc, wc, L_MIRRORED_BORDER)) == NULL)
+        return (NUMA *)ERROR_PTR("na1 not made", __func__, NULL);
     n1 = n + 2 * wc;
     fa1 = numaGetFArray(na1, L_NOCOPY);
     nad = numaMakeConstant(0, n);
@@ -644,7 +646,8 @@ NUMA       *na1, *nad;
     if (width > n)
         L_WARNING("filter wider than input array!\n", __func__);
 
-    na1 = numaAddSpecifiedBorder(nas, wc, wc, L_MIRRORED_BORDER);
+    if ((na1 = numaAddSpecifiedBorder(nas, wc, wc, L_MIRRORED_BORDER)) == NULL)
+        return (NUMA *)ERROR_PTR("na1 not made", __func__, NULL);
     n1 = n + 2 * wc;
     fa1 = numaGetFArray(na1, L_NOCOPY);
     nad = numaMakeConstant(0, n);
@@ -808,7 +811,7 @@ NUMA      *na1, *na2, *nad;
  *              NULL on error
  */
 NUMA *
-numaConvertToInt(NUMA  *nas)
+numaConvertToInt(const NUMA  *nas)
 {
 l_int32  i, n, ival;
 NUMA    *nad;
@@ -858,10 +861,10 @@ NUMA    *nad;
  * </pre>
  */
 NUMA *
-numaMakeHistogram(NUMA     *na,
-                  l_int32   maxbins,
-                  l_int32  *pbinsize,
-                  l_int32  *pbinstart)
+numaMakeHistogram(const NUMA  *na,
+                  l_int32      maxbins,
+                  l_int32     *pbinsize,
+                  l_int32     *pbinstart)
 {
 l_int32    i, n, ival, hval;
 l_int32    iminval, imaxval, range, binsize, nbins, ibin;
@@ -969,8 +972,8 @@ NUMA      *nai, *nahist;
  * </pre>
  */
 NUMA *
-numaMakeHistogramAuto(NUMA    *na,
-                      l_int32  maxbins)
+numaMakeHistogramAuto(const NUMA  *na,
+                      l_int32      maxbins)
 {
 l_int32    i, n, imin, imax, irange, ibin, ival, allints;
 l_float32  minval, maxval, range, binsize, fval;
@@ -1115,7 +1118,7 @@ NUMA      *nad;
     nd = (ns + newsize - 1) / newsize;
     if ((nad = numaCreate(nd)) == NULL)
         return (NUMA *)ERROR_PTR("nad not made", __func__, NULL);
-    numaGetParameters(nad, &start, &oldsize);
+    numaGetParameters(nas, &start, &oldsize);
     numaSetParameters(nad, start, oldsize * newsize);
 
     for (i = 0; i < nd; i++) {  /* new bins */
@@ -1224,16 +1227,16 @@ NUMA      *nad;
  * </pre>
  */
 l_ok
-numaGetStatsUsingHistogram(NUMA       *na,
-                           l_int32     maxbins,
-                           l_float32  *pmin,
-                           l_float32  *pmax,
-                           l_float32  *pmean,
-                           l_float32  *pvariance,
-                           l_float32  *pmedian,
-                           l_float32   rank,
-                           l_float32  *prval,
-                           NUMA      **phisto)
+numaGetStatsUsingHistogram(const NUMA  *na,
+                           l_int32      maxbins,
+                           l_float32   *pmin,
+                           l_float32   *pmax,
+                           l_float32   *pmean,
+                           l_float32   *pvariance,
+                           l_float32   *pmedian,
+                           l_float32    rank,
+                           l_float32   *prval,
+                           NUMA       **phisto)
 {
 l_int32    i, n;
 l_float32  minval, maxval, fval, mean, sum;
@@ -1518,9 +1521,9 @@ NUMA      *nan, *nar;
  * </pre>
  */
 l_ok
-numaHistogramGetRankFromVal(NUMA       *na,
-                            l_float32   rval,
-                            l_float32  *prank)
+numaHistogramGetRankFromVal(const NUMA  *na,
+                            l_float32    rval,
+                            l_float32   *prank)
 {
 l_int32    i, ibinval, n;
 l_float32  startval, binsize, binval, maxval, fractval, total, sum, val;
@@ -1819,9 +1822,9 @@ l_float32  sum, ave, ntot;
  * </pre>
  */
 l_ok
-numaGetRankBinValues(NUMA    *na,
-                     l_int32  nbins,
-                     NUMA   **pnam)
+numaGetRankBinValues(const NUMA  *na,
+                     l_int32      nbins,
+                     NUMA       **pnam)
 {
 NUMA      *na1;
 l_int32    maxbins, type;
@@ -2131,9 +2134,9 @@ NUMA      *nascore, *naave1, *naave2, *nanum1, *nanum2;
  * </pre>
  */
 l_ok
-grayHistogramsToEMD(NUMAA  *naa1,
-                    NUMAA  *naa2,
-                    NUMA  **pnad)
+grayHistogramsToEMD(const NUMAA  *naa1,
+                    const NUMAA  *naa2,
+                    NUMA        **pnad)
 {
 l_int32     i, n, nt;
 l_float32   dist;
@@ -2284,12 +2287,12 @@ NUMA       *na3;
  * </pre>
  */
 l_ok
-grayInterHistogramStats(NUMAA   *naa,
-                        l_int32  wc,
-                        NUMA   **pnam,
-                        NUMA   **pnams,
-                        NUMA   **pnav,
-                        NUMA   **pnarv)
+grayInterHistogramStats(const NUMAA  *naa,
+                        l_int32       wc,
+                        NUMA        **pnam,
+                        NUMA        **pnams,
+                        NUMA        **pnav,
+                        NUMA        **pnarv)
 {
 l_int32      i, j, n, nn;
 l_float32  **arrays;
@@ -2372,10 +2375,10 @@ NUMA        *na1, *na2, *na3, *na4;
  * </pre>
  */
 NUMA *
-numaFindPeaks(NUMA      *nas,
-              l_int32    nmax,
-              l_float32  fract1,
-              l_float32  fract2)
+numaFindPeaks(const NUMA  *nas,
+              l_int32      nmax,
+              l_float32    fract1,
+              l_float32    fract2)
 {
 l_int32    i, k, n, maxloc, lloc, rloc;
 l_float32  fmaxval, sum, total, newtotal, val, lastval;
@@ -2488,9 +2491,9 @@ NUMA      *na, *napeak;
  * </pre>
  */
 NUMA *
-numaFindExtrema(NUMA      *nas,
-                l_float32  delta,
-                NUMA     **pnav)
+numaFindExtrema(const NUMA  *nas,
+                l_float32    delta,
+                NUMA       **pnav)
 {
 l_int32    i, n, found, loc, direction;
 l_float32  startval, val, maxval, minval;
@@ -2706,10 +2709,10 @@ l_float32  *fa;
  * </pre>
  */
 l_ok
-numaCountReversals(NUMA       *nas,
-                   l_float32   minreversal,
-                   l_int32    *pnr,
-                   l_float32  *prd)
+numaCountReversals(const NUMA  *nas,
+                   l_float32    minreversal,
+                   l_int32     *pnr,
+                   l_float32   *prd)
 {
 l_int32    i, n, nr, ival, binvals;
 l_int32   *ia;
@@ -3136,8 +3139,9 @@ l_float32  bestwidth, bestshift, bestscore;
  * \brief   numaEvalHaarSum()
  *
  * \param[in]    nas         numa of non-negative signal values
- * \param[in]    width       distance between +1 and -1 in convolution comb
- * \param[in]    shift       phase of the comb: location of first +1
+ * \param[in]    width       finite distance > 0 between +1 and -1
+ *                            in convolution comb
+ * \param[in]    shift       finite phase >= 0: location of first +1
  * \param[in]    relweight   relative weight of (-1 comb) / (+1 comb)
  *                           contributions to the 'convolution'.  In effect,
  *                           the convolution kernel is a comb consisting of
@@ -3173,17 +3177,27 @@ numaEvalHaarSum(NUMA       *nas,
 {
 l_int32    i, n, nsamp, index;
 l_float32  score, weight, val;
+l_float64  dsamp;
 
     if (!pscore)
         return ERROR_INT("&score not defined", __func__, 1);
     *pscore = 0.0;
     if (!nas)
         return ERROR_INT("nas not defined", __func__, 1);
+    if (!isfinite(width) || width <= 0.0)
+        return ERROR_INT("width must be finite and > 0", __func__, 1);
+    if (!isfinite(shift) || shift < 0.0)
+        return ERROR_INT("shift must be finite and >= 0", __func__, 1);
     if ((n = numaGetCount(nas)) < 2 * width)
         return ERROR_INT("nas size too small", __func__, 1);
+    if (shift >= n)
+        return 0;
+    dsamp = ((l_float64)n - shift) / width;
+    if (dsamp > INT_MAX)
+        return ERROR_INT("width too small", __func__, 1);
 
     score = 0.0;
-    nsamp = (l_int32)((n - shift) / width);
+    nsamp = (l_int32)dsamp;
     for (i = 0; i < nsamp; i++) {
         index = (l_int32)(shift + i * width);
         weight = (i % 2) ? 1.0f : -1.0f * relweight;

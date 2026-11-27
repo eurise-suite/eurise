@@ -99,9 +99,9 @@
 #include "array_internal.h"
 #include "pix_internal.h"
 
-static const l_uint32  MaxArraySize = 100000000;  /* 100 million */
-static const l_uint32  MaxPtrArraySize = 10000000;  /* 10 million */
-static const l_int32 InitialArraySize = 50;      /*!< n'importe quoi */
+static const l_uint32 MaxArraySize = 100000000;    /* 100 million */
+static const l_uint32 MaxPtrArraySize = 10000000;  /* 10 million */
+static const l_int32 InitialArraySize = 50;        /*!< n'importe quoi */
 
     /* Static functions */
 static l_int32 ptaExtendArrays(PTA *pta);
@@ -125,6 +125,8 @@ PTA  *pta;
         n = InitialArraySize;
 
     pta = (PTA *)LEPT_CALLOC(1, sizeof(PTA));
+    if (!pta)
+        return (PTA *)ERROR_PTR("pta not made", __func__, NULL);
     pta->n = 0;
     pta->nalloc = n;
     pta->refcount = 1;
@@ -216,7 +218,7 @@ PTA  *pta;
  * \return  copy of pta, or NULL on error
  */
 PTA *
-ptaCopy(PTA  *pta)
+ptaCopy(const PTA  *pta)
 {
 l_int32    i;
 l_float32  x, y;
@@ -366,7 +368,7 @@ size_t  oldsize, newsize;
 
     if (!pta)
         return ERROR_INT("pta not defined", __func__, 1);
-    if (pta->nalloc > (l_int32)MaxArraySize)  /* belt & suspenders */
+    if (pta->nalloc >= (l_int32)MaxArraySize)  /* belt & suspenders */
         return ERROR_INT("pta at maximum size; can't extend", __func__, 1);
     oldsize = 4 * pta->nalloc;
     if (pta->nalloc > MaxArraySize / 2) {
@@ -477,7 +479,7 @@ l_int32  i, n;
  * \return  count, or 0 if no pta
  */
 l_int32
-ptaGetCount(PTA  *pta)
+ptaGetCount(const PTA  *pta)
 {
     if (!pta)
         return ERROR_INT("pta not defined", __func__, 0);
@@ -496,7 +498,7 @@ ptaGetCount(PTA  *pta)
  * \return  0 if OK; 1 on error
  */
 l_ok
-ptaGetPt(PTA        *pta,
+ptaGetPt(const PTA  *pta,
          l_int32     index,
          l_float32  *px,
          l_float32  *py)
@@ -524,10 +526,10 @@ ptaGetPt(PTA        *pta,
  * \return  0 if OK; 1 on error
  */
 l_ok
-ptaGetIPt(PTA      *pta,
-          l_int32   index,
-          l_int32  *px,
-          l_int32  *py)
+ptaGetIPt(const PTA  *pta,
+          l_int32     index,
+          l_int32    *px,
+          l_int32    *py)
 {
     if (px) *px = 0;
     if (py) *py = 0;
@@ -581,9 +583,9 @@ ptaSetPt(PTA       *pta,
  * </pre>
  */
 l_ok
-ptaGetArrays(PTA    *pta,
-             NUMA  **pnax,
-             NUMA  **pnay)
+ptaGetArrays(const PTA  *pta,
+             NUMA      **pnax,
+             NUMA      **pnay)
 {
 l_int32  i, n;
 NUMA    *nax, *nay;
@@ -1044,7 +1046,7 @@ size_t  oldsize, newsize;
  * \return  count, or 0 if no ptaa
  */
 l_int32
-ptaaGetCount(PTAA  *ptaa)
+ptaaGetCount(const PTAA  *ptaa)
 {
     if (!ptaa)
         return ERROR_INT("ptaa not defined", __func__, 0);
@@ -1062,9 +1064,9 @@ ptaaGetCount(PTAA  *ptaa)
  * \return  pta, or NULL on error
  */
 PTA *
-ptaaGetPta(PTAA    *ptaa,
-           l_int32  index,
-           l_int32  accessflag)
+ptaaGetPta(const PTAA  *ptaa,
+           l_int32      index,
+           l_int32      accessflag)
 {
     if (!ptaa)
         return (PTA *)ERROR_PTR("ptaa not defined", __func__, NULL);
@@ -1091,11 +1093,11 @@ ptaaGetPta(PTAA    *ptaa,
  * \return  0 if OK; 1 on error
  */
 l_ok
-ptaaGetPt(PTAA       *ptaa,
-           l_int32     ipta,
-           l_int32     jpt,
-           l_float32  *px,
-           l_float32  *py)
+ptaaGetPt(const PTAA  *ptaa,
+          l_int32      ipta,
+          l_int32      jpt,
+          l_float32   *px,
+          l_float32   *py)
 {
 PTA  *pta;
 
@@ -1377,7 +1379,7 @@ PTAA  *ptaa;
  */
 l_ok
 ptaaWriteDebug(const char  *filename,
-               PTAA        *ptaa,
+               const PTAA  *ptaa,
                l_int32      type)
 {
     if (LeptDebugOK) {
@@ -1399,7 +1401,7 @@ ptaaWriteDebug(const char  *filename,
  */
 l_ok
 ptaaWrite(const char  *filename,
-          PTAA        *ptaa,
+          const PTAA  *ptaa,
           l_int32      type)
 {
 l_int32  ret;
@@ -1429,9 +1431,9 @@ FILE    *fp;
  * \return  0 if OK; 1 on error
  */
 l_ok
-ptaaWriteStream(FILE    *fp,
-                PTAA    *ptaa,
-                l_int32  type)
+ptaaWriteStream(FILE        *fp,
+                const PTAA  *ptaa,
+                l_int32      type)
 {
 l_int32  i, n;
 PTA     *pta;
@@ -1469,10 +1471,10 @@ PTA     *pta;
  * </pre>
  */
 l_ok
-ptaaWriteMem(l_uint8  **pdata,
-             size_t    *psize,
-             PTAA      *ptaa,
-             l_int32    type)
+ptaaWriteMem(l_uint8    **pdata,
+             size_t      *psize,
+             const PTAA  *ptaa,
+             l_int32      type)
 {
 l_int32  ret;
 FILE    *fp;

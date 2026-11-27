@@ -1847,7 +1847,7 @@ l_int32  w, h, count;
  * \return  na of ON pixels in each pix, or NULL on error
  */
 NUMA *
-pixaCountPixels(PIXA  *pixa)
+pixaCountPixels(const PIXA  *pixa)
 {
 l_int32   d, i, n, count;
 l_int32  *tab;
@@ -2304,7 +2304,7 @@ l_uint32  *line, *data;
     data = pixGetData(pix);
     fullwords = w >> 5;
     endbits = w & 31;
-    endmask = 0xffffffff << (32 - endbits);
+    endmask = (endbits == 0) ? 0 : (0xffffffffU << (32 - endbits));
 
     sum = 0;
     for (i = 0; i < h; i++) {

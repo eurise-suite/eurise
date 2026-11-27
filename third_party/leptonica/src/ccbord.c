@@ -256,7 +256,8 @@
 #include "pix_internal.h"
 #include "ccbord_internal.h"
 
-static const l_int32  INITIAL_PTR_ARRAYSIZE = 20;    /* n'import quoi */
+static const l_int32  InitialPtrArraySize = 20;   /* n'import quoi */
+static const l_int32  MaxArraySize = 10000000;    /* 10 M */
 
     /* In ccbaGenerateSinglePath(): don't save holes
      * in c.c. with ridiculously many small holes   */
@@ -322,7 +323,7 @@ ccbaCreate(PIX     *pixs,
 CCBORDA  *ccba;
 
     if (n <= 0)
-        n = INITIAL_PTR_ARRAYSIZE;
+        n = InitialPtrArraySize;
 
     ccba = (CCBORDA *)LEPT_CALLOC(1, sizeof(CCBORDA));
     if (pixs) {
@@ -387,6 +388,8 @@ PTAA    *local;
         return (CCBORD *)ERROR_PTR("pixs defined and not 1bpp", __func__, NULL);
 
     ccb = (CCBORD *)LEPT_CALLOC(1, sizeof(CCBORD));
+    if (!ccb)
+        return (CCBORD *)ERROR_PTR("ccb not made", __func__, NULL);
     ccb->refcount = 1;
     if (pixs)
         ccb->pix = pixClone(pixs);
@@ -485,6 +488,8 @@ ccbaExtendArray(CCBORDA  *ccba)
 {
     if (!ccba)
         return ERROR_INT("ccba not defined", __func__, 1);
+    if (ccba->nalloc >= (l_int32)MaxArraySize / 2)
+        return ERROR_INT("ccba near max size; can't extend", __func__, 1);
 
     if ((ccba->ccb = (CCBORD **)reallocNew((void **)&ccba->ccb,
                                 sizeof(CCBORD *) * ccba->nalloc,
@@ -2405,6 +2410,10 @@ NUMAA    *step;
     LEPT_FREE(datain);
     if (!dataout)
         return (CCBORDA *)ERROR_PTR("dataout not made", __func__, NULL);
+    if (outbytes < 26) {
+        LEPT_FREE(dataout);
+        return (CCBORDA *)ERROR_PTR("dataout too small", __func__, NULL);
+    }
 
     offset = 18;
     memcpy(strbuf, dataout, offset);
@@ -2413,7 +2422,10 @@ NUMAA    *step;
         LEPT_FREE(dataout);
         return (CCBORDA *)ERROR_PTR("file not type ccba", __func__, NULL);
     }
-    sscanf(strbuf, "ccba: %7d cc\n", &ncc);
+    if (sscanf(strbuf, "ccba: %7d cc\n", &ncc) != 1 || ncc < 0) {
+        LEPT_FREE(dataout);
+        return (CCBORDA *)ERROR_PTR("invalid ncc", __func__, NULL);
+    }
 /*    lept_stderr("ncc = %d\n", ncc); */
     if ((ccba = ccbaCreate(NULL, ncc)) == NULL) {
         LEPT_FREE(dataout);
@@ -2432,6 +2444,8 @@ NUMAA    *step;
         ccb = ccbCreate(NULL);
         ccbaAddCcb(ccba, ccb);
 
+        if (offset + 20 > outbytes)
+            goto cleanup_truncated;
         memcpy(&xoff, dataout + offset, 4);
         offset += 4;
         memcpy(&yoff, dataout + offset, 4);
@@ -2452,6 +2466,8 @@ NUMAA    *step;
         ccb->step = step;
 
         for (j = 0; j < nb; j++) {  /* should be nb */
+            if (offset + 8 > outbytes)
+                goto cleanup_truncated;
             memcpy(&startx, dataout + offset, 4);
             offset += 4;
             memcpy(&starty, dataout + offset, 4);
@@ -2462,6 +2478,8 @@ NUMAA    *step;
             numaaAddNuma(step, na, L_INSERT);
 
             while(1) {
+                if (offset >= outbytes)
+                    goto cleanup_truncated;
                 bval = *(dataout + offset);
                 offset++;
                 nib1 = (bval >> 4);
@@ -2479,6 +2497,11 @@ NUMAA    *step;
     }
     LEPT_FREE(dataout);
     return ccba;
+
+cleanup_truncated:
+    LEPT_FREE(dataout);
+    ccbaDestroy(&ccba);
+    return (CCBORDA *)ERROR_PTR("data truncated", __func__, NULL);
 
 #endif  /* !HAVE_LIBZ */
 }

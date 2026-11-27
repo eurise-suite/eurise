@@ -1406,7 +1406,7 @@ pixSetSpecial(PIX     *pix,
  * </pre>
  */
 char *
-pixGetText(PIX  *pix)
+pixGetText(const PIX  *pix)
 {
     if (!pix)
         return (char *)ERROR_PTR("pix not defined", __func__, NULL);
@@ -1500,6 +1500,7 @@ pixCopyText(PIX        *pixd,
  *      (2) This retrieves the string and performs ascii85 decoding
  *          followed by decompression on it.  The returned binary data
  *          is owned by the caller and must be freed.
+ *      (3) This returns NULL if str == NULL.
  * </pre>
  */
 l_uint8 *
@@ -1511,7 +1512,7 @@ char  *str;
     if (!pix)
         return (l_uint8 *)ERROR_PTR("pix not defined", __func__, NULL);
     str = pixGetText(pix);
-    return decodeAscii85WithComp(str, strlen(str), psize);
+    return decodeAscii85WithComp(str, 0, psize);
 }
 
 
@@ -1609,15 +1610,10 @@ l_int32  valid;
 l_ok
 pixDestroyColormap(PIX  *pix)
 {
-PIXCMAP  *cmap;
-
     if (!pix)
         return ERROR_INT("pix not defined", __func__, 1);
 
-    if ((cmap = pix->colormap) != NULL) {
-        pixcmapDestroy(&cmap);
-        pix->colormap = NULL;
-    }
+    pixcmapDestroy(&pix->colormap);
     return 0;
 }
 
@@ -1902,7 +1898,7 @@ pixSizesEqual(const PIX  *pix1,
  * \return  0 if OK, 1 on error
  */
 l_ok
-pixMaxAspectRatio(PIX        *pixs,
+pixMaxAspectRatio(const PIX  *pixs,
                   l_float32  *pratio)
 {
 l_int32  w, h;

@@ -137,7 +137,7 @@ l_uint8   *cmapBuf, *fdata, *data, *bmpih_b;
 l_int16    bftype, depth, d;
 l_int32    offset, width, height, height_neg, xres, yres, spp;
 l_int32    compression, imagebytes, fdatabytes, cmapbytes, ncolors, maxcolors;
-l_int32    fdatabpl, extrabytes, filebpp, pixWpl, pixBpl, i, j, k;
+l_int32    fdatabpl, extrabytes, filebpp, pixWpl, pixBpl, i, j, k, valid;
 l_uint32   ihbytes;
 l_uint32  *line, *pixdata, *pword;
 l_int64    npixels;
@@ -252,7 +252,13 @@ PIXCMAP   *cmap;
         /* Handle the colormap */
     cmapBuf = NULL;
     if (ncolors > 0) {
-        if ((cmapBuf = (l_uint8 *)LEPT_CALLOC(ncolors, sizeof(RGBA_QUAD)))
+            /* Allocate for the full colormap (1 << depth entries), because
+             * this buffer replaces the pixcmap array below, whose nalloc is
+             * set to 1 << depth by pixcmapCreate().  Allocating only ncolors
+             * entries would leave the array smaller than nalloc, so a later
+             * pixcmapAddColor() would write past the end of the buffer.
+             * ncolors <= 1 << depth is enforced above. */
+        if ((cmapBuf = (l_uint8 *)LEPT_CALLOC(1 << depth, sizeof(RGBA_QUAD)))
                  == NULL)
             return (PIX *)ERROR_PTR("cmapBuf alloc fail", __func__, NULL );
 
@@ -377,6 +383,15 @@ PIXCMAP   *cmap;
     pixEndianByteSwap(pix);
     if (height_neg)
         pixFlipTB(pix, pix);
+
+        /* Verify that the pixel values do not exceed the colormap */
+    if (cmap) {
+        pixcmapIsValid(cmap, pix, &valid);
+        if (!valid) {
+            pixDestroy(&pix);
+            return (PIX *)ERROR_PTR("colormap is invalid", __func__, NULL);
+        }
+    }
 
         /* ----------------------------------------------
          * We do not use 1 bpp pix with colormaps in leptonica.

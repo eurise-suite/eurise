@@ -102,6 +102,8 @@ L_BYTEA  *ba;
     if (nbytes <= 0 || nbytes > MaxArraySize)
         nbytes = InitialArraySize;
     ba = (L_BYTEA *)LEPT_CALLOC(1, sizeof(L_BYTEA));
+    if (!ba)
+        return (L_BYTEA *)ERROR_PTR("bytea not made", __func__, NULL);
     ba->data = (l_uint8 *)LEPT_CALLOC(nbytes + 1, sizeof(l_uint8));
     if (!ba->data) {
         l_byteaDestroy(&ba);
@@ -185,6 +187,10 @@ L_BYTEA  *ba;
 
     if ((data = l_binaryReadStream(fp, &nbytes)) == NULL)
         return (L_BYTEA *)ERROR_PTR("data not read", __func__, NULL);
+    if (nbytes > MaxArraySize) {
+        LEPT_FREE(data);
+        return (L_BYTEA *)ERROR_PTR("stream too large", __func__, NULL);
+    }
     if ((ba = l_byteaCreate(nbytes)) == NULL) {
         LEPT_FREE(data);
         return (L_BYTEA *)ERROR_PTR("ba not made", __func__, NULL);
@@ -423,8 +429,8 @@ l_byteaExtendArrayToSize(L_BYTEA  *ba,
 {
     if (!ba)
         return ERROR_INT("ba not defined", __func__, 1);
-    if (ba->nalloc > MaxArraySize)  /* belt & suspenders */
-        return ERROR_INT("ba has too many ptrs", __func__, 1);
+    if (ba->nalloc >= (l_int32)MaxArraySize)  /* belt & suspenders */
+        return ERROR_INT("ba ptrs at max size; can't extend", __func__, 1);
     if (size > MaxArraySize)
         return ERROR_INT("size > 1 GB; too large", __func__, 1);
     if (size <= ba->nalloc) {

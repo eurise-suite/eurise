@@ -128,6 +128,10 @@
 static const size_t  MaxPtrArraySize = 100000;
 static const size_t  InitialPtrArraySize = 20;      /*!< n'importe quoi */
 
+    /* Max dimensions allowed when reading from file */
+static const l_int32  MaxAllowedWidth = 1000000;
+static const l_int32  MaxAllowedHeight = 1000000;
+
     /* Static functions */
 static l_int32 fpixaExtendArray(FPIXA *fpixa);
 static l_int32 fpixaExtendArrayToSize(FPIXA *fpixa, l_int32 size);
@@ -169,6 +173,8 @@ FPIX       *fpixd;
     }
 
     fpixd = (FPIX *)LEPT_CALLOC(1, sizeof(FPIX));
+    if (!fpixd)
+        return (FPIX *)ERROR_PTR("fpixd not made", __func__, NULL);
     fpixSetDimensions(fpixd, width, height);
     fpixSetWpl(fpixd, width);  /* 4-byte words */
     fpixd->refcount = 1;
@@ -561,10 +567,16 @@ FPIXA  *fpixa;
         n = InitialPtrArraySize;
 
     fpixa = (FPIXA *)LEPT_CALLOC(1, sizeof(FPIXA));
+    if (!fpixa)
+        return (FPIXA *)ERROR_PTR("fpixa not made", __func__, NULL);
     fpixa->n = 0;
     fpixa->nalloc = n;
     fpixa->refcount = 1;
     fpixa->fpix = (FPIX **)LEPT_CALLOC(n, sizeof(FPIX *));
+    if (!fpixa->fpix) {
+        fpixaDestroy(&fpixa);
+        return (FPIXA *)ERROR_PTR("fpix ptrs not made", __func__, NULL);
+    }
     return fpixa;
 }
 
@@ -746,8 +758,8 @@ size_t  oldsize, newsize;
 
     if (!fpixa)
         return ERROR_INT("fpixa not defined", __func__, 1);
-    if (fpixa->nalloc > MaxPtrArraySize)  /* belt & suspenders */
-        return ERROR_INT("fpixa has too many ptrs", __func__, 1);
+    if (fpixa->nalloc >= (l_int32)MaxPtrArraySize)  /* belt & suspenders */
+        return ERROR_INT("fpixa has max ptrs; can't expand", __func__, 1);
     if (size > MaxPtrArraySize)
         return ERROR_INT("size > 100K ptrs; too large", __func__, 1);
     if (size <= fpixa->nalloc) {
@@ -976,6 +988,8 @@ DPIX       *dpix;
     }
 
     dpix = (DPIX *)LEPT_CALLOC(1, sizeof(DPIX));
+    if (!dpix)
+        return (DPIX *)ERROR_PTR("dpix not made", __func__, NULL);
     dpixSetDimensions(dpix, width, height);
     dpixSetWpl(dpix, width);  /* 8 byte words */
     dpix->refcount = 1;
@@ -1388,6 +1402,7 @@ fpixReadStream(FILE  *fp)
 {
 char        buf[256];
 l_int32     w, h, nbytes, xres, yres, version;
+l_uint64    expected;
 l_float32  *data;
 FPIX       *fpix;
 
@@ -1400,6 +1415,16 @@ FPIX       *fpix;
         return (FPIX *)ERROR_PTR("invalid fpix version", __func__, NULL);
     if (fscanf(fp, "w = %d, h = %d, nbytes = %d\n", &w, &h, &nbytes) != 3)
         return (FPIX *)ERROR_PTR("read fail for data size", __func__, NULL);
+    if (w <= 0 || h <= 0 || w > MaxAllowedWidth || h > MaxAllowedHeight ||
+        nbytes < 0)
+        return (FPIX *)ERROR_PTR("invalid fpix data size", __func__, NULL);
+    expected = (l_uint64)w * (l_uint64)h * sizeof(l_float32);
+    if (expected != (l_uint64)nbytes) {
+        L_ERROR("nbytes = %llu inconsistent with w = %llu, h = %llu, and "
+                "expected = 4 * w * h = %llu\n", __func__,
+               (l_uint64)nbytes, (l_uint64)w, (l_uint64)h, expected);
+        return NULL;
+    }
 
         /* Use fgets() and sscanf(); not fscanf(), for the last
          * bit of header data before the float data.  The reason is
@@ -1677,6 +1702,7 @@ dpixReadStream(FILE  *fp)
 {
 char        buf[256];
 l_int32     w, h, nbytes, version, xres, yres;
+l_uint64    expected;
 l_float64  *data;
 DPIX       *dpix;
 
@@ -1689,6 +1715,16 @@ DPIX       *dpix;
         return (DPIX *)ERROR_PTR("invalid dpix version", __func__, NULL);
     if (fscanf(fp, "w = %d, h = %d, nbytes = %d\n", &w, &h, &nbytes) != 3)
         return (DPIX *)ERROR_PTR("read fail for data size", __func__, NULL);
+    if (w <= 0 || h <= 0 || w > MaxAllowedWidth || h > MaxAllowedHeight ||
+        nbytes < 0)
+        return (DPIX *)ERROR_PTR("invalid dpix data size", __func__, NULL);
+    expected = (l_uint64)w * (l_uint64)h * sizeof(l_float64);
+    if (expected != (l_uint64)nbytes) {
+        L_ERROR("nbytes = %llu inconsistent with w = %llu, h = %llu, and "
+                "expected = 8 * w * h = %llu\n", __func__,
+                (l_uint64)nbytes, (l_uint64)w, (l_uint64)h, expected);
+        return NULL;
+    }
 
         /* Use fgets() and sscanf(); not fscanf(), for the last
          * bit of header data before the float data.  The reason is

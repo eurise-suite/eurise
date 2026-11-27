@@ -1355,8 +1355,12 @@ l_uint32  *rtab, *gtab, *btab;
     rtab = (l_uint32 *)LEPT_CALLOC(256, sizeof(l_uint32));
     gtab = (l_uint32 *)LEPT_CALLOC(256, sizeof(l_uint32));
     btab = (l_uint32 *)LEPT_CALLOC(256, sizeof(l_uint32));
-    if (!rtab || !gtab || !btab)
+    if (!rtab || !gtab || !btab) {
+        LEPT_FREE(rtab);
+        LEPT_FREE(gtab);
+        LEPT_FREE(btab);
         return ERROR_INT("calloc fail for tab", __func__, 1);
+    }
     *prtab = rtab;
     *pgtab = gtab;
     *pbtab = btab;
@@ -3806,9 +3810,9 @@ cleanup_arrays:
  * </pre>
  */
 l_int32 *
-pixcmapToOctcubeLUT(PIXCMAP  *cmap,
-                    l_int32   level,
-                    l_int32   metric)
+pixcmapToOctcubeLUT(const PIXCMAP  *cmap,
+                    l_int32         level,
+                    l_int32         metric)
 {
 l_int32    i, k, size, ncolors, mindist, dist, mincolor, index;
 l_int32    rval, gval, bval;  /* color at center of the octcube */

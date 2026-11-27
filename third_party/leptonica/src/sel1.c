@@ -147,8 +147,8 @@
 #include "allheaders.h"
 
     /* Bounds on sel ptr array size */
-static const l_uint32  MaxPtrArraySize = 10000;
-static const l_int32 InitialPtrArraySize = 50;      /*!< n'importe quoi */
+static const l_uint32 MaxPtrArraySize = 10000;
+static const l_int32 InitialPtrArraySize = 50;  /*!< n'importe quoi */
 
     /* Bounds on kernel size */
 static const l_uint32  MaxKernelSize = 10000;
@@ -558,6 +558,8 @@ SEL     *csel;
         return ERROR_INT("added sel must have name", __func__, 1);
     if (copyflag != L_INSERT && copyflag != L_COPY)
         return ERROR_INT("invalid copyflag", __func__, 1);
+    if (sela->nalloc >= (l_int32)MaxPtrArraySize)  /* belt & suspenders */
+        return ERROR_INT("sela at max size; can't extend", __func__, 1);
 
     if (copyflag == L_COPY) {
         if ((csel = selCopy(sel)) == NULL)
@@ -594,6 +596,8 @@ selaExtendArray(SELA  *sela)
 {
     if (!sela)
         return ERROR_INT("sela not defined", __func__, 1);
+    if (sela->nalloc >= (l_int32)MaxPtrArraySize / 2)
+        return ERROR_INT("sela near max size; can't extend", __func__, 1);
 
     if ((sela->sel = (SEL **)reallocNew((void **)&sela->sel,
                               sizeof(SEL *) * sela->nalloc,
@@ -658,7 +662,7 @@ selaGetSel(SELA    *sela,
  * \return  sel name not copied, or NULL if no name or on error
  */
 char *
-selGetName(SEL  *sel)
+selGetName(const SEL  *sel)
 {
     if (!sel)
         return (char *)ERROR_PTR("sel not defined", __func__, NULL);
@@ -748,10 +752,10 @@ SEL     *sel;
  * \return  0 if OK; 1 on error
  */
 l_ok
-selGetElement(SEL      *sel,
-              l_int32   row,
-              l_int32   col,
-              l_int32  *ptype)
+selGetElement(const SEL  *sel,
+              l_int32     row,
+              l_int32     col,
+              l_int32    *ptype)
 {
     if (!ptype)
         return ERROR_INT("&type not defined", __func__, 1);
@@ -813,11 +817,11 @@ selSetElement(SEL     *sel,
  * \return  0 if OK, 1 on error
  */
 l_ok
-selGetParameters(SEL      *sel,
-                 l_int32  *psy,
-                 l_int32  *psx,
-                 l_int32  *pcy,
-                 l_int32  *pcx)
+selGetParameters(const SEL  *sel,
+                 l_int32    *psy,
+                 l_int32    *psx,
+                 l_int32    *pcy,
+                 l_int32    *pcx)
 {
     if (psy) *psy = 0;
     if (psx) *psx = 0;
@@ -861,8 +865,8 @@ selSetOrigin(SEL     *sel,
  * \return  0 if OK; 1 on error or if origin is not found
  */
 l_ok
-selGetTypeAtOrigin(SEL      *sel,
-                   l_int32  *ptype)
+selGetTypeAtOrigin(const SEL  *sel,
+                   l_int32    *ptype)
 {
 l_int32  sx, sy, cx, cy, i, j;
 
@@ -1141,11 +1145,11 @@ SARRAY  *sa;
  * </pre>
  */
 l_ok
-selFindMaxTranslations(SEL      *sel,
-                       l_int32  *pxp,
-                       l_int32  *pyp,
-                       l_int32  *pxn,
-                       l_int32  *pyn)
+selFindMaxTranslations(const SEL  *sel,
+                       l_int32    *pxp,
+                       l_int32    *pyp,
+                       l_int32    *pxn,
+                       l_int32    *pyn)
 {
 l_int32  sx, sy, cx, cy, i, j;
 l_int32  maxxp, maxyp, maxxn, maxyn;
@@ -1299,7 +1303,6 @@ SELA    *sela;
 
     if ((sela = selaCreate(n)) == NULL)
         return (SELA *)ERROR_PTR("sela not made", __func__, NULL);
-    sela->nalloc = n;
 
     for (i = 0; i < n; i++) {
         if ((sel = selReadStream(fp)) == NULL) {
@@ -1364,7 +1367,8 @@ SEL     *sel;
 
     if (fgets(linebuf, sizeof(linebuf), fp) == NULL)
         return (SEL *)ERROR_PTR("error reading into linebuf", __func__, NULL);
-    sscanf(linebuf, "  ------  %200s  ------", selname);
+    if (sscanf(linebuf, "  ------  %200s  ------", selname) != 1)
+        return (SEL *)ERROR_PTR("sel name not read", __func__, NULL);
 
     if (fscanf(fp, "  sy = %d, sx = %d, cy = %d, cx = %d\n",
                &sy, &sx, &cy, &cx) != 4)
@@ -1627,7 +1631,7 @@ char     ch;
  * </pre>
  */
 char *
-selPrintToString(SEL  *sel)
+selPrintToString(const SEL  *sel)
 {
 char     is_center;
 char    *str, *strptr;
@@ -2122,8 +2126,8 @@ l_uint32  pixval;
  * </pre>
  */
 SELA *
-selaCreateFromColorPixa(PIXA    *pixa,
-                        SARRAY  *sa)
+selaCreateFromColorPixa(const PIXA  *pixa,
+                        SARRAY      *sa)
 {
 char    *str;
 l_int32  i, n;
@@ -2172,9 +2176,9 @@ SELA    *sela;
  * </pre>
  */
 PIX *
-selDisplayInPix(SEL     *sel,
-                l_int32  size,
-                l_int32  gthick)
+selDisplayInPix(const SEL  *sel,
+                l_int32     size,
+                l_int32     gthick)
 {
 l_int32  i, j, w, h, sx, sy, cx, cy, type, width;
 l_int32  radius1, radius2, shift1, shift2, x0, y0;

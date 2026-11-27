@@ -727,10 +727,10 @@ GPLOT  *gplot;
  * </pre>
  */
 l_ok
-gplotSimpleN(NUMAA       *naa,
-             l_int32      outformat,
-             const char  *outroot,
-             const char  *title)
+gplotSimpleN(const NUMAA  *naa,
+             l_int32       outformat,
+             const char   *outroot,
+             const char   *title)
 {
 GPLOT  *gplot;
 
@@ -841,8 +841,8 @@ PIX            *pix;
  * </pre>
  */
 PIX *
-gplotSimplePixN(NUMAA       *naa,
-                const char  *title)
+gplotSimplePixN(const NUMAA  *naa,
+                const char   *title)
 {
 char            buf[64];
 static l_atomic index;
@@ -1003,12 +1003,12 @@ GPLOT  *gplot;
  * </pre>
  */
 GPLOT *
-gplotSimpleXYN(NUMA        *nax,
-               NUMAA       *naay,
-               l_int32      plotstyle,
-               l_int32      outformat,
-               const char  *outroot,
-               const char  *title)
+gplotSimpleXYN(NUMA         *nax,
+               const NUMAA  *naay,
+               l_int32       plotstyle,
+               l_int32       outformat,
+               const char   *outroot,
+               const char   *title)
 {
 l_int32  i, n;
 GPLOT   *gplot;
@@ -1155,13 +1155,13 @@ PIX   *pix;
  * </pre>
  */
 PIX *
-gplotGeneralPixN(NUMA        *nax,
-                 NUMAA       *naay,
-                 l_int32      plotstyle,
-                 const char  *rootname,
-                 const char  *title,
-                 const char  *xlabel,
-                 const char  *ylabel)
+gplotGeneralPixN(NUMA         *nax,
+                 const NUMAA  *naay,
+                 l_int32       plotstyle,
+                 const char   *rootname,
+                 const char   *title,
+                 const char   *xlabel,
+                 const char   *ylabel)
 {
 l_int32  i, n;
 GPLOT   *gplot;
@@ -1206,8 +1206,8 @@ GPLOT *
 gplotRead(const char  *filename)
 {
 char     buf[Bufsize];
-char    *rootname, *title, *xlabel, *ylabel, *ignores;
-l_int32  outformat, ret, version, ignore;
+char    *rootname, *title, *xlabel, *ylabel;
+l_int32  outformat, version, ignore;
 FILE    *fp;
 GPLOT   *gplot;
 
@@ -1218,8 +1218,7 @@ GPLOT   *gplot;
         return (GPLOT *)ERROR_PTR_1("stream not opened",
                                     filename, __func__, NULL);
 
-    ret = fscanf(fp, "Gplot Version %d\n", &version);
-    if (ret != 1) {
+    if (fscanf(fp, "Gplot Version %d\n", &version) != 1) {
         fclose(fp);
         return (GPLOT *)ERROR_PTR_1("not a gplot file",
                                     filename, __func__, NULL);
@@ -1230,18 +1229,39 @@ GPLOT   *gplot;
                                     filename, __func__, NULL);
     }
 
-    ignore = fscanf(fp, "Rootname: %511s\n", buf);  /* Bufsize - 1 */
+    if (fscanf(fp, "Rootname: %511s\n", buf) != 1) {  /* Bufsize - 1 */
+        fclose(fp);
+        return (GPLOT *)ERROR_PTR_1("rootname not read",
+                                    filename, __func__, NULL);
+    }
     rootname = stringNew(buf);
     ignore = fscanf(fp, "Output format: %d\n", &outformat);
-    ignores = fgets(buf, Bufsize, fp);   /* Title: ... */
-    title = stringNew(buf + 7);
-    title[strlen(title) - 1] = '\0';
-    ignores = fgets(buf, Bufsize, fp);   /* X axis label: ... */
-    xlabel = stringNew(buf + 14);
-    xlabel[strlen(xlabel) - 1] = '\0';
-    ignores = fgets(buf, Bufsize, fp);   /* Y axis label: ... */
-    ylabel = stringNew(buf + 14);
-    ylabel[strlen(ylabel) - 1] = '\0';
+
+        /* Each label line must be long enough to hold its prefix
+         * and the trailing newline that is removed below.  Verify
+         * that there is at least one character after each prefix.  */
+    title = xlabel = ylabel = NULL;
+    if (fgets(buf, Bufsize, fp) && strlen(buf) > 7) {  /* Title:  */
+        title = stringNew(buf + 7);
+        title[strlen(title) - 1] = '\0';
+    }
+    if (fgets(buf, Bufsize, fp) && strlen(buf) > 14) {  /* X axis label: */
+        xlabel = stringNew(buf + 14);
+        xlabel[strlen(xlabel) - 1] = '\0';
+    }
+    if (fgets(buf, Bufsize, fp) && strlen(buf) > 14) {  /* Y axis label: */
+        ylabel = stringNew(buf + 14);
+        ylabel[strlen(ylabel) - 1] = '\0';
+    }
+    if (!title || !xlabel || !ylabel) {
+        LEPT_FREE(rootname);
+        LEPT_FREE(title);
+        LEPT_FREE(xlabel);
+        LEPT_FREE(ylabel);
+        fclose(fp);
+        return (GPLOT *)ERROR_PTR_1("labels not read",
+                                    filename, __func__, NULL);
+    }
 
     gplot = gplotCreate(rootname, outformat, title, xlabel, ylabel);
     LEPT_FREE(rootname);
@@ -1258,7 +1278,7 @@ GPLOT   *gplot;
     sarrayDestroy(&gplot->plotlabels);
     numaDestroy(&gplot->plotstyles);
 
-    ignore = fscanf(fp, "Commandfile name: %s\n", buf);  /* Bufsize - 1 */
+    ignore = fscanf(fp, "Commandfile name: %511s\n", buf);  /* Bufsize - 1 */
     stringReplace(&gplot->cmdname, buf);
     ignore = fscanf(fp, "\nCommandfile data:");
     gplot->cmddata = sarrayReadStream(fp);
@@ -1272,7 +1292,7 @@ GPLOT   *gplot;
     gplot->plotstyles = numaReadStream(fp);
 
     ignore = fscanf(fp, "Number of plots: %d\n", &gplot->nplots);
-    ignore = fscanf(fp, "Output file name: %s\n", buf);
+    ignore = fscanf(fp, "Output file name: %511s\n", buf);  /* Bufsize - 1 */
     stringReplace(&gplot->outname, buf);
     ignore = fscanf(fp, "Axis scaling: %d\n", &gplot->scaling);
 

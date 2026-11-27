@@ -202,9 +202,9 @@
 
 #ifdef __APPLE__
 #include <unistd.h>
-#include <errno.h>
 #endif
 
+#include <errno.h>     /* for errno */
 #include <string.h>
 #include <stddef.h>
 #include "allheaders.h"
@@ -945,8 +945,8 @@ l_int32      nsrc, nsub1, nsub2, len, npre, loc;
         return (char *)ERROR_PTR("dest not made", __func__, NULL);
     npre = ptr - src;
     memcpy(dest, src, npre);
-    strcpy(dest + npre, sub2);
-    strcpy(dest + npre + nsub2, ptr + nsub1);
+    memcpy(dest + npre, sub2, nsub2);
+    memcpy(dest + npre + nsub2, ptr + nsub1, nsrc - npre - nsub1);
     if (ploc) *ploc = npre + nsub2;
     return dest;
 }
@@ -1394,7 +1394,10 @@ L_BBUFFER  *bb;
         navail = bb->nalloc - bb->n;
         if (navail < 4096) {
              nadd = L_MAX(bb->nalloc, 4096);
-             bbufferExtendArray(bb, nadd);
+             if (bbufferExtendArray(bb, nadd)) {
+                 bbufferDestroy(&bb);
+                 return (l_uint8 *)ERROR_PTR("bb not extended", __func__, NULL);
+             }
         }
         nread = fread((void *)(bb->array + bb->n), 1, 4096, fp);
         bb->n += nread;
@@ -1600,11 +1603,13 @@ l_int64  pos, nbytes;
     pos = ftell(fp);          /* initial position */
     if (pos < 0)
         return ERROR_INT("seek position must be > 0", __func__, 0);
-    fseek(fp, 0, SEEK_END);   /* EOF */
+    if (fseek(fp, 0, SEEK_END) != 0)   /* EOF */
+        return ERROR_INT("fseek to end failed", __func__, 0);
     nbytes = ftell(fp);
+    if (fseek(fp, pos, SEEK_SET) != 0)  /* back to initial position */
+        return ERROR_INT("fseek to initial position failed", __func__, 0);
     if (nbytes < 0)
         return ERROR_INT("nbytes is < 0", __func__, 0);
-    fseek(fp, pos, SEEK_SET);        /* back to initial position */
     return nbytes;
 }
 
@@ -1875,11 +1880,15 @@ SARRAY   *sa;
 FILE *
 fopenReadStream(const char  *filename)
 {
-char  *fname, *tail;
-FILE  *fp;
+char   *stripped_name, *fname, *tail;
+size_t  len;
+FILE   *fp;
 
     if (!filename)
         return (FILE *)ERROR_PTR("filename not defined", __func__, NULL);
+    if ((len = strlen(filename)) == 0)
+        return (FILE *)ERROR_PTR_1("filename length 0", filename, __func__,
+                                   NULL);
 
         /* Try input filename */
     fname = genPathname(filename, NULL);
@@ -1889,14 +1898,33 @@ FILE  *fp;
 
         /* Else, strip directory and try locally */
     splitPathAtDirectory(filename, NULL, &tail);
-    if (!tail)
-        return (FILE*)ERROR_PTR_1("tail not found", filename, __func__, NULL);
-    fp = fopen(tail, "rb");
-    if (!fp)
-        L_ERROR("failed to open locally with tail %s for filename %s\n",
-                __func__, tail, filename);
-    LEPT_FREE(tail);
-    return fp;
+    if (tail) {
+        fp = fopen(tail, "rb");
+        if (!fp)
+            L_INFO("failed to open locally with tail %s for filename %s\n",
+                 __func__, tail, filename);
+        LEPT_FREE(tail);
+        if (fp) return fp;
+    }
+
+#ifdef WIN32
+        /* On Windows, if the file wasn't found, check if the name is
+           wrapped in double quotes and try again.  This supports
+           "Copy as path", which wraps paths in double quotes. */
+    if (len > 2 && filename[0] == '"' && filename[len - 1] == '"') {
+        stripped_name = (char *)LEPT_CALLOC(len, sizeof(char));
+        if (!stripped_name) {
+            L_ERROR("stripped name not alloc'd\n", __func__);
+        } else {
+            memcpy(stripped_name, filename + 1, len - 2);
+            fp = fopenReadStream(stripped_name);  /* recursive call */
+            LEPT_FREE(stripped_name);
+            if (fp) return fp;
+        }
+    }
+#endif  /* WIN32 */
+
+    return (FILE *)ERROR_PTR_1("file not found", filename, __func__, NULL);
 }
 
 
@@ -2174,11 +2202,11 @@ l_uint32  attributes;
     sarraySplitString(sa, subdir, "/");
     n = sarrayGetCount(sa);
     dir = genPathname("/tmp", NULL);
-    ret = 0;   /* don't check ret values with unix because if a directory
-                * exists, mkdir() returns -1  */
        /* Make sure the tmp directory exists */
 #ifndef _WIN32
-    mkdir(dir, 0777);
+    if (mkdir(dir, 0777) != 0 && errno != EEXIST) {
+        ++ret;
+    }
 #else
     attributes = GetFileAttributesA(dir);
     if (attributes == INVALID_FILE_ATTRIBUTES)
@@ -2188,7 +2216,9 @@ l_uint32  attributes;
     for (i = 0; i < n; i++) {
         tmpdir = pathJoin(dir, sarrayGetString(sa, i, L_NOCOPY));
 #ifndef _WIN32
-        mkdir(tmpdir, 0777);
+        if (mkdir(tmpdir, 0777) != 0 && errno != EEXIST) {
+            ++ret;
+        }
 #else
         if (CreateDirectoryA(tmpdir, NULL) == 0)
             ret += (GetLastError() != ERROR_ALREADY_EXISTS);
@@ -3243,11 +3273,11 @@ size_t   pathlen;
  * \param[in]    path     preallocated on stack or heap and passed in
  * \param[in]    nbytes   size of %path array, in bytes
  * \param[in]    flag     L_ADD_TRAIL_SLASH or L_REMOVE_TRAIL_SLASH
- * \return  0 if OK, 1 on error
+ * \return  0 if OK or the path is empty, 1 on error
  *
  * <pre>
  * Notes:
- *      (1) This carries out the requested action if necessary.
+ *      (1) This modifies the input path string if necessary.
  * </pre>
  */
 l_ok
@@ -3263,7 +3293,7 @@ size_t  len;
     if (flag != L_ADD_TRAIL_SLASH && flag != L_REMOVE_TRAIL_SLASH)
         return ERROR_INT("invalid flag", __func__, 1);
 
-    len = strlen(path);
+    if ((len = strlen(path)) == 0) return 0;
     lastchar = path[len - 1];
     if (flag == L_ADD_TRAIL_SLASH && lastchar != '/' && len < nbytes - 2) {
         path[len] = '/';
@@ -3338,8 +3368,8 @@ char  dirname[240];
  * \brief   extractNumberFromFilename()
  *
  * \param[in]    fname
- * \param[in]    numpre    number of characters before the digits to be found
- * \param[in]    numpost   number of characters after the digits to be found
+ * \param[in]    numpre    number of characters before the digits; >= 0
+ * \param[in]    numpost   number of characters after the digits; >= 0
  * \return  num number embedded in the filename; -1 on error or if
  *                   not found
  *
@@ -3362,13 +3392,15 @@ l_int32  len, nret, num;
 
     if (!fname)
         return ERROR_INT("fname not defined", __func__, -1);
+    if (numpre < 0 || numpost < 0)
+        return ERROR_INT("numpre and numpost must be >= 0", __func__, -1);
 
     splitPathAtDirectory(fname, NULL, &tail);
     splitPathAtExtension(tail, &basename, NULL);
     LEPT_FREE(tail);
 
     len = strlen(basename);
-    if (numpre + numpost > len - 1) {
+    if (numpre >= len || numpost >= len - numpre) {
         LEPT_FREE(basename);
         return ERROR_INT("numpre + numpost too big", __func__, -1);
     }

@@ -399,8 +399,9 @@ PIXAA   *paa;
         return ERROR_INT("pixs not defined", __func__, 1);
 
         /* Get the bounding boxes of the words from the word mask. */
-    pixWordBoxesByDilation(pixs, minwidth, minheight, maxwidth, maxheight,
-                           &boxa1, NULL, NULL);
+    if (pixWordBoxesByDilation(pixs, minwidth, minheight,
+                               maxwidth, maxheight, &boxa1, NULL, NULL))
+        return ERROR_INT("word boxes not made", __func__, 1);
 
         /* Generate a pixa of the word images */
     pixa1 = pixaCreateFromBoxa(pixs, boxa1, 0, 0, NULL);
@@ -469,8 +470,9 @@ NUMA    *nai;
         return ERROR_INT("pixs not defined", __func__, 1);
 
         /* Get the bounding boxes of the words from the word mask. */
-    pixWordBoxesByDilation(pixs, minwidth, minheight, maxwidth, maxheight,
-                           &boxa1, NULL, NULL);
+    if (pixWordBoxesByDilation(pixs, minwidth, minheight,
+                               maxwidth, maxheight, &boxa1, NULL, NULL))
+        return ERROR_INT("word boxes not made", __func__, 1);
 
         /* 2D sort the bounding boxes of these words. */
     baa = boxaSort2d(boxa1, NULL, 3, -5, 5);
@@ -741,16 +743,16 @@ NUMAA   *naa;
  * </pre>
  */
 l_ok
-numaaCompareImagesByBoxes(NUMAA    *naa1,
-                          NUMAA    *naa2,
-                          l_int32   nperline,
-                          l_int32   nreq,
-                          l_int32   maxshiftx,
-                          l_int32   maxshifty,
-                          l_int32   delx,
-                          l_int32   dely,
-                          l_int32  *psame,
-                          l_int32   debugflag)
+numaaCompareImagesByBoxes(const NUMAA  *naa1,
+                          const NUMAA  *naa2,
+                          l_int32       nperline,
+                          l_int32       nreq,
+                          l_int32       maxshiftx,
+                          l_int32       maxshifty,
+                          l_int32       delx,
+                          l_int32       dely,
+                          l_int32      *psame,
+                          l_int32       debugflag)
 {
 l_int32   n1, n2, i, j, nbox, y1, y2, xl1, xl2;
 l_int32   shiftx, shifty, match;
@@ -961,8 +963,15 @@ l_int32  *ia1, *ia2, *iasx, *iasy, *index1, *index2;
     iasy = numaGetIArray(nasy);
     index1 = (l_int32 *)LEPT_CALLOC(n1, sizeof(l_int32));  /* watch rows */
     index2 = (l_int32 *)LEPT_CALLOC(n2, sizeof(l_int32));
-    if (!index1 || !index2)
+    if (!index1 || !index2) {
+        LEPT_FREE(ia1);
+        LEPT_FREE(ia2);
+        LEPT_FREE(iasx);
+        LEPT_FREE(iasy);
+        LEPT_FREE(index1);
+        LEPT_FREE(index2);
         return ERROR_INT("calloc fail for array", __func__, 1);
+    }
     for (i = 0; i < nm; i++) {
         if (*psame == 1)
             break;

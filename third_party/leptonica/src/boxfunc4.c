@@ -148,10 +148,10 @@ BOXA    *boxad;
  * </pre>
  */
 BOXAA *
-boxaaSelectRange(BOXAA   *baas,
-                 l_int32  first,
-                 l_int32  last,
-                 l_int32  copyflag)
+boxaaSelectRange(const BOXAA  *baas,
+                 l_int32       first,
+                 l_int32       last,
+                 l_int32       copyflag)
 {
 l_int32  n, nboxa, i;
 BOXA    *boxa;
@@ -778,8 +778,8 @@ PTA     *pta, *pta1;
  * </pre>
  */
 BOXA *
-ptaConvertToBoxa(PTA     *pta,
-                 l_int32  ncorners)
+ptaConvertToBoxa(const PTA  *pta,
+                 l_int32     ncorners)
 {
 l_int32  i, n, nbox, x1, y1, x2, y2, x3, y3, x4, y4, x, y, xmax, ymax;
 BOX     *box;
@@ -871,7 +871,7 @@ PTA     *pta;
  * </pre>
  */
 BOX *
-ptaConvertToBox(PTA  *pta)
+ptaConvertToBox(const PTA  *pta)
 {
 l_int32  n, x1, y1, x2, y2, x3, y3, x4, y4, x, y, xmax, ymax;
 
@@ -921,10 +921,10 @@ l_int32  n, x1, y1, x2, y2, x3, y3, x4, y4, x, y, xmax, ymax;
  * </pre>
  */
 l_ok
-boxaGetExtent(BOXA     *boxa,
-              l_int32  *pw,
-              l_int32  *ph,
-              BOX     **pbox)
+boxaGetExtent(const BOXA  *boxa,
+              l_int32     *pw,
+              l_int32     *ph,
+              BOX        **pbox)
 {
 l_int32  i, n, x, y, w, h, xmax, ymax, xmin, ymin, found;
 
@@ -985,11 +985,11 @@ l_int32  i, n, x, y, w, h, xmax, ymax, xmin, ymin, found;
  * </pre>
  */
 l_ok
-boxaGetCoverage(BOXA       *boxa,
-                l_int32     wc,
-                l_int32     hc,
-                l_int32     exactflag,
-                l_float32  *pfract)
+boxaGetCoverage(const BOXA  *boxa,
+                l_int32      wc,
+                l_int32      hc,
+                l_int32      exactflag,
+                l_float32   *pfract)
 {
 l_int32  i, n, x, y, w, h, sum;
 BOX     *box, *boxc;
@@ -1044,11 +1044,11 @@ PIX     *pixt;
  * \return  0 if OK, 1 on error
  */
 l_ok
-boxaaSizeRange(BOXAA    *baa,
-               l_int32  *pminw,
-               l_int32  *pminh,
-               l_int32  *pmaxw,
-               l_int32  *pmaxh)
+boxaaSizeRange(const BOXAA  *baa,
+               l_int32      *pminw,
+               l_int32      *pminh,
+               l_int32      *pmaxw,
+               l_int32      *pmaxh)
 {
 l_int32  minw, minh, maxw, maxh, minbw, minbh, maxbw, maxbh, i, n;
 BOXA    *boxa;
@@ -1243,8 +1243,8 @@ BOX     *box;
  * </pre>
  */
 l_ok
-boxaGetArea(BOXA     *boxa,
-            l_int32  *parea)
+boxaGetArea(const BOXA  *boxa,
+            l_int32     *parea)
 {
 l_int32  i, n, w, h;
 
@@ -1292,7 +1292,7 @@ l_int32  i, n, w, h;
  */
 PIX *
 boxaDisplayTiled(BOXA        *boxas,
-                 PIXA        *pixa,
+                 const PIXA  *pixa,
                  l_int32      first,
                  l_int32      last,
                  l_int32      maxwidth,

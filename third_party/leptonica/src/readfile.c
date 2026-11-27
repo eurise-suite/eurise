@@ -521,6 +521,9 @@ PIX     *pix;
 
     case IFF_JP2:
         ret = readHeaderJp2k(filename, &w, &h, &bps, &spp, NULL);
+        if (ret)
+            return ERROR_INT_1("jp2: no header info returned",
+                               filename, __func__, 1);
         break;
 
     case IFF_WEBP:
@@ -664,7 +667,10 @@ l_uint16  twobytepw;
     if (!buf)
         return ERROR_INT("byte buffer not defined", __func__, 0);
 
-        /* Check the bmp and tiff 2-byte header ids */
+        /* Check the bmp and tiff 4-byte header ids.  For tiff, the
+         * 2-byte byte-order marker is followed by version number 42
+         * in the appropriate byte order.  This ensures that a text
+         * file starting with "II" or "MM" is not misdetected as tiff. */
     ((char *)(&twobytepw))[0] = buf[0];
     ((char *)(&twobytepw))[1] = buf[1];
 
@@ -673,7 +679,8 @@ l_uint16  twobytepw;
         return 0;
     }
 
-    if (twobytepw == TIFF_BIGEND_ID || twobytepw == TIFF_LITTLEEND_ID) {
+    if ((twobytepw == TIFF_BIGEND_ID && buf[2] == 0 && buf[3] == 42) ||
+        (twobytepw == TIFF_LITTLEEND_ID && buf[2] == 42 && buf[3] == 0)) {
         *pformat = IFF_TIFF;
         return 0;
     }

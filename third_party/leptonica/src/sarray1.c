@@ -174,6 +174,8 @@ SARRAY  *sa;
         n = InitialPtrArraySize;
 
     sa = (SARRAY *)LEPT_CALLOC(1, sizeof(SARRAY));
+    if (!sa)
+        return (SARRAY *)ERROR_PTR("sarray not made", __func__, NULL);
     if ((sa->array = (char **)LEPT_CALLOC(n, sizeof(char *))) == NULL) {
         sarrayDestroy(&sa);
         return (SARRAY *)ERROR_PTR("ptr array not made", __func__, NULL);
@@ -479,8 +481,8 @@ size_t  oldsize, newsize;
 
     if (!sa)
         return ERROR_INT("sa not defined", __func__, 1);
-    if (sa->nalloc >= (l_int32)MaxPtrArraySize)  /* belt & suspenders */
-        return ERROR_INT("sa at maximum ptr size; can't extend", __func__, 1);
+    if (sa->nalloc >= (l_int32)MaxPtrArraySize)
+        return ERROR_INT("sa near maximum ptr size; can't extend", __func__, 1);
     oldsize = sa->nalloc * sizeof(char *);
     if (sa->nalloc > (l_int32)(MaxPtrArraySize / 2)) {
         newsize = MaxPtrArraySize * sizeof(char *);
@@ -614,7 +616,7 @@ l_int32  i;
  * \return  count, or 0 if no strings or on error
  */
 l_int32
-sarrayGetCount(SARRAY  *sa)
+sarrayGetCount(const SARRAY  *sa)
 {
     if (!sa)
         return ERROR_INT("sa not defined", __func__, 0);
@@ -637,9 +639,9 @@ sarrayGetCount(SARRAY  *sa)
  * </pre>
  */
 char **
-sarrayGetArray(SARRAY   *sa,
-               l_int32  *pnalloc,
-               l_int32  *pn)
+sarrayGetArray(const SARRAY  *sa,
+               l_int32       *pnalloc,
+               l_int32       *pn)
 {
 char  **array;
 
@@ -670,9 +672,9 @@ char  **array;
  * </pre>
  */
 char *
-sarrayGetString(SARRAY  *sa,
-                l_int32  index,
-                l_int32  copyflag)
+sarrayGetString(const SARRAY  *sa,
+                l_int32        index,
+                l_int32        copyflag)
 {
     if (!sa)
         return (char *)ERROR_PTR("sa not defined", __func__, NULL);
@@ -713,8 +715,8 @@ sarrayGetString(SARRAY  *sa,
  * </pre>
  */
 char *
-sarrayToString(SARRAY  *sa,
-               l_int32  addnlflag)
+sarrayToString(const SARRAY  *sa,
+               l_int32        addnlflag)
 {
     if (!sa)
         return (char *)ERROR_PTR("sa not defined", __func__, NULL);
@@ -746,13 +748,14 @@ sarrayToString(SARRAY  *sa,
  * </pre>
  */
 char *
-sarrayToStringRange(SARRAY  *sa,
-                    l_int32  first,
-                    l_int32  nstrings,
-                    l_int32  addnlflag)
+sarrayToStringRange(const SARRAY  *sa,
+                    l_int32        first,
+                    l_int32        nstrings,
+                    l_int32        addnlflag)
 {
 char    *dest, *src, *str;
-l_int32  n, i, last, size, index, len;
+l_int32  n, i, last;
+size_t   size, index, len;
 
     if (!sa)
         return (char *)ERROR_PTR("sa not defined", __func__, NULL);
@@ -1197,9 +1200,9 @@ SARRAY  *saout;
  * </pre>
  */
 SARRAY *
-sarraySelectRange(SARRAY  *sain,
-                  l_int32  first,
-                  l_int32  last)
+sarraySelectRange(const SARRAY  *sain,
+                  l_int32        first,
+                  l_int32        last)
 {
 char    *str;
 l_int32  n, i;
@@ -1413,7 +1416,8 @@ SARRAY  *sa;
 
     for (i = 0; i < n; i++) {
             /* Get the size of the stored string */
-        if ((fscanf(fp, "%d[%d]:", &index, &size) != 2) || (size > (1 << 30))) {
+        if ((fscanf(fp, "%d[%d]:", &index, &size) != 2) ||
+            (size < 0) || (size > (1 << 30))) {
             success = FALSE;
             L_ERROR("error on string size\n", __func__);
             goto cleanup;

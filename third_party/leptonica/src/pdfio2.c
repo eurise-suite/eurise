@@ -955,7 +955,7 @@ FILE         *fp;
                                           fname, __func__, NULL);
 
         /* Optionally, encode the compressed data */
-    if (ascii85flag == 1) {
+    if (ascii85flag) {
         data85 = encodeAscii85(data, nbytes, &nbytes85);
         LEPT_FREE(data);
         if (!data85)
@@ -966,7 +966,14 @@ FILE         *fp;
     }
 
     cid = (L_COMP_DATA *)LEPT_CALLOC(1, sizeof(L_COMP_DATA));
-    if (ascii85flag == 0) {
+    if (!cid) {
+        if (ascii85flag)
+            LEPT_FREE(data85);
+        else
+            LEPT_FREE(data);
+        return (L_COMP_DATA *)ERROR_PTR("cid not made", __func__, NULL);
+    }
+    if (!ascii85flag) {
         cid->datacomp = data;
     } else {  /* ascii85 */
         cid->data85 = data85;
@@ -996,6 +1003,9 @@ FILE         *fp;
  *      (1) Set ascii85flag:
  *           ~ 0 for binary data (PDF only)
  *           ~ 1 for ascii85 (5 for 4) encoded binary data (PostScript only)
+ *      (2) The caller transfers ownership of %data to the returned
+ *          cid (via cid->datacomp or cid->data85).  If this function
+ *          fails, %data is freed before returning NULL.
  * </pre>
  */
 L_COMP_DATA *
@@ -1011,6 +1021,11 @@ L_COMP_DATA  *cid;
     if (!data)
         return (L_COMP_DATA *)ERROR_PTR("data not defined", __func__, NULL);
 
+    if (ascii85flag != 0 && ascii85flag != 1) {
+        LEPT_FREE(data);
+        return (L_COMP_DATA *)ERROR_PTR("wrong ascii85flags", __func__, NULL);
+    }
+
         /* Read the metadata */
     if (readHeaderMemJpeg(data, nbytes, &w, &h, &spp, NULL, NULL)) {
         LEPT_FREE(data);
@@ -1020,7 +1035,7 @@ L_COMP_DATA  *cid;
     readResolutionMemJpeg(data, nbytes, &xres, &yres);
 
         /* Optionally, encode the compressed data */
-    if (ascii85flag == 1) {
+    if (ascii85flag) {
         data85 = encodeAscii85(data, nbytes, &nbytes85);
         LEPT_FREE(data);
         if (!data85)
@@ -1030,7 +1045,14 @@ L_COMP_DATA  *cid;
     }
 
     cid = (L_COMP_DATA *)LEPT_CALLOC(1, sizeof(L_COMP_DATA));
-    if (ascii85flag == 0) {
+    if (!cid) {
+        if (ascii85flag)
+            LEPT_FREE(data85);
+        else
+            LEPT_FREE(data);
+        return (L_COMP_DATA *)ERROR_PTR("cid not made", __func__, NULL);
+    }
+    if (!ascii85flag) {
         cid->datacomp = data;
     } else {  /* ascii85 */
         cid->data85 = data85;
@@ -1125,6 +1147,9 @@ FILE         *fp;
     if (!fname)
         return (L_COMP_DATA *)ERROR_PTR("fname not defined", __func__, NULL);
 
+    if (ascii85flag != 0 && ascii85flag != 1)
+        return (L_COMP_DATA *)ERROR_PTR("wrong ascii85flags", __func__, NULL);
+
         /* Make sure this is a single page tiff file */
     if ((fp = fopenReadStream(fname)) == NULL)
         return (L_COMP_DATA *)ERROR_PTR_1("stream not opened",
@@ -1153,7 +1178,7 @@ FILE         *fp;
     }
 
         /* Optionally, encode the compressed data */
-    if (ascii85flag == 1) {
+    if (ascii85flag) {
         data85 = encodeAscii85(datacomp, nbytescomp, &nbytes85);
         LEPT_FREE(datacomp);
         if (!data85)
@@ -1164,7 +1189,7 @@ FILE         *fp;
     }
 
     cid = (L_COMP_DATA *)LEPT_CALLOC(1, sizeof(L_COMP_DATA));
-    if (ascii85flag == 0) {
+    if (!ascii85flag) {
         cid->datacomp = datacomp;
     } else {  /* ascii85 */
         cid->data85 = data85;
@@ -1363,6 +1388,9 @@ PIXCMAP      *cmap;
     if (!pixs)
         return (L_COMP_DATA *)ERROR_PTR("pixs not defined", __func__, NULL);
 
+    if (ascii85flag != 0 && ascii85flag != 1)
+        return (L_COMP_DATA *)ERROR_PTR("wrong ascii85flags", __func__, NULL);
+
         /* Convert the image to one of these 4 types:
          *     1 bpp
          *     8 bpp, no colormap
@@ -1417,7 +1445,7 @@ PIXCMAP      *cmap;
     }
 
         /* Optionally, encode the compressed data */
-    if (ascii85flag == 1) {
+    if (ascii85flag) {
         data85 = encodeAscii85(datacomp, nbytescomp, &nbytes85);
         LEPT_FREE(datacomp);
         if (!data85) {
@@ -1430,7 +1458,7 @@ PIXCMAP      *cmap;
     }
 
     cid = (L_COMP_DATA *)LEPT_CALLOC(1, sizeof(L_COMP_DATA));
-    if (ascii85flag == 0) {
+    if (!ascii85flag) {
         cid->datacomp = datacomp;
     } else {  /* ascii85 */
         cid->data85 = data85;
@@ -1615,8 +1643,10 @@ l_int32      res, ret;
 l_float32    wpt, hpt;
 L_PDF_DATA  *lpd = NULL;
 
-    if (!pdata || !pnbytes)
+    if (!pdata || !pnbytes) {
+        l_CIDataDestroy(&cid);
         return ERROR_INT("&data and &nbytes not both defined", __func__, 1);
+    }
     *pdata = NULL;
     *pnbytes = 0;
     if (!cid)
@@ -1630,8 +1660,10 @@ L_PDF_DATA  *lpd = NULL;
     hpt = cid->h * 72.f / res;
 
         /* Set up the pdf data struct (lpd) */
-    if ((lpd = pdfdataCreate(title)) == NULL)
+    if ((lpd = pdfdataCreate(title)) == NULL) {
+        l_CIDataDestroy(&cid);
         return ERROR_INT("lpd not made", __func__, 1);
+    }
     ptraAdd(lpd->cida, cid);
     lpd->n++;
     ptaAddPt(lpd->xy, 0, 0);   /* xpt = ypt = 0 */
@@ -2302,7 +2334,8 @@ parseTrailerPdf(L_BYTEA  *bas,
 char     *str;
 l_uint8   nl = '\n';
 l_uint8  *data;
-l_int32   i, j, start, startloc, xrefloc, found, loc, nobj, objno, trailer_ok;
+l_int32   i, j, n, start, startloc, xrefloc, found, loc, prevloc, nobj, objno;
+l_int32   trailer_ok;
 size_t    size;
 L_DNA    *da, *daobj, *daxref;
 SARRAY   *sa;
@@ -2360,7 +2393,8 @@ SARRAY   *sa;
     trailer_ok = TRUE;
     for (i = 1; i < nobj; i++) {
         l_dnaGetIValue(da, i, &startloc);
-        if ((sscanf((char *)(data + startloc), "%d 0 obj", &objno)) != 1) {
+        if (startloc < 0 || (size_t)startloc >= size ||
+            (sscanf((char *)(data + startloc), "%d 0 obj", &objno)) != 1) {
             L_ERROR("bad trailer for object %d\n", __func__, i);
             trailer_ok = FALSE;
             break;
@@ -2387,6 +2421,23 @@ SARRAY   *sa;
         l_dnaAddNumber(da, loc);
         l_dnaDestroy(&daobj);
         l_dnaDestroy(&daxref);
+    }
+
+        /* The caller uses the first 4 locations and takes the difference
+         * of adjacent locations as the object sizes, so they must be
+         * in order and within the data. */
+    if ((n = l_dnaGetCount(da)) < 4) {
+        l_dnaDestroy(pda);
+        return ERROR_INT("too few object locations", __func__, 1);
+    }
+    prevloc = 0;
+    for (i = 0; i < n; i++) {
+        l_dnaGetIValue(da, i, &loc);
+        if (loc < prevloc || (size_t)loc >= size) {
+            l_dnaDestroy(pda);
+            return ERROR_INT("invalid object locations", __func__, 1);
+        }
+        prevloc = loc;
     }
 
     return 0;
@@ -2493,6 +2544,10 @@ L_DNA    *da_match;
     nrepl = l_dnaGetCount(da_match);
     matches = l_dnaGetIArray(da_match);
     for (i = 0; i < nrepl; i++) {
+            /* A match must lie beyond 'start'.  It doesn't if the
+             * object begins with something like "01 0 R" */
+        if (matches[i] <= start)
+            continue;
             /* Find the first space before the object number */
         for (j = matches[i] - 1; j > 0; j--) {
             if (datas[j] == space)

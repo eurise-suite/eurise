@@ -115,7 +115,8 @@ static const l_int32   InitialArraySize = 1024;     /*!< n'importe quoi */
  * \brief   bbufferCreate()
  *
  * \param[in]    indata   address in memory [optional]
- * \param[in]    nalloc   size of byte array to be alloc'd 0 for default
+ * \param[in]    nalloc   size of byte array to be alloc'd; 0 for default
+ *                        when %indata is NULL
  * \return  bbuffer, or NULL on error
  *
  * <pre>
@@ -132,6 +133,9 @@ bbufferCreate(const l_uint8  *indata,
 {
 L_BBUFFER  *bb;
 
+    if (indata && nalloc <= 0)
+        return (L_BBUFFER *)ERROR_PTR(
+            "nalloc must be > 0 with input data", __func__, NULL);
     if (nalloc <= 0 || nalloc > MaxArraySize)
         nalloc = InitialArraySize;
 
@@ -355,6 +359,10 @@ bbufferExtendArray(L_BBUFFER  *bb,
 {
     if (!bb)
         return ERROR_INT("bb not defined", __func__, 1);
+    if (nbytes <= 0)
+        return ERROR_INT("nbytes <= 0", __func__, 1);
+    if (bb->nalloc >= (l_int32)MaxArraySize - nbytes)
+        return ERROR_INT("bb cannot be extended", __func__, 1);
 
     if ((bb->array = (l_uint8 *)reallocNew((void **)&bb->array,
                                 bb->nalloc,

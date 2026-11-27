@@ -491,8 +491,9 @@ l_uint32    oword;
     if (insize <= 0)
         return (l_uint8 *)ERROR_PTR("insize not > 0", __func__, NULL);
 
-        /* Accumulate results in outa */
-    maxsize = (l_int32)(80. + (insize * 4. / 5.));  /* plenty big */
+        /* Accumulate results in outa.  Each 'z' input char expands
+         * to 4 output bytes, so allocate for that worst case. */
+    maxsize = (l_int32)(80. + (insize * 4.));
     if ((outa = (l_uint8 *)LEPT_CALLOC(maxsize, sizeof(l_uint8))) == NULL)
         return (l_uint8 *)ERROR_PTR("outa not made", __func__, NULL);
 
@@ -645,7 +646,8 @@ l_uint8  *data1, *outdata;
  * \param[in]    inarray     base64 encoded string with newlines
  * \param[in]    insize      number of bytes in input array
  * \param[in]    leadspace   number of spaces in each line before the data
- * \param[in]    linechars   number of bytes of data in each line; multiple of 4
+ * \param[in]    linechars   number of bytes of data in each line; positive
+ *                            multiple of 4
  * \param[in]    addquotes   1 to add quotes to each line of data; 0 to skip
  * \param[out]   poutsize    number of bytes in output char array
  * \return  outarray ascii
@@ -680,8 +682,9 @@ l_int32  i, j, flatindex, flatsize, outindex, nlines, linewithpad, linecount;
         return (char *)ERROR_PTR("insize not > 0", __func__, NULL);
     if (leadspace < 0)
         return (char *)ERROR_PTR("leadspace must be >= 0", __func__, NULL);
-    if (linechars % 4)
-        return (char *)ERROR_PTR("linechars % 4 must be 0", __func__, NULL);
+    if (linechars <= 0 || linechars % 4)
+        return (char *)ERROR_PTR(
+            "linechars must be a positive multiple of 4", __func__, NULL);
 
         /* Remove all white space */
     if ((flata = (char *)LEPT_CALLOC(insize, sizeof(char))) == NULL)
@@ -693,6 +696,10 @@ l_int32  i, j, flatindex, flatsize, outindex, nlines, linewithpad, linecount;
 
         /* Generate output string */
     flatsize = flatindex;
+    if (flatsize == 0) {
+        LEPT_FREE(flata);
+        return (char *)ERROR_PTR("no base64 data", __func__, NULL);
+    }
     nlines = (flatsize + linechars - 1) / linechars;
     linewithpad = leadspace + linechars + 1;  /* including newline */
     if (addquotes) linewithpad += 2;
