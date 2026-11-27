@@ -57,7 +57,6 @@ import eu.eurise.postazione.BuildConfig
 import eu.eurise.postazione.PostazioneModel
 import eu.eurise.postazione.R
 import eu.eurise.postazione.data.Cosa
-import eu.eurise.postazione.data.Contesto
 import eu.eurise.postazione.data.Siti
 import eu.eurise.core.suite.PostazioneContract
 import androidx.compose.foundation.combinedClickable
@@ -71,6 +70,21 @@ import eu.eurise.postazione.data.Meteo
 import eu.eurise.postazione.data.Saluto
 import eu.eurise.postazione.data.Scheda
 import eu.eurise.postazione.data.Schede
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import eu.eurise.postazione.data.Azioni
+import eu.eurise.postazione.data.Gesto
+import eu.eurise.postazione.data.Linguetta
+import eu.eurise.postazione.data.Pagine
+import eu.eurise.postazione.data.Tipo
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
@@ -82,6 +96,7 @@ import java.util.Locale
 private val Ora = DateTimeFormatter.ofPattern("H:mm")
 private val Giorno = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.ITALIAN)
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
     val col = colori(isSystemInDarkTheme(), model.accento)
@@ -90,58 +105,96 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
     var cassetto by remember { mutableStateOf(false) }
     var cercaSubito by remember { mutableStateOf(false) }
     var sitoPer by remember { mutableStateOf<String?>(null) }
-    // Dove va l'app scelta nel cassetto: l'id di una categoria della dock, o «scheda:<nome>» per le app di una scheda.
+    // Dove va l'app scelta nel cassetto: l'id di una categoria, «pagina:<id>» o «gesto:<nome>».
     var scegliPer by remember { mutableStateOf<String?>(null) }
     var impostazioni by remember { mutableStateOf(false) }
+    var modificaBolle by remember { mutableStateOf(false) }
+    var aiAperta by remember { mutableStateOf(false) }
+    var pagineAperte by remember { mutableStateOf(false) }
+    var gestiAperti by remember { mutableStateOf(false) }
 
-    // Il tasto Home chiude tutto e riporta la scheda in cima.
+    val homeIndex = model.pagine.size
+    val pager = rememberPagerState(initialPage = homeIndex) { model.pagine.size + 2 }
+    val scope = rememberCoroutineScope()
+    // Il tasto Home chiude tutto, torna alla Home e riporta la linguetta in cima.
     var giri by remember { mutableStateOf(0) }
-    LaunchedEffect(Unit) { home.collect { ventaglio = null; cassetto = false; scegliPer = null; editor = null; giri++ } }
+    LaunchedEffect(Unit) {
+        home.collect {
+            ventaglio = null; cassetto = false; scegliPer = null; editor = null; aiAperta = false; modificaBolle = false; giri++
+            pager.animateScrollToPage(model.pagine.size)
+        }
+    }
     LaunchedEffect(model.impostazioniRichieste) { if (model.impostazioniRichieste > 0) impostazioni = true }
     LaunchedEffect(Unit) { while (true) { delay(15_000); model.tic() } }
-    BackHandler(enabled = ventaglio != null) { ventaglio = null }
+    BackHandler(enabled = ventaglio != null || aiAperta || modificaBolle || pager.currentPage != homeIndex) {
+        when {
+            ventaglio != null -> ventaglio = null
+            aiAperta -> aiAperta = false
+            modificaBolle -> modificaBolle = false
+            else -> scope.launch { pager.animateScrollToPage(homeIndex) }
+        }
+    }
 
-    val adesso = model.adesso
-    val cielo = Schede.cielo(adesso)
+    val cielo = model.cielo
     val suCielo = testoSulCielo(cielo)
-    val scheda = model.scheda
     val apriCassetto: (Boolean) -> Unit = { cerca -> cercaSubito = cerca; scegliPer = null; cassetto = true }
+    val paginaAi: String? = model.pagine.getOrNull(pager.currentPage)?.id
+    // I gesti a due e tre dita: cerca, AI e «tutte le app» li fa la schermata, il resto il modello.
+    val onGesto: (Gesto) -> Unit = { g ->
+        when (val azione = model.gesti[g].orEmpty()) {
+            Azioni.CERCA -> apriCassetto(true)
+            Azioni.AI -> aiAperta = true
+            Azioni.TUTTE -> scope.launch { pager.animateScrollToPage(model.pagine.size + 1) }
+            else -> model.funzione(azione)
+        }
+    }
 
-    BoxWithConstraints(Modifier.fillMaxSize().background(col.fondo)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(col.fondo).gestiDita(onGesto)) {
         CieloDiFondo(cielo)
-        // Telefono: barra in basso. Tablet e schermi larghi: binario dal lato della mano e foglio a due colonne.
+        // Telefono: dock in basso. Tablet e schermi larghi: binario dal lato della mano.
         val largo = maxWidth >= 840.dp
         val onGruppo: (String) -> Unit = { g ->
             val prima = model.gruppi[g]?.firstOrNull()
             if (prima == null || !model.apri(prima)) ventaglio = g
         }
-        if (largo) {
-            Row(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-                val binario: @Composable () -> Unit = {
-                    Binario(model, col, onGruppo, { ventaglio = it }, { apriCassetto(true) }, { model.alfred() }, { apriCassetto(false) })
-                }
-                if (model.mancino) binario()
-                Column(Modifier.weight(1f).padding(bottom = 14.dp)) {
-                    Testata(model, suCielo, Modifier)
-                    Linguette(model, scheda, col, suCielo)
-                    Foglio(model, scheda, col, true, giri, Modifier.weight(1f)) { scegliPer = "scheda:" + scheda.name; cercaSubito = false; cassetto = true }
-                }
-                if (!model.mancino) binario()
+        val suCassetto = pager.currentPage == homeIndex + 1
+        Row(Modifier.fillMaxSize()) {
+            val binario: @Composable () -> Unit = {
+                if (largo && !suCassetto) Binario(
+                    model, col, onGruppo, { ventaglio = it }, { apriCassetto(true) }, { model.alfred() },
+                    { scope.launch { pager.animateScrollToPage(homeIndex + 1) } },
+                )
             }
-        } else {
-            Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(bottom = 116.dp)) {
-                Testata(model, suCielo, Modifier.pointerInput(Unit) { scorriSu { apriCassetto(false) } })
-                Linguette(model, scheda, col, suCielo)
-                Foglio(model, scheda, col, false, giri, Modifier.weight(1f)) { scegliPer = "scheda:" + scheda.name; cercaSubito = false; cassetto = true }
+            if (model.mancino) binario()
+            HorizontalPager(pager, Modifier.weight(1f).fillMaxHeight(), beyondViewportPageCount = 1) { i ->
+                when {
+                    i < homeIndex -> PaginaUtente(
+                        model, model.pagine[i], col, suCielo, largo,
+                        onAggiungi = { scegliPer = "pagina:" + model.pagine[i].id; cercaSubito = false; cassetto = true },
+                        onModifica = { pagineAperte = true },
+                    )
+                    i == homeIndex -> Column(
+                        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(bottom = if (largo) 14.dp else 112.dp),
+                    ) {
+                        if (modificaBolle) BarraModifica(model, col) { modificaBolle = false } else Testata(model, suCielo, Modifier)
+                        Linguette(model, col, suCielo, onBolle = { modificaBolle = true })
+                        FoglioBolle(model, model.attiva, col, giri, modificaBolle, { modificaBolle = it }, Modifier.weight(1f))
+                    }
+                    else -> CassettoCategorie(model, col, giri, onModifica = { editor = it })
+                }
             }
-            // Il richiamo di «Tutte le app» sopra la barra: un tocco o uno scorrimento verso l'alto.
-            Column(
-                Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 98.dp)
-                    .clickable { apriCassetto(false) }.pointerInput(Unit) { scorriSu { apriCassetto(false) } },
-                horizontalAlignment = Alignment.CenterHorizontally,
+            if (!model.mancino) binario()
+        }
+        if (!largo && !suCassetto) {
+            // Lo swipe dal basso apre l'AI della pagina: il richiamo sopra la dock.
+            val ai = model.aiDi(paginaAi)
+            Row(
+                Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 92.dp)
+                    .clickable { aiAperta = true }.pointerInput(Unit) { scorriSu { aiAperta = true } }.padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(EuriseIcons.chevronUp(), null, Modifier.size(16.dp), tint = suCielo.copy(alpha = 0.8f))
-                Text(stringResource(R.string.tutte_le_app), color = suCielo.copy(alpha = 0.85f), fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
+                Icon(EuriseIcons.chevronUp(), null, Modifier.size(14.dp), tint = suCielo.copy(alpha = 0.8f))
+                Text(" " + ai.nome.substringBefore(" ·"), color = suCielo.copy(alpha = 0.85f), fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
             }
             Barra(
                 model, col,
@@ -149,7 +202,7 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
                 onVentaglio = { ventaglio = it },
                 onLente = { apriCassetto(true) },
                 onAlfred = { model.alfred() },
-                modifier = Modifier.align(Alignment.BottomCenter).pointerInput(Unit) { scorriSu { apriCassetto(false) } },
+                modifier = Modifier.align(Alignment.BottomCenter).pointerInput(Unit) { scorriSu { aiAperta = true } },
             )
         }
         ventaglio?.let { g ->
@@ -157,7 +210,10 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
                 ventaglio = null; scegliPer = g; cercaSubito = false; cassetto = true
             }, onModifica = { ventaglio = null; editor = g })
         }
-        editor?.let { g -> EditorCategoria(model, g, onChiudi = { editor = null; ventaglio = g }) }
+        editor?.let { g -> EditorCategoria(model, g, onChiudi = { editor = null }) }
+        if (aiAperta) AiDalBasso(model, paginaAi, col, onChiudi = { aiAperta = false })
+        if (pagineAperte) GestionePagine(model, onChiudi = { pagineAperte = false }, onVai = { i -> pagineAperte = false; scope.launch { pager.animateScrollToPage(i) } })
+        if (gestiAperti) GestioneGesti(model, onChiudi = { gestiAperti = false }, onScegliApp = { g -> gestiAperti = false; scegliPer = "gesto:" + g.name; cercaSubito = false; cassetto = true })
         if (cassetto) {
             Cassetto(
                 model, col, cercaSubito, scegliPer,
@@ -165,9 +221,10 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
                     val g = scegliPer
                     when {
                         g == null -> if (model.apri(chiave)) cassetto = false
-                        g.startsWith("scheda:") -> {
-                            runCatching { Scheda.valueOf(g.removePrefix("scheda:")) }.getOrNull()?.let { model.fissaInScheda(it, chiave) }
-                            cassetto = false; scegliPer = null
+                        g.startsWith("pagina:") -> { model.aggiungiAPagina(g.removePrefix("pagina:"), chiave); cassetto = false; scegliPer = null }
+                        g.startsWith("gesto:") -> {
+                            Gesto.entries.firstOrNull { it.name == g.removePrefix("gesto:") }?.let { model.impostaGesto(it, Azioni.app(chiave)) }
+                            cassetto = false; scegliPer = null; gestiAperti = true
                         }
                         else -> { model.aggiungi(g, chiave); cassetto = false; scegliPer = null; ventaglio = g }
                     }
@@ -181,18 +238,22 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
             NuovoSito(
                 onAggiungi = { indirizzo, nome ->
                     model.aggiungiSito(g, indirizzo, nome).also { ok ->
-                        if (ok) { sitoPer = null; cassetto = false; scegliPer = null; if (!g.startsWith("scheda:")) ventaglio = g }
+                        if (ok) { sitoPer = null; cassetto = false; scegliPer = null; if (!g.startsWith("pagina:")) ventaglio = g }
                     }
                 },
                 onChiudi = { sitoPer = null },
             )
         }
-        if (impostazioni) Impostazioni(model, onChiudi = { impostazioni = false })
+        if (impostazioni) Impostazioni(
+            model, onChiudi = { impostazioni = false },
+            onPagine = { impostazioni = false; pagineAperte = true },
+            onGesti = { impostazioni = false; gestiAperti = true },
+        )
     }
 }
 
 /** Uno scorrimento verso l'alto di almeno 60 dp. */
-private suspend fun androidx.compose.ui.input.pointer.PointerInputScope.scorriSu(azione: () -> Unit) {
+internal suspend fun androidx.compose.ui.input.pointer.PointerInputScope.scorriSu(azione: () -> Unit) {
     var tot = 0f
     detectVerticalDragGestures(
         onDragStart = { tot = 0f },
@@ -206,7 +267,9 @@ private fun Testata(model: PostazioneModel, colore: Color, modifier: Modifier) {
     val saluto = stringResource(
         when (Schede.saluto(adesso)) { Saluto.Giorno -> R.string.saluto_giorno; Saluto.Pomeriggio -> R.string.saluto_pomeriggio; Saluto.Sera -> R.string.saluto_sera },
     )
-    val testo = if (model.nome.isBlank()) saluto else stringResource(R.string.saluto_nome, saluto, model.nome)
+    val notte = adesso.hour >= 22 || adesso.hour < 4
+    val testo0 = if (notte) stringResource(R.string.saluto_notte) else saluto
+    val testo = if (model.nome.isBlank()) testo0 else stringResource(R.string.saluto_nome, testo0, model.nome)
     val tel = model.telefono
     val hub = BuildConfig.HUB_PACKAGE
     Column(modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 10.dp, bottom = 12.dp)) {
@@ -242,35 +305,75 @@ private fun Testata(model: PostazioneModel, colore: Color, modifier: Modifier) {
     }
 }
 
+/** Il nome di una linguetta: quello scelto, o quello di partenza del suo tipo. */
 @Composable
-private fun Linguette(model: PostazioneModel, attiva: Scheda, col: Colori, suCielo: Color) {
+internal fun nomeLinguetta(l: Linguetta): String = l.nome.ifBlank {
+    stringResource(when (l.tipo) { Tipo.Lavoro -> R.string.scheda_lavoro; Tipo.Personale -> R.string.scheda_personale; Tipo.Viaggio -> R.string.scheda_viaggio; Tipo.Libera -> R.string.scheda_libera })
+}
+
+/**
+ * Le linguette: un tocco la apre, tenendola premuta Rinomina, Bolle, Quando si apre da sola, Sposta e Togli; il + ne
+ * aggiunge una. Linguetta e foglio sono un pezzo solo, senza filo (tavola del 27 novembre).
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun Linguette(model: PostazioneModel, col: Colori, suCielo: Color, onBolle: () -> Unit) {
+    val attiva = model.attiva
+    var menu by remember { mutableStateOf<Linguetta?>(null) }
+    var rinomina by remember { mutableStateOf<Linguetta?>(null) }
+    var tipo by remember { mutableStateOf<Linguetta?>(null) }
+    var nuova by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
     Row(Modifier.fillMaxWidth().padding(start = 10.dp), verticalAlignment = Alignment.Bottom) {
-        Scheda.entries.forEachIndexed { i, s ->
-            val nome = stringResource(when (s) { Scheda.Lavoro -> R.string.scheda_lavoro; Scheda.Personale -> R.string.scheda_personale; Scheda.Viaggio -> R.string.scheda_viaggio })
-            if (s == attiva) {
-                val prima = i == 0
-                Box(
-                    Modifier.padding(start = if (prima) 0.dp else 10.dp, end = 10.dp).height(40.dp)
-                        .drawBehind {
-                            // I «piedi» concavi della linguetta: il foglio e la linguetta sono un pezzo solo (schedario).
-                            val r = 10.dp.toPx(); val w = size.width; val h = size.height
-                            drawPath(Path().apply { moveTo(w, h - r); quadraticTo(w, h, w + r, h); lineTo(w, h); close() }, col.foglio)
-                            if (!prima) drawPath(Path().apply { moveTo(0f, h - r); quadraticTo(0f, h, -r, h); lineTo(0f, h); close() }, col.foglio)
+        Row(Modifier.weight(1f).horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.Bottom) {
+            model.linguette.forEachIndexed { i, l ->
+                val nome = nomeLinguetta(l)
+                val tocco = Modifier.combinedClickable(
+                    onClick = { model.scegli(l) },
+                    onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); menu = l },
+                )
+                Box {
+                    if (l.id == attiva.id) {
+                        val prima = i == 0
+                        Box(
+                            Modifier.padding(start = if (prima) 0.dp else 6.dp, end = 6.dp).height(40.dp)
+                                .drawBehind {
+                                    // I «piedi» concavi della linguetta: il foglio e la linguetta sono un pezzo solo.
+                                    val r = 10.dp.toPx(); val w = size.width; val h = size.height
+                                    drawPath(Path().apply { moveTo(w, h - r); quadraticTo(w, h, w + r, h); lineTo(w, h); close() }, col.foglio)
+                                    if (!prima) drawPath(Path().apply { moveTo(0f, h - r); quadraticTo(0f, h, -r, h); lineTo(0f, h); close() }, col.foglio)
+                                }
+                                .background(col.foglio, RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                                .then(tocco).padding(horizontal = 16.dp),
+                            contentAlignment = Alignment.Center,
+                        ) { Text(nome, color = suCielo, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
+                    } else {
+                        Box(Modifier.height(36.dp).then(tocco).padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
+                            Text(nome, color = suCielo.copy(alpha = 0.85f), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                         }
-                        .background(col.foglio, RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                        .padding(horizontal = 16.dp),
-                    contentAlignment = Alignment.Center,
-                ) { Text(nome, color = col.inchiostro, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
-            } else {
+                    }
+                    DropdownMenu(menu?.id == l.id, onDismissRequest = { menu = null }) {
+                        DropdownMenuItem(text = { Text(stringResource(R.string.lg_rinomina)) }, onClick = { menu = null; rinomina = l })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.lg_bolle)) }, onClick = { menu = null; model.scegli(l); onBolle() })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.lg_quando)) }, onClick = { menu = null; tipo = l })
+                        if (i > 0) DropdownMenuItem(text = { Text(stringResource(R.string.lg_sinistra)) }, onClick = { menu = null; model.spostaLinguetta(l, -1) })
+                        if (i < model.linguette.size - 1) DropdownMenuItem(text = { Text(stringResource(R.string.lg_destra)) }, onClick = { menu = null; model.spostaLinguetta(l, 1) })
+                        if (model.linguette.size > 1) DropdownMenuItem(
+                            text = { Text(stringResource(R.string.lg_togli), color = Color(0xFFB3261E)) },
+                            onClick = { menu = null; model.togliLinguetta(l) },
+                        )
+                    }
+                }
+            }
+            if (model.linguette.size < Pagine.MAX_LINGUETTE) {
                 Box(
-                    Modifier.height(36.dp).clickable { model.scegli(s) }.padding(horizontal = 10.dp),
+                    Modifier.padding(start = 2.dp, bottom = 5.dp).size(28.dp).background(col.foglio, CircleShape).clickable { nuova = true },
                     contentAlignment = Alignment.Center,
-                ) { Text(nome, color = suCielo.copy(alpha = 0.85f), fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
+                ) { Icon(EuriseIcons.plus(), stringResource(R.string.lg_aggiungi), Modifier.size(14.dp), tint = suCielo) }
             }
         }
-        Spacer(Modifier.weight(1f))
         Row(
-            Modifier.padding(end = 14.dp, bottom = 11.dp).clickable { model.scegli(Schede.automatica(LocalDateTime.now())) },
+            Modifier.padding(start = 8.dp, end = 14.dp, bottom = 11.dp).clickable { model.tornaAutomatica() },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(Modifier.size(6.dp).background(suCielo.copy(alpha = 0.9f), CircleShape))
@@ -280,206 +383,14 @@ private fun Linguette(model: PostazioneModel, attiva: Scheda, col: Colori, suCie
             )
         }
     }
+    rinomina?.let { l ->
+        TestoDialog(stringResource(R.string.lg_rinomina), nomeLinguetta(l), onOk = { model.rinominaLinguetta(l, it) }, onChiudi = { rinomina = null })
+    }
+    if (nuova) TestoDialog(stringResource(R.string.lg_aggiungi), "", onOk = { if (it.isNotBlank()) model.aggiungiLinguetta(it) }, onChiudi = { nuova = false })
+    tipo?.let { l -> TipoDialog(l, onScelta = { model.tipoLinguetta(l, it) }, onChiudi = { tipo = null }) }
 }
 
-/**
- * Il foglio della scheda. In alto il «Prossimo» e la fine della giornata, poi le app di questa scheda, poi le persone
- * (da rispondere, musica, notizie, oroscopo, preferiti), poi le cose da fare. Sul telefono una sotto l'altra; sugli
- * schermi larghi due colonne.
- */
-@Composable
-private fun Foglio(model: PostazioneModel, scheda: Scheda, col: Colori, largo: Boolean, giri: Int, modifier: Modifier, onAggiungiApp: () -> Unit) {
-    // Ogni scheda ha il suo scorrimento e si apre sempre dall'inizio.
-    val stato = remember(scheda) { androidx.compose.foundation.lazy.LazyListState() }
-    val statoDestra = remember(scheda) { androidx.compose.foundation.lazy.LazyListState() }
-    LaunchedEffect(giri, scheda) { stato.scrollToItem(0); statoDestra.scrollToItem(0) }
-    val primaAttiva = scheda == Scheda.entries.first()
-    val forma = RoundedCornerShape(topStart = if (primaAttiva) 0.dp else 22.dp, topEnd = 22.dp, bottomStart = 22.dp, bottomEnd = 22.dp)
-    val spazi = Arrangement.spacedBy(16.dp)
-    if (largo) {
-        Row(modifier.fillMaxWidth().padding(horizontal = 10.dp).background(col.foglio, forma).padding(horizontal = 6.dp)) {
-            LazyColumn(Modifier.weight(1f), state = stato, contentPadding = PaddingValues(14.dp), verticalArrangement = spazi) {
-                alto(model, scheda, col)
-                item(key = "app") { AppDellaScheda(model, scheda, col, onAggiungiApp) }
-                cose(model, scheda, col)
-            }
-            LazyColumn(Modifier.weight(1f), state = statoDestra, contentPadding = PaddingValues(14.dp), verticalArrangement = spazi) {
-                persone(model, scheda, col)
-            }
-        }
-    } else {
-        LazyColumn(
-            modifier.fillMaxWidth().padding(horizontal = 10.dp).background(col.foglio, forma), state = stato,
-            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = spazi,
-        ) {
-            alto(model, scheda, col)
-            item(key = "app") { AppDellaScheda(model, scheda, col, onAggiungiApp) }
-            persone(model, scheda, col)
-            cose(model, scheda, col)
-        }
-    }
-}
-
-/**
- * Le app di questa scheda: quelle fissate (di partenza o scelte) e le più aperte qui. Tenere premuto un'app la fissa o la
- * toglie; l'ultimo posto aggiunge un'app scelta da te.
- */
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
-@Composable
-private fun AppDellaScheda(model: PostazioneModel, scheda: Scheda, col: Colori, onAggiungi: () -> Unit) {
-    val lista = model.appDellaScheda(scheda)
-    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-    var menu by remember { mutableStateOf<String?>(null) }
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(
-            stringResource(when (scheda) { Scheda.Lavoro -> R.string.app_lavoro; Scheda.Personale -> R.string.app_personale; Scheda.Viaggio -> R.string.app_viaggio }),
-            color = col.inchiostro, fontSize = 13.sp, fontWeight = FontWeight.Bold,
-        )
-        val celle = lista.map<String, String?> { it } + if (lista.size < Contesto.QUANTE) listOf(null) else emptyList()
-        celle.chunked(4).forEach { riga ->
-            Row(Modifier.fillMaxWidth()) {
-                riga.forEach { chiave ->
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.TopCenter) {
-                        if (chiave == null) {
-                            Column(Modifier.clickable { onAggiungi() }.padding(vertical = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Box(Modifier.size(46.dp).background(col.riquadro, CircleShape), contentAlignment = Alignment.Center) {
-                                    Icon(EuriseIcons.plus(), stringResource(R.string.aggiungi_app), Modifier.size(20.dp), tint = col.accento)
-                                }
-                                Text(stringResource(R.string.aggiungi), color = col.sotto, fontSize = 11.sp, maxLines = 1, modifier = Modifier.padding(top = 5.dp))
-                            }
-                        } else {
-                            Column(
-                                Modifier.combinedClickable(
-                                    onClick = { model.apri(chiave) },
-                                    onLongClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress); menu = chiave },
-                                ).padding(vertical = 2.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                if (Siti.eSito(chiave)) IconaSito(model.nomeDi(chiave), col.accento, 46.dp, col.notte)
-                                else IconaApp(model.telefono, chiave, 46.dp, col.notte)
-                                Text(
-                                    model.nomeDi(chiave), color = col.inchiostro, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.padding(top = 5.dp, start = 2.dp, end = 2.dp),
-                                )
-                            }
-                            DropdownMenu(menu == chiave, onDismissRequest = { menu = null }) {
-                                if (!model.fissataInScheda(scheda, chiave)) {
-                                    DropdownMenuItem(text = { Text(stringResource(R.string.app_fissa)) }, onClick = { model.fissaInScheda(scheda, chiave); menu = null })
-                                }
-                                DropdownMenuItem(text = { Text(stringResource(R.string.app_togli)) }, onClick = { model.togliDaScheda(scheda, chiave); menu = null })
-                            }
-                        }
-                    }
-                }
-                repeat(4 - riga.size) { Spacer(Modifier.weight(1f)) }
-            }
-        }
-    }
-}
-
-private fun apriCalendario(model: PostazioneModel): Boolean =
-    model.telefono.apriSuiteO(BuildConfig.HUB_PACKAGE, "eu.eurise.hub.CalendarApp", Intent(Intent.ACTION_VIEW, CalendarContract.CONTENT_URI.buildUpon().appendPath("time").build()))
-
-private fun apriAttivita(model: PostazioneModel) {
-    model.telefono.apriSuiteO(BuildConfig.HUB_PACKAGE, "eu.eurise.hub.TasksApp", null)
-}
-
-private fun LazyListScope.alto(model: PostazioneModel, scheda: Scheda, col: Colori) {
-    val g = model.giornata
-    val tel = model.telefono
-    if (!g.collegata) {
-        item { Nota(stringResource(R.string.senza_eurise), col) }
-    } else if (g.impegni.isEmpty()) {
-        item { Riga(stringResource(R.string.nessun_impegno), stringResource(R.string.calendario), col) { model.apriSezione("calendar") || apriCalendario(model) } }
-    } else {
-        item {
-            // Le schede che scorrono hanno tutte la stessa misura: niente gradini tra una e l'altra.
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(g.impegni.size, key = { g.impegni[it].id.toString() + ":" + g.impegni[it].inizio }) { i ->
-                    val e = g.impegni[i]
-                    SchedaImpegno(e, i == 0, scheda == Scheda.Viaggio, model.adesso, col,
-                        onNaviga = { tel.avvia(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(e.luogo)))) },
-                        onRitardo = { testo, titolo ->
-                            tel.avvia(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, testo), titolo))
-                        },
-                        onApri = { model.apriImpegno(e) },
-                        onElimina = if (e.eliminabile) ({ model.eliminaImpegno(e) }) else null)
-                }
-            }
-        }
-    }
-    if (scheda == Scheda.Lavoro && g.collegata && model.fineGiornata) item { FineGiornata(model, col) }
-}
-
-private fun LazyListScope.persone(model: PostazioneModel, scheda: Scheda, col: Colori) {
-    when (scheda) {
-        Scheda.Lavoro -> avvisi(model, col, R.string.da_rispondere)
-        Scheda.Personale -> {
-            if (model.pausaFino > 0L) item { RigaPausa(model, col) }
-            if (model.ascolto && model.brano != null) item { SchedaMusica(model, col) }
-            avvisi(model, col, R.string.messaggi)
-            if (model.giornata.collegata) {
-                item(key = "oroscopo") { BollaOroscopo(model, col) }
-                val notizie = model.notizie
-                if (notizie != null) {
-                    item { Text(stringResource(R.string.notizie), color = col.inchiostro, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
-                    if (notizie.isEmpty()) item {
-                        Riga(stringResource(R.string.notizie_vuote), stringResource(R.string.centro_privacy), col) { model.apriSezione("privacy") }
-                    }
-                    items(notizie.size) { i -> RigaNotizia(model, notizie[i], col) }
-                }
-            }
-        }
-        Scheda.Viaggio -> {
-            item { BollaPreferiti(model, col) }
-            item { BollaAuto(model, col) }
-            if (model.ascolto && model.brano != null) item { SchedaMusica(model, col) }
-        }
-    }
-}
-
-/** Le cose da fare (e i farmaci) in tutte le schede: in Lavoro sempre, nelle altre solo se ce ne sono. */
-private fun LazyListScope.cose(model: PostazioneModel, scheda: Scheda, col: Colori) {
-    val g = model.giornata
-    if (!g.collegata) return
-    val visibili = g.cose.filter { it.id !in model.toccate }
-    if (scheda != Scheda.Lavoro && visibili.isEmpty()) return
-    item {
-        val totale = g.aperte + g.fatte
-        Intestazione(
-            if (g.fatte > 0) stringResource(R.string.da_fare_fatte, g.fatte, totale) else stringResource(R.string.da_fare_oggi, g.aperte),
-            stringResource(R.string.attivita), col,
-        ) { if (!model.apriSezione("tasks")) apriAttivita(model) }
-    }
-    if (scheda == Scheda.Lavoro) {
-        val ora = model.adesso.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val sera = model.adesso.toLocalDate().atTime(18, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val spazio = if (g.aperte > 0) Liberi.primo(ora, sera, g.impegni.filter { !it.tuttoIlGiorno }.map { it.inizio to it.fine }) else null
-        if (spazio != null) {
-            val quante = Liberi.quante(spazio, g.cose.count { !it.farmaco })
-            item { SpazioLibero(spazio, spazio.inizio == ora, quante, col, onMetti = if (quante > 0) ({ model.mettiNelloSpazio(spazio) }) else null) }
-        }
-    }
-    if (visibili.isEmpty()) item { Text(stringResource(R.string.niente_da_fare), color = col.sotto, fontSize = 13.5.sp) }
-    items(visibili.size, key = { "cosa:" + visibili[it].id }) { i -> RigaCosa(model, visibili[i], col) }
-}
-
-/** «Da rispondere»: messaggi, posta e chiamate perse ancora tra le notifiche; spento, la riga per accenderlo. */
-private fun LazyListScope.avvisi(model: PostazioneModel, col: Colori, titolo: Int) {
-    if (!model.ascolto) {
-        item { AccendiAscolto(col) { model.aggiorna() } }
-        return
-    }
-    val lista = model.avvisi
-    item {
-        Text(stringResource(titolo, lista.size), color = col.inchiostro, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-    }
-    if (lista.isEmpty()) item { Text(stringResource(R.string.niente_da_rispondere), color = col.sotto, fontSize = 13.5.sp) }
-    items(lista.size) { i -> RigaAvviso(model, lista[i], col) }
-}
-
-private fun iconaCielo(cielo: String?): ImageVector = when (cielo) {
+internal fun iconaCielo(cielo: String?): ImageVector = when (cielo) {
     null, "Clear" -> EuriseIcons.sun()
     "Fog" -> EuriseIcons.fog()
     "Drizzle", "Rain", "Showers" -> EuriseIcons.rain()
@@ -489,7 +400,7 @@ private fun iconaCielo(cielo: String?): ImageVector = when (cielo) {
 }
 
 @Composable
-private fun rigaMeteo(m: Meteo, adesso: LocalDateTime): String {
+internal fun rigaMeteo(m: Meteo, adesso: LocalDateTime): String {
     val cielo = stringResource(
         when (m.cielo) {
             "Clear" -> R.string.cielo_sereno; "PartlyCloudy" -> R.string.cielo_poco_nuvoloso; "Fog" -> R.string.cielo_nebbia
@@ -507,7 +418,7 @@ private fun rigaMeteo(m: Meteo, adesso: LocalDateTime): String {
 internal fun orario(ms: Long): String = Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).toLocalTime().format(Ora)
 
 @Composable
-private fun richiamo(e: Impegno, adesso: LocalDateTime, primo: Boolean): String {
+internal fun richiamo(e: Impegno, adesso: LocalDateTime, primo: Boolean): String {
     val ora = adesso.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
     val inizio = Instant.ofEpochMilli(e.inizio).atZone(ZoneId.systemDefault()).toLocalDate()
     val min = ((e.inizio - ora) / 60_000L).toInt()
@@ -520,67 +431,63 @@ private fun richiamo(e: Impegno, adesso: LocalDateTime, primo: Boolean): String 
     }
 }
 
+/**
+ * Un impegno, sempre della stessa misura e senza spazi vuoti (tavola del 27 novembre): prima riga il nome, seconda
+ * orario e luogo, sotto due tasti (Naviga se c'è un luogo, altrimenti Apri; Ritardo se manca poco).
+ */
 @Composable
-private fun SchedaImpegno(
+internal fun SchedaImpegno(
     e: Impegno, primo: Boolean, viaggio: Boolean, adesso: LocalDateTime, col: Colori,
     onNaviga: () -> Unit, onRitardo: (String, String) -> Unit, onApri: () -> Unit, onElimina: (() -> Unit)?,
+    modifier: Modifier = Modifier.width(262.dp),
 ) {
     var menu by remember { mutableStateOf(false) }
     var conferma by remember { mutableStateOf(false) }
-    Row(
-        Modifier.width(282.dp).height(170.dp)
-            .background(col.prossimo, RoundedCornerShape(18.dp)).clickable { onApri() },
+    val ora = adesso.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    val vicino = !e.tuttoIlGiorno && e.inizio - ora < 90 * 60_000L
+    Column(
+        modifier.background(col.prossimo, RoundedCornerShape(16.dp)).clickable { onApri() }.padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Box(Modifier.width(5.dp).fillMaxHeight().background(if (primo) col.lente else androidx.compose.ui.graphics.SolidColor(col.riga), RoundedCornerShape(topStart = 18.dp, bottomStart = 18.dp)))
-        Column(Modifier.fillMaxHeight().padding(start = 13.dp, end = 8.dp, top = 12.dp, bottom = 12.dp)) {
-            val tempo = if (e.tuttoIlGiorno) stringResource(R.string.tutto_il_giorno) else orario(e.inizio) + "–" + orario(e.fine)
-            // In alto il richiamo e i tre puntini, sempre su una riga; l'orario va con il luogo sotto il titolo.
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(e.titolo, color = col.inchiostro, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            if (primo) {
                 Text(
-                    richiamo(e, adesso, primo), color = col.accento, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+                    richiamo(e, adesso, true), color = col.accento, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                    modifier = Modifier.padding(start = 6.dp).background(col.accento.copy(alpha = 0.12f), RoundedCornerShape(10.dp)).padding(horizontal = 7.dp, vertical = 2.dp),
                 )
-                Box {
-                    Icon(EuriseIcons.more(), stringResource(R.string.altro), Modifier.size(30.dp).clickable { menu = true }.padding(6.dp), tint = col.sotto)
-                    DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                        DropdownMenuItem(text = { Text(stringResource(R.string.apri_calendario)) }, onClick = { menu = false; onApri() })
-                        if (e.luogo.isNotBlank()) DropdownMenuItem(text = { Text(stringResource(R.string.naviga)) }, onClick = { menu = false; onNaviga() })
-                        if (onElimina != null) DropdownMenuItem(text = { Text(stringResource(R.string.elimina)) }, onClick = { menu = false; conferma = true })
-                    }
+            }
+            Box {
+                Icon(EuriseIcons.more(), stringResource(R.string.altro), Modifier.size(30.dp).clickable { menu = true }.padding(6.dp), tint = col.sotto)
+                DropdownMenu(menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.apri_calendario)) }, onClick = { menu = false; onApri() })
+                    if (e.luogo.isNotBlank()) DropdownMenuItem(text = { Text(stringResource(R.string.naviga)) }, onClick = { menu = false; onNaviga() })
+                    if (onElimina != null) DropdownMenuItem(text = { Text(stringResource(R.string.elimina)) }, onClick = { menu = false; conferma = true })
                 }
             }
-            Text(e.titolo, color = col.inchiostro, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 21.sp)
-            Text(
-                listOf(tempo, e.luogo).filter { it.isNotBlank() }.joinToString(" · "),
-                color = col.sotto, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp),
-            )
-            Spacer(Modifier.weight(1f))
-            val ora = adesso.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            val vicino = !e.tuttoIlGiorno && e.inizio - ora < 90 * 60_000L
-            Row(Modifier.padding(end = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (e.luogo.isNotBlank()) {
-                    Box(
-                        Modifier.weight(1.4f).height(38.dp).background(col.lente, RoundedCornerShape(12.dp)).clickable { onNaviga() },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(stringResource(if (viaggio) R.string.avvia_navigatore else R.string.naviga), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-                if (vicino) {
-                    val testo = stringResource(if (viaggio) R.string.arrivo_testo else R.string.ritardo_testo, e.titolo)
-                    val titolo = stringResource(if (viaggio) R.string.arrivo_a else R.string.ritardo_a)
-                    Box(
-                        Modifier.weight(1f).height(38.dp).background(col.foglio, RoundedCornerShape(12.dp)).clickable { onRitardo(testo, titolo) },
-                        contentAlignment = Alignment.Center,
-                    ) { Text(stringResource(if (viaggio) R.string.avvisa else R.string.ritardo), color = col.inchiostro, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
-                }
-                if (e.luogo.isBlank() && !vicino) {
-                    Box(
-                        Modifier.weight(1f).height(38.dp).background(col.foglio, RoundedCornerShape(12.dp)).clickable { onApri() },
-                        contentAlignment = Alignment.Center,
-                    ) { Text(stringResource(R.string.apri), color = col.inchiostro, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
-                }
+        }
+        val tempo = if (e.tuttoIlGiorno) stringResource(R.string.tutto_il_giorno) else orario(e.inizio) + "–" + orario(e.fine)
+        Text(
+            listOf(tempo, e.luogo).filter { it.isNotBlank() }.joinToString(" · "),
+            color = col.sotto, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(end = 6.dp),
+        )
+        Row(Modifier.padding(top = 8.dp, end = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val tasto: @Composable RowScope.(String, Boolean, () -> Unit) -> Unit = { testo, pieno, azione ->
+                Box(
+                    Modifier.weight(1f).height(36.dp)
+                        .then(if (pieno) Modifier.background(col.lente, RoundedCornerShape(11.dp)) else Modifier.background(col.bolla, RoundedCornerShape(11.dp)))
+                        .clickable { azione() },
+                    contentAlignment = Alignment.Center,
+                ) { Text(testo, color = if (pieno) Color.White else col.inchiostro, fontSize = 13.sp, fontWeight = if (pieno) FontWeight.Bold else FontWeight.SemiBold) }
             }
+            if (e.luogo.isNotBlank()) tasto(stringResource(if (viaggio) R.string.avvia_navigatore else R.string.naviga), true, onNaviga)
+            else tasto(stringResource(R.string.apri), true, onApri)
+            if (vicino) {
+                val testo = stringResource(if (viaggio) R.string.arrivo_testo else R.string.ritardo_testo, e.titolo)
+                val titolo = stringResource(if (viaggio) R.string.arrivo_a else R.string.ritardo_a)
+                tasto(stringResource(if (viaggio) R.string.avvisa else R.string.ritardo), false) { onRitardo(testo, titolo) }
+            } else if (e.luogo.isNotBlank()) tasto(stringResource(R.string.apri), false, onApri)
+            else Spacer(Modifier.weight(1f))
         }
     }
     if (conferma && onElimina != null) {
@@ -610,7 +517,7 @@ internal fun Intestazione(titolo: String, link: String, col: Colori, onLink: () 
  * (o nei Farmaci), i tre puntini portano a domani o la eliminano (la dose si salta).
  */
 @Composable
-private fun RigaCosa(model: PostazioneModel, c: Cosa, col: Colori) {
+internal fun RigaCosa(model: PostazioneModel, c: Cosa, col: Colori) {
     var menu by remember { mutableStateOf(false) }
     var conferma by remember { mutableStateOf(false) }
     Row(Modifier.fillMaxWidth().clickable { model.apriCosa(c) }.padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -660,7 +567,7 @@ private fun RigaCosa(model: PostazioneModel, c: Cosa, col: Colori) {
 }
 
 @Composable
-private fun Riga(testo: String, link: String, col: Colori, onLink: () -> Unit) {
+internal fun Riga(testo: String, link: String, col: Colori, onLink: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().background(col.riquadro, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,

@@ -59,6 +59,7 @@ import eu.eurise.core.designsystem.icon.shimmer
 import eu.eurise.postazione.PostazioneModel
 import eu.eurise.postazione.R
 import eu.eurise.postazione.data.Categoria
+import eu.eurise.postazione.data.Gruppi
 import eu.eurise.postazione.data.Gruppo
 import eu.eurise.postazione.data.Icona
 import eu.eurise.postazione.data.Siti
@@ -67,7 +68,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * La dock in basso: sei categorie con la loro icona, le stesse in ogni scheda (un tocco apre la preferita, tenere premuto
+ * La dock in basso: otto categorie con la loro icona, le stesse in ogni scheda (un tocco apre la preferita, tenere premuto
  * apre il ventaglio) e la lente con la stellina di Eurise dal lato della mano (un tocco cerca ovunque, tenere premuto
  * chiama Alfred).
  */
@@ -96,7 +97,8 @@ fun Barra(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (model.mancino) { lente(); Divisore(col) }
-        val voci = if (model.mancino) model.dock.reversed() else model.dock
+        val dock = model.dock.take(Gruppi.IN_DOCK)
+        val voci = if (model.mancino) dock.reversed() else dock
         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
             voci.forEach { c ->
                 val a = aspetto(c)
@@ -107,13 +109,13 @@ fun Barra(
                     ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Box(
-                        Modifier.size(42.dp).background(a.tinta.copy(alpha = if (col.notte) 0.28f else 0.12f), RoundedCornerShape(14.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) { Icon(a.icona, null, Modifier.size(22.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta) }
+                    // Solo il disegno nel suo colore, senza alone: otto categorie ci stanno senza stringersi.
+                    Box(Modifier.size(34.dp), contentAlignment = Alignment.Center) {
+                        Icon(a.icona, null, Modifier.size(23.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta)
+                    }
                     // Nomi fino a nove lettere interi («Comunica»): un filo più piccoli e stretti, mai tagliati se ci stanno.
                     Text(
-                        a.nome, color = col.sotto, fontSize = if (a.nome.length > 7) 9.sp else 10.sp, letterSpacing = (-0.2).sp,
+                        a.nome, color = col.sotto, fontSize = if (a.nome.length > 7) 8.5.sp else 9.5.sp, letterSpacing = (-0.3).sp,
                         fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 4.dp),
                     )
@@ -133,8 +135,9 @@ fun Binario(
 ) {
     val haptic = LocalHapticFeedback.current
     Column(
-        Modifier.padding(horizontal = 12.dp, vertical = 14.dp).width(84.dp).fillMaxHeight().background(col.barra, RoundedCornerShape(26.dp)).padding(vertical = 14.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp),
+        Modifier.padding(horizontal = 12.dp, vertical = 14.dp).width(84.dp).fillMaxHeight().background(col.barra, RoundedCornerShape(26.dp)).padding(vertical = 14.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(
             Modifier.size(52.dp).background(col.lente, RoundedCornerShape(17.dp))
@@ -142,20 +145,19 @@ fun Binario(
             contentAlignment = Alignment.Center,
         ) { LenteEurise(Color.White, Modifier.size(28.dp)) }
         Box(Modifier.width(30.dp).height(1.dp).background(col.riga))
-        model.dock.reversed().forEach { c ->
+        model.dock.take(Gruppi.IN_DOCK).reversed().forEach { c ->
             val a = aspetto(c)
             Column(
                 Modifier.combinedClickable(onClick = { onGruppo(c.id) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onVentaglio(c.id) }),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Box(
-                    Modifier.size(46.dp).background(a.tinta.copy(alpha = if (col.notte) 0.28f else 0.12f), RoundedCornerShape(15.dp)),
-                    contentAlignment = Alignment.Center,
-                ) { Icon(a.icona, null, Modifier.size(23.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta) }
+                Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                    Icon(a.icona, null, Modifier.size(24.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta)
+                }
                 Text(a.nome, color = col.sotto, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
             }
         }
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(6.dp))
         Icon(
             EuriseIcons.grid(), stringResource(R.string.tutte_le_app),
             Modifier.size(46.dp).clickable { onTutte() }.padding(12.dp), tint = col.sotto,
@@ -270,6 +272,10 @@ fun EditorCategoria(model: PostazioneModel, id: String, onChiudi: () -> Unit) {
                     Text(stringResource(R.string.cat_posto), fontSize = 13.sp, modifier = Modifier.weight(1f))
                     TextButton({ model.spostaCategoria(id, -1) }) { Text("←") }
                     TextButton({ model.spostaCategoria(id, 1) }) { Text("→") }
+                }
+                Text(stringResource(R.string.cat_posto_aiuto, Gruppi.IN_DOCK), fontSize = 11.5.sp, color = Color(0xFF6B6A66))
+                if (model.dock.size > 1) TextButton({ model.togliCategoria(id); onChiudi() }) {
+                    Text(stringResource(R.string.cat_togli), color = Color(0xFFB3261E))
                 }
             }
         },

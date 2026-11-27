@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import eu.eurise.core.designsystem.icon.EuriseIcons
 import eu.eurise.postazione.R
-import eu.eurise.postazione.data.Cielo
 import eu.eurise.postazione.data.Categoria
 import eu.eurise.postazione.data.Gruppo
 import androidx.compose.ui.res.stringResource
@@ -41,6 +40,8 @@ class Colori(
     val accento: Color,
     val barra: Color,
     val lente: Brush,
+    /** Il fondo delle bolle sopra il foglio satinato: un filo più pieno, perché si legga sempre. */
+    val bolla: Color,
 )
 
 /** I colori della Postazione: carta e inchiostro uguali per tutti, l'accento a scelta; di sera l'accento si spegne. */
@@ -53,33 +54,14 @@ fun colori(notte: Boolean, accento: Accento = Accento.Ceruleo): Colori {
         Accento.Ottone -> if (notte) Triple(sfuma(0xFFC9A35A, 0xFFA8843F, 0xFF7C6130), Color(0xFFD6B572), Color(0xFF262420))
             else Triple(sfuma(0xFFD9A441, 0xFFB98429, 0xFF8A6420), Color(0xFF8A6420), Color(0xFFF5EEDF))
     }
+    // Il foglio è satinato e quasi trasparente sopra il cielo (27 novembre 2026); le bolle e la dock un filo più piene.
     return if (notte) Colori(
-        true, Color(0xFF12161D), Color(0xFF181D25), Color(0xFF232B37), prossimo,
-        Color(0xFFE9EBEE), Color(0xFF9AA3B0), Color(0x12FFFFFF), tinta, Color(0xEB181D25), lente,
+        true, Color(0xFF12161D), Color(0x57161B24), Color(0x1FFFFFFF), prossimo.copy(alpha = 0.78f),
+        Color(0xFFE9EBEE), Color(0xFFAAB2BE), Color(0x14FFFFFF), tinta, Color(0xA6161B24), lente, Color(0xA81E2430),
     ) else Colori(
-        false, Color(0xFFF2F0EB), Color(0xFFFBFAF7), Color(0xFFF2F1EC), prossimo,
-        Color(0xFF1C1D20), Color(0xFF62615C), Color(0x141C1D20), tinta, Color(0xF0FBFAF7), lente,
+        false, Color(0xFFF2F0EB), Color(0x57FBFAF7), Color(0x14000000), prossimo.copy(alpha = 0.80f),
+        Color(0xFF1C1D20), Color(0xFF5C5B56), Color(0x121C1D20), tinta, Color(0xB8FBFAF7), lente, Color(0xBDFFFFFF),
     )
-}
-
-/** Il colore del testo sopra il cielo: chiaro di sera e di notte, scuro di giorno. */
-fun testoSulCielo(c: Cielo) = if (c == Cielo.Notte || c == Cielo.Tramonto) Color(0xFFF2F3F5) else Color(0xFF1B2536)
-
-/** Il cielo: solo luce, niente disegni (giro 3 della tela: «meno giocattolo»). */
-@Composable
-fun CieloDiFondo(c: Cielo, modifier: Modifier = Modifier) {
-    val (base, luce) = when (c) {
-        Cielo.Mattino -> listOf(Color(0xFFAFC6E0), Color(0xFFD3DEEA), Color(0xFFEEEAE3)) to Color(0xF2FFF4D6)
-        Cielo.Giorno -> listOf(Color(0xFF9DBEE3), Color(0xFFCFDDEC), Color(0xFFEFEDE7)) to Color(0xCCFFFBEF)
-        Cielo.Tramonto -> listOf(Color(0xFF3F5275), Color(0xFF7D7C93), Color(0xFFC9A48F), Color(0xFFE7CDB2)) to Color(0x8CFFD6AA)
-        Cielo.Notte -> listOf(Color(0xFF0C1119), Color(0xFF141C2A), Color(0xFF1C2638)) to Color(0x29D6DEF0)
-    }
-    Box(modifier.fillMaxSize().background(Brush.verticalGradient(base))) {
-        Canvas(Modifier.fillMaxSize()) {
-            val centro = if (c == Cielo.Tramonto) Offset(size.width * 0.18f, size.height * 0.30f) else Offset(size.width * 0.82f, size.height * 0.07f)
-            drawCircle(Brush.radialGradient(listOf(luce, luce.copy(alpha = 0f)), centro, size.width * 0.55f), size.width * 0.55f, centro)
-        }
-    }
 }
 
 /** La lente della barra con la stellina della suite al centro: il rimando al segno di Eurise. */

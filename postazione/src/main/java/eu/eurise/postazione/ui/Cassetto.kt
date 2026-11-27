@@ -72,7 +72,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Switch
 import eu.eurise.postazione.data.Ai
-import eu.eurise.postazione.data.Scheda
 import eu.eurise.postazione.data.Trovata
 import eu.eurise.core.designsystem.component.Jurisdiction
 import eu.eurise.core.designsystem.component.PrivacyConsentSheet
@@ -117,8 +116,11 @@ fun Cassetto(
         if (scegliPer == null) { delay(220); model.cerca(testo) }
     }
     val titoloScelta = scegliPer?.let { id ->
-        if (id.startsWith("scheda:")) stringResource(R.string.aggiungi_a, nomeScheda(id.removePrefix("scheda:")))
-        else stringResource(R.string.aggiungi_a, model.categoria(id)?.let { aspetto(it).nome }.orEmpty())
+        when {
+            id.startsWith("pagina:") -> stringResource(R.string.aggiungi_a, model.pagine.firstOrNull { it.id == id.removePrefix("pagina:") }?.nome.orEmpty())
+            id.startsWith("gesto:") -> stringResource(R.string.gs_scegli)
+            else -> stringResource(R.string.aggiungi_a, model.categoria(id)?.let { aspetto(it).nome }.orEmpty())
+        }
     }
     val rapido = chiave.isEmpty() && !tutteAperte
     val perChiave = remember(tutte) { tutte.associateBy { it.chiave } }
@@ -239,13 +241,6 @@ private fun Tessera(a: App, model: PostazioneModel, col: Colori, onScelta: (Stri
         )
     }
 }
-
-@Composable
-private fun nomeScheda(nome: String): String = stringResource(
-    when (runCatching { Scheda.valueOf(nome) }.getOrDefault(Scheda.Lavoro)) {
-        Scheda.Lavoro -> R.string.scheda_lavoro; Scheda.Personale -> R.string.scheda_personale; Scheda.Viaggio -> R.string.scheda_viaggio
-    },
-)
 
 private val GiornoOra = DateTimeFormatter.ofPattern("EEE d MMM · H:mm", java.util.Locale.ITALIAN)
 private val SoloGiorno = DateTimeFormatter.ofPattern("EEE d MMM", java.util.Locale.ITALIAN)
@@ -432,7 +427,7 @@ private fun semplice(s: String): String =
  * Eurise). Accendere mostra prima la spiegazione; spegnere vale subito, senza conferme.
  */
 @Composable
-fun Impostazioni(model: PostazioneModel, onChiudi: () -> Unit) {
+fun Impostazioni(model: PostazioneModel, onChiudi: () -> Unit, onPagine: () -> Unit = {}, onGesti: () -> Unit = {}) {
     var nome by remember { mutableStateOf(model.nome) }
     var mancino by remember { mutableStateOf(model.mancino) }
     val context = LocalContext.current
@@ -474,6 +469,9 @@ fun Impostazioni(model: PostazioneModel, onChiudi: () -> Unit) {
                         })
                     }
                 }
+                Text(stringResource(R.string.imp_schermata), fontWeight = FontWeight.SemiBold)
+                TextButton(onPagine) { Text(stringResource(R.string.pg_titolo)) }
+                TextButton(onGesti) { Text(stringResource(R.string.gs_titolo)) }
                 TextButton({
                     runCatching { context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                 }) { Text(stringResource(R.string.imp_predefinita)) }

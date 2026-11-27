@@ -69,6 +69,7 @@ attesa "$r" cerca CHIUSA "la curiosa non cerca tra impegni, note e documenti (le
 attesa "$r" fatta CHIUSA "la curiosa non chiude né elimina cose da fare"
 attesa "$r" elimina CHIUSA "la curiosa non elimina impegni"
 attesa "$r" oroscopo CHIUSA "la curiosa non fa leggere l'oroscopo all'app Eurise"
+attesa "$r" aggiungi CHIUSA "la curiosa non aggiunge cose da fare (Ti hanno cercato → Da fare)"
 attesa "$r" trovata CHIUSA "la curiosa non fa aprire documenti o impegni all'app Eurise"
 attesa "$r" interruttori CHIUSA "la curiosa non legge né spegne gli interruttori della Postazione"
 attesa "$r" codici CHIUSA "la curiosa non legge i codici 2FA"

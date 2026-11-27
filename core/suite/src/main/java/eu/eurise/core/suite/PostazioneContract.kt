@@ -23,6 +23,8 @@ object PostazioneContract {
     const val KEY_EV_ALLDAY = "evAllDay"
     /** LongArray: id dell'evento (per aprirlo nel Calendario o eliminarlo). */
     const val KEY_EV_ID = "evId"
+    /** Boolean: l'app Eurise ha il permesso del calendario (senza, gli impegni non arrivano: la Postazione lo dice). */
+    const val KEY_EV_PERM = "evPerm"
     /** BooleanArray: si può eliminare dalla Postazione (calendario scrivibile, evento non ricorrente). */
     const val KEY_EV_EDIT = "evEdit"
 
@@ -85,6 +87,12 @@ object PostazioneContract {
      * l'orario che aveva) o [ACT_DELETE]. Risposta [KEY_OK]. Scrive nei dati dell'app Eurise: solo app della suite.
      */
     const val METHOD_TASK = "task"
+    /**
+     * Una cosa da fare nuova per oggi, dal titolo in arg (da 1 a [MAX_TITLE] caratteri): «Richiamare Giulia», «Rispondere
+     * a Studio Rossi» dallo swipe di «Ti hanno cercato» e «Da rispondere». Risposta [KEY_OK]. Solo app della suite.
+     */
+    const val METHOD_ADD_TASK = "addTask"
+    const val MAX_TITLE = 120
     /** Un'azione su un impegno ([EXTRA_ID]): arg [ACT_DELETE], solo se [KEY_EV_EDIT] era vero. Risposta [KEY_OK]. */
     const val METHOD_EVENT = "event"
     const val ACT_DONE = "done"
@@ -142,6 +150,6 @@ object PostazioneContract {
     const val KIND_MEDICINES = "medicines"
 
     const val MAX_EVENTS = 5
-    const val MAX_TASKS = 4
+    const val MAX_TASKS = 8
     const val HOURS = 36
 }

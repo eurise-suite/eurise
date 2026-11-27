@@ -34,6 +34,8 @@ data class Giornata(
     val aperte: Int = 0,
     val fatte: Int = 0,
     val meteo: Meteo? = null,
+    /** L'app Eurise vede il calendario (senza il suo permesso gli impegni non arrivano). */
+    val calendario: Boolean = true,
 )
 
 object LettoreGiornata {
@@ -60,7 +62,7 @@ object LettoreGiornata {
             Cosa(ids[i], cTitoli[i], scad.getOrElse(i) { 0L }, late.getOrElse(i) { false }, med.getOrElse(i) { false })
         }
         val meteo = if (b.getBoolean(C.KEY_W_OK)) Meteo(b.getInt(C.KEY_W_TEMP), b.getString(C.KEY_W_SKY).orEmpty(), b.getLong(C.KEY_W_RAIN)) else null
-        return Giornata(true, impegni, cose, b.getInt(C.KEY_TASK_OPEN), b.getInt(C.KEY_TASK_DONE), meteo)
+        return Giornata(true, impegni, cose, b.getInt(C.KEY_TASK_OPEN), b.getInt(C.KEY_TASK_DONE), meteo, b.getBoolean(C.KEY_EV_PERM, true))
     }
 
     /** «Chiudi la giornata»: le cose aperte passano a domani. Torna quante, o -1 se l'app Eurise non risponde. */
@@ -94,6 +96,12 @@ object LettoreGiornata {
         val uri = Uri.parse("content://" + C.authority(hub))
         val extra = android.os.Bundle().apply { putLong(C.EXTRA_ID, id) }
         return runCatching { SuiteAccess.call(context, uri, C.METHOD_TASK, azione, extra)?.getBoolean(C.KEY_OK) == true }.getOrDefault(false)
+    }
+
+    /** Una cosa da fare per oggi nell'app Eurise («Richiamare Giulia»); vero se l'ha scritta. */
+    fun aggiungiCosa(context: Context, hub: String, titolo: String): Boolean {
+        val uri = Uri.parse("content://" + C.authority(hub))
+        return runCatching { SuiteAccess.call(context, uri, C.METHOD_ADD_TASK, titolo.take(C.MAX_TITLE), null)?.getBoolean(C.KEY_OK) == true }.getOrDefault(false)
     }
 
     fun eliminaImpegno(context: Context, hub: String, id: Long): Boolean {

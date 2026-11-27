@@ -31,24 +31,42 @@ class GruppiTest {
         Gruppi.risolvi(Gruppo.Comunica.predefinite, installate, mapOf("dialer" to "com.android.dialer")),
     )
 
-    @Test fun dockDiSeiConComunicaAccantoAllaLente() {
-        assertEquals(Gruppi.POSTI, Gruppi.dockIniziale.size)
+    @Test fun dockDiOttoConComunicaAccantoAllaLente() {
+        assertEquals(Gruppi.IN_DOCK, Gruppi.dockIniziale.size)
         assertEquals(Gruppo.Comunica.name, Gruppi.dockIniziale.last().id)
+    }
+
+    @Test fun laDockASeiDiPrimaPrendeCasaEAgenda() {
+        val vecchia = listOf("Lavoro", "Foto", "Mappe", "WebAI", "Musica", "Comunica").joinToString("\n") { "$it\t\tx" }
+        assertEquals(listOf("Lavoro", "Foto", "Mappe", "WebAI", "Musica", "Casa", "Agenda", "Comunica"), Gruppi.leggiDock(vecchia).map { it.id })
+    }
+
+    @Test fun categorieFinoADieciEAppSpostateOCopiate() {
+        var dock = Gruppi.dockIniziale
+        repeat(5) { i -> Gruppi.aggiungiCategoria(dock, "C$i", "star", "c$i")?.let { dock = it.first } }
+        assertEquals(Gruppi.MAX, dock.size)
+        assertEquals(Gruppi.MAX - 1, Gruppi.togliCategoria(dock, "c0").size)
+        val g = mapOf("A" to listOf("x/1", "y/2", "z/3"), "B" to listOf("w/4"))
+        val spostate = Gruppi.spostaApp(g, listOf("x/1", "z/3"), "A", "B", copia = false)
+        assertEquals(listOf("y/2"), spostate["A"])
+        assertEquals(listOf("w/4", "x/1", "z/3"), spostate["B"])
+        val copiate = Gruppi.spostaApp(g, listOf("x/1"), "A", "B", copia = true)
+        assertEquals(3, copiate["A"]!!.size)
     }
 
     @Test fun dockSalvataERiletta() {
         val dock = Gruppi.sostituisci(Gruppi.dockIniziale, "Musica", Categoria("c1", "Cantiere\tA", "tools"))
         val riletta = Gruppi.leggiDock(Gruppi.scriviDock(dock))
-        assertEquals(listOf("Lavoro", "Foto", "Mappe", "WebAI", "c1", "Comunica"), riletta.map { it.id })
+        assertEquals(listOf("Lavoro", "Foto", "Mappe", "WebAI", "c1", "Casa", "Agenda", "Comunica"), riletta.map { it.id })
         assertEquals("Cantiere A", riletta[4].nome)
         assertEquals("tools", riletta[4].icona)
-        // Una dock rovinata o incompleta torna quella di partenza.
+        // Una dock rovinata torna quella di partenza.
         assertEquals(Gruppi.dockIniziale, Gruppi.leggiDock("x\ty"))
     }
 
     @Test fun unaCategoriaProntaGiaNellaDockNonSiDoppia() {
         val dock = Gruppi.sostituisci(Gruppi.dockIniziale, "Musica", Categoria("Foto", "", "camera"))
-        assertEquals(6, dock.map { it.id }.distinct().size)
+        assertEquals(8, dock.map { it.id }.distinct().size)
     }
 
     @Test fun spostaNellaDock() {

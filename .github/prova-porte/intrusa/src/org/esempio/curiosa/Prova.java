@@ -47,6 +47,7 @@ public class Prova extends Activity {
             call("fatta", "content://eu.eurise.hub" + suffix + ".postazione", "task", "done");
             call("elimina", "content://eu.eurise.hub" + suffix + ".postazione", "event", "delete");
             call("oroscopo", "content://eu.eurise.hub" + suffix + ".postazione", "horoscope", null);
+            call("aggiungi", "content://eu.eurise.hub" + suffix + ".postazione", "addTask", "prova");
             avvia("trovata", "eu.eurise.hub" + suffix, "eu.eurise.hub.OpenFoundActivity");
             // Gli interruttori della Postazione: solo l'app Eurise li legge (nemmeno l'amica).
             call("interruttori", "content://eu.eurise.postazione" + suffix + ".hub", "privacy", null);

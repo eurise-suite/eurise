@@ -33,23 +33,33 @@ data class Categoria(val id: String, val nome: String, val icona: String) {
 }
 
 object Gruppi {
-    /** Quante categorie stanno nella dock accanto alla lente. */
-    const val POSTI = 6
+    /** Quante categorie al più (cassetto a destra della Home); le prime [IN_DOCK] stanno nella dock accanto alla lente. */
+    const val MAX = 10
+    const val IN_DOCK = 8
 
     /**
-     * La dock di partenza, la stessa in ogni scheda: le icone non cambiano posto, così la mano impara dove sono.
+     * Le categorie di partenza, le stesse in ogni linguetta: le icone non cambiano posto, così la mano impara dove sono.
      * Comunica è l'ultima, accanto alla lente.
      */
-    val dockIniziale: List<Categoria> = listOf(Gruppo.Lavoro, Gruppo.Foto, Gruppo.Mappe, Gruppo.WebAI, Gruppo.Musica, Gruppo.Comunica)
-        .map { Categoria(it.name, "", it.icona) }
+    val dockIniziale: List<Categoria> = listOf(
+        Gruppo.Lavoro, Gruppo.Foto, Gruppo.Mappe, Gruppo.WebAI, Gruppo.Musica, Gruppo.Casa, Gruppo.Agenda, Gruppo.Comunica,
+    ).map { Categoria(it.name, "", it.icona) }
 
-    /** La dock salvata (una categoria per riga: id, nome, icona separati da tabulazioni); quella di partenza se manca. */
+    /**
+     * Le categorie salvate (una per riga: id, nome, icona separati da tabulazioni); quelle di partenza se mancano. Le
+     * dock salvate a sei (fino al 27 novembre 2026) prendono Casa e Agenda prima dell'ultima, come chiesto.
+     */
     fun leggiDock(testo: String?): List<Categoria> {
         val lette = testo.orEmpty().lines().mapNotNull { riga ->
             val p = riga.split('\t')
             if (p.size < 3 || p[0].isBlank()) null else Categoria(p[0].trim(), p[1].trim().take(24), p[2].trim())
-        }.distinctBy { it.id }.take(POSTI)
-        return if (lette.size == POSTI) lette else dockIniziale
+        }.distinctBy { it.id }.take(MAX)
+        if (lette.isEmpty()) return dockIniziale
+        if (lette.size == 6) {
+            val nuove = listOf(Gruppo.Casa, Gruppo.Agenda).filter { g -> lette.none { it.id == g.name } }.map { Categoria(it.name, "", it.icona) }
+            return lette.dropLast(1) + nuove + lette.last()
+        }
+        return lette
     }
 
     fun scriviDock(dock: List<Categoria>): String =
@@ -66,6 +76,23 @@ object Gruppi {
         val j = i + verso
         if (i < 0 || j !in dock.indices) return dock
         return dock.toMutableList().apply { add(j, removeAt(i)) }
+    }
+
+    /** Una categoria nuova in fondo (fino a [MAX]); null se non c'è posto. */
+    fun aggiungiCategoria(dock: List<Categoria>, nome: String, icona: String, id: String): Pair<List<Categoria>, Categoria>? {
+        if (dock.size >= MAX) return null
+        val c = Categoria(id, nome.trim().take(24), icona)
+        return (dock + c) to c
+    }
+
+    fun togliCategoria(dock: List<Categoria>, id: String): List<Categoria> = if (dock.size <= 1) dock else dock.filter { it.id != id }
+
+    /** Sposta [chiavi] da [da] ad [a] (le toglie da [da]); con [copia] le lascia anche in [da]. */
+    fun spostaApp(gruppi: Map<String, List<String>>, chiavi: List<String>, da: String?, a: String, copia: Boolean): Map<String, List<String>> {
+        val dest = (gruppi[a].orEmpty() + chiavi).distinct()
+        var out = gruppi + (a to dest)
+        if (!copia && da != null && da != a) out = out + (da to gruppi[da].orEmpty().filter { it !in chiavi })
+        return out
     }
 
     /**

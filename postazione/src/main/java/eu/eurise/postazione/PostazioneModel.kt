@@ -21,7 +21,16 @@ import eu.eurise.postazione.data.Brano
 import eu.eurise.postazione.data.Giornata
 import eu.eurise.postazione.data.Ai
 import eu.eurise.postazione.data.Categoria
-import eu.eurise.postazione.data.Contesto
+import eu.eurise.postazione.data.Azioni
+import eu.eurise.postazione.data.Bolla
+import eu.eurise.postazione.data.Gesto
+import eu.eurise.postazione.data.Linguetta
+import eu.eurise.postazione.data.Misura
+import eu.eurise.postazione.data.Pagina
+import eu.eurise.postazione.data.Pagine
+import eu.eurise.postazione.data.Sole
+import eu.eurise.postazione.data.Tipo
+import eu.eurise.postazione.data.TipoBolla
 import eu.eurise.postazione.data.Cosa
 import eu.eurise.postazione.data.Gruppi
 import eu.eurise.postazione.data.Gruppo
@@ -65,10 +74,15 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
     /** Le sei categorie della dock, le stesse in ogni scheda, e le app di ognuna (per id della categoria). */
     var dock by mutableStateOf(Gruppi.leggiDock(prefs.getString(K_DOCK, null))); private set
     var gruppi by mutableStateOf<Map<String, List<String>>>(emptyMap()); private set
-    /** Le app fissate in ogni scheda e quelle tolte dai suggerimenti. */
-    private var fissate by mutableStateOf<Map<Scheda, List<String>>>(emptyMap())
-    private var nascoste by mutableStateOf(Scheda.entries.associateWith { s -> prefs.getString(K_CTX_NO + s.name, null).orEmpty().lines().filter { it.isNotBlank() }.toSet() })
-    private var usiScheda by mutableStateOf(Scheda.entries.associateWith { s -> Usi.leggi(prefs.getString(K_USI + "." + s.name, null)) })
+    /** Le linguette della Home (nome, quando si aprono da sole) e le bolle di ognuna. */
+    var linguette by mutableStateOf(Pagine.leggiLinguette(prefs.getString(K_LINGUETTE, null))); private set
+    var bolle by mutableStateOf(linguette.associate { l -> l.id to Pagine.leggiBolle(prefs.getString(K_BOLLE + l.id, null), l.tipo) }); private set
+    /** Le pagine a sinistra della Home, con le loro app. */
+    var pagine by mutableStateOf(Pagine.leggiPagine(prefs.getString(K_PAGINE, null))); private set
+    var appPagine by mutableStateOf<Map<String, List<String>>>(emptyMap()); private set
+    /** I gesti a due e tre dita. */
+    var gesti by mutableStateOf(Gesto.entries.associateWith { g -> prefs.getString(K_GESTO + g.name, null)?.takeIf { Azioni.valida(it) } ?: Azioni.iniziale(g) }); private set
+    var torcia by mutableStateOf(false); private set
     /** L'intelligenza artificiale del tocco sulla riga «Chiedi a…» (tenere premuto le mostra tutte). */
     var ai by mutableStateOf(Ai.da(prefs.getString(K_AI, null))); private set
     var oroscopo by mutableStateOf<Oroscopo?>(null); private set
@@ -81,7 +95,7 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
     var adesso by mutableStateOf(LocalDateTime.now()); private set
     var nome by mutableStateOf(prefs.getString(K_NOME, "").orEmpty()); private set
     var mancino by mutableStateOf(prefs.getBoolean(K_MANCINO, false)); private set
-    private var manuale by mutableStateOf(prefs.getString(K_MANUALE, null)?.let { runCatching { Scheda.valueOf(it) }.getOrNull() })
+    private var manuale by mutableStateOf(prefs.getString(K_MANUALE_ID, null))
     private var autoAllaScelta by mutableStateOf(prefs.getString(K_AUTO, null)?.let { runCatching { Scheda.valueOf(it) }.getOrNull() })
 
     /** Accesso alle notifiche acceso (da Android): «Da rispondere» e musica. */
@@ -109,8 +123,25 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
     var cercoAuto by mutableStateOf(false); private set
     var autoNonTrovata by mutableStateOf(false); private set
 
-    val scheda: Scheda get() = Schede.attiva(Schede.automatica(adesso), manuale, autoAllaScelta)
-    val automatica: Boolean get() = scheda == Schede.automatica(adesso)
+    /** La linguetta che si aprirebbe da sola adesso: la prima del tipo giusto (Lavoro nei feriali in orario, se no Personale). */
+    private fun linguettaAuto(): Linguetta {
+        val tipo = if (Schede.automatica(adesso) == Scheda.Lavoro) Tipo.Lavoro else Tipo.Personale
+        return linguette.firstOrNull { it.tipo == tipo } ?: linguette.first()
+    }
+
+    /** La linguetta davanti: una scelta a mano vale finché la scelta automatica resta quella di quando l'hai fatta. */
+    val attiva: Linguetta get() {
+        val auto = linguettaAuto()
+        val m = manuale ?: return auto
+        return if (autoAllaScelta == Schede.automatica(adesso)) linguette.firstOrNull { it.id == m } ?: auto else auto
+    }
+
+    /** Il comportamento della linguetta davanti (le Libere si comportano come il Personale). */
+    val scheda: Scheda get() = when (attiva.tipo) { Tipo.Lavoro -> Scheda.Lavoro; Tipo.Viaggio -> Scheda.Viaggio; else -> Scheda.Personale }
+    val automatica: Boolean get() = attiva.id == linguettaAuto().id
+
+    /** Il cielo di adesso: ora del giorno (alba e tramonto del posto) e tempo che fa. */
+    val cielo get() = Sole.adesso(adesso, ZoneId.systemDefault(), auto?.lat, auto?.lon, giornata.meteo?.cielo)
 
     /** «Chiudi la giornata» da proporre: fine del lavoro, non ancora chiusa oggi. */
     val fineGiornata: Boolean get() = Schede.fineGiornata(adesso) && chiusa != adesso.toLocalDate().toString()
@@ -146,7 +177,7 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
     /** Solo con la scheda Personale davanti, e al più ogni venti minuti: le legge l'app Eurise, con le sue regole. */
     private suspend fun leggiNotizie() {
         val ora = System.currentTimeMillis()
-        if (scheda != Scheda.Personale || !giornata.collegata || ora - notizieAlle < 20 * 60_000L) return
+        if (!haBolla(TipoBolla.Notizie) || !giornata.collegata || ora - notizieAlle < 20 * 60_000L) return
         notizieAlle = ora
         notizie = withContext(Dispatchers.IO) { LettoreGiornata.notizie(contesto, BuildConfig.HUB_PACKAGE) }
     }
@@ -154,7 +185,7 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
     /** Come le notizie: solo con la scheda Personale davanti, al più ogni mezz'ora (o subito se cambi segno). */
     private suspend fun leggiOroscopo(segno: Int? = null) {
         val ora = System.currentTimeMillis()
-        if (segno == null && (scheda != Scheda.Personale || !giornata.collegata || ora - oroscopoAlle < 30 * 60_000L)) return
+        if (segno == null && (!haBolla(TipoBolla.Oroscopo) || !giornata.collegata || ora - oroscopoAlle < 30 * 60_000L)) return
         oroscopoAlle = ora
         oroscopo = withContext(Dispatchers.IO) { LettoreGiornata.oroscopo(contesto, BuildConfig.HUB_PACKAGE, segno) }
     }
@@ -177,9 +208,7 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
         val chiavi = app.map { it.chiave }
         val insieme = chiavi.toSet()
         gruppi = dock.associate { c -> c.id to appDi(c, chiavi, insieme) }
-        fissate = Scheda.entries.associateWith { s ->
-            Gruppi.leggi(prefs.getString(K_CTX + s.name, null), insieme) ?: Gruppi.risolvi(Contesto.predefinite(s), chiavi, ruoli)
-        }
+        appPagine = pagine.associate { p -> p.id to (Gruppi.leggi(prefs.getString(K_PAGINA_APP + p.id, null), insieme) ?: emptyList()) }
     }
 
     private fun appDi(c: Categoria, chiavi: List<String>, insieme: Set<String>): List<String> =
@@ -207,26 +236,175 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
         prefs.edit().putString(K_DOCK, Gruppi.scriviDock(dock)).apply()
     }
 
-    /** Le app della scheda: fissate e più usate in quella scheda. */
-    fun appDellaScheda(s: Scheda): List<String> =
-        Contesto.mostra(fissate[s].orEmpty(), usiScheda[s].orEmpty(), nascoste[s].orEmpty(), app.map { it.chiave })
+    // Categorie (fino a dieci: le prime otto nella dock, tutte nel cassetto a destra)
 
-    fun fissataInScheda(s: Scheda, chiave: String): Boolean = chiave in fissate[s].orEmpty()
-
-    fun fissaInScheda(s: Scheda, chiave: String) {
-        val lista = Gruppi.aggiungi(fissate[s].orEmpty(), chiave)
-        fissate = fissate + (s to lista)
-        val no = nascoste[s].orEmpty() - chiave
-        nascoste = nascoste + (s to no)
-        prefs.edit().putString(K_CTX + s.name, Gruppi.scrivi(lista)).putString(K_CTX_NO + s.name, no.joinToString("\n")).apply()
+    /** Una categoria nuova in fondo; il suo id, o null se sono già dieci. */
+    fun nuovaCategoria(nome: String, icona: String): String? {
+        val (d, c) = Gruppi.aggiungiCategoria(dock, nome, icona, "c" + System.currentTimeMillis()) ?: return null
+        dock = d
+        prefs.edit().putString(K_DOCK, Gruppi.scriviDock(dock)).putString(K_GRUPPO + c.id, "").apply()
+        ricalcolaGruppi()
+        return c.id
     }
 
-    fun togliDaScheda(s: Scheda, chiave: String) {
-        val lista = Gruppi.togli(fissate[s].orEmpty(), chiave)
-        fissate = fissate + (s to lista)
-        val no = nascoste[s].orEmpty() + chiave
-        nascoste = nascoste + (s to no)
-        prefs.edit().putString(K_CTX + s.name, Gruppi.scrivi(lista)).putString(K_CTX_NO + s.name, no.joinToString("\n")).apply()
+    fun togliCategoria(id: String) {
+        dock = Gruppi.togliCategoria(dock, id)
+        prefs.edit().putString(K_DOCK, Gruppi.scriviDock(dock)).apply()
+        ricalcolaGruppi()
+    }
+
+    /** Sposta (o copia) più app insieme da una categoria a un'altra; [da] null = dall'elenco A–Z (si aggiungono). */
+    fun spostaApp(chiavi: List<String>, da: String?, a: String, copia: Boolean) {
+        val nuovi = Gruppi.spostaApp(gruppi, chiavi, da, a, copia)
+        prefs.edit().apply { nuovi.forEach { (id, l) -> if (l != gruppi[id]) putString(K_GRUPPO + id, Gruppi.scrivi(l)) } }.apply()
+        gruppi = nuovi
+    }
+
+    fun togliApp(chiavi: List<String>, da: String) = salva(da, gruppi[da].orEmpty().filter { it !in chiavi })
+
+    // Linguette e bolle
+
+    fun bolleDi(l: Linguetta): List<Bolla> = bolle[l.id] ?: Pagine.bolleIniziali(l.tipo)
+    private fun haBolla(t: TipoBolla) = bolleDi(attiva).any { it.tipo == t }
+
+    private fun salvaBolle(l: Linguetta, b: List<Bolla>) {
+        bolle = bolle + (l.id to b)
+        prefs.edit().putString(K_BOLLE + l.id, Pagine.scriviBolle(b)).apply()
+        if (b.any { it.tipo == TipoBolla.Notizie || it.tipo == TipoBolla.Oroscopo }) viewModelScope.launch { leggiNotizie(); leggiOroscopo() }
+    }
+
+    fun aggiungiBolla(l: Linguetta, t: TipoBolla) {
+        if (bolleDi(l).none { it.tipo == t }) salvaBolle(l, bolleDi(l) + Bolla(t, if (t == TipoBolla.Meteo || t == TipoBolla.Ascolto) Misura.Piccola else Misura.Larga))
+    }
+    fun togliBolla(l: Linguetta, t: TipoBolla) = salvaBolle(l, bolleDi(l).filter { it.tipo != t })
+    fun misuraBolla(l: Linguetta, t: TipoBolla) = salvaBolle(l, bolleDi(l).map { if (it.tipo == t) it.copy(misura = Pagine.prossimaMisura(it.misura)) else it })
+    fun spostaBolla(l: Linguetta, t: TipoBolla, verso: Int) = salvaBolle(l, Pagine.sposta(bolleDi(l), t, verso))
+
+    private fun salvaLinguette(nuove: List<Linguetta>) {
+        linguette = nuove
+        prefs.edit().putString(K_LINGUETTE, Pagine.scriviLinguette(nuove)).apply()
+    }
+
+    fun aggiungiLinguetta(nome: String): Linguetta? {
+        if (linguette.size >= Pagine.MAX_LINGUETTE) return null
+        val l = Linguetta("l" + System.currentTimeMillis(), nome.trim().take(20), Tipo.Libera)
+        salvaLinguette(linguette + l)
+        scegli(l)
+        return l
+    }
+
+    fun rinominaLinguetta(l: Linguetta, nome: String) = salvaLinguette(linguette.map { if (it.id == l.id) it.copy(nome = nome.trim().take(20)) else it })
+    fun tipoLinguetta(l: Linguetta, t: Tipo) = salvaLinguette(linguette.map { if (it.id == l.id) it.copy(tipo = t) else it })
+    fun spostaLinguetta(l: Linguetta, verso: Int) = salvaLinguette(Pagine.sposta(linguette, linguette.indexOfFirst { it.id == l.id }, verso))
+
+    fun togliLinguetta(l: Linguetta) {
+        if (linguette.size <= 1) return
+        salvaLinguette(linguette.filter { it.id != l.id })
+        bolle = bolle - l.id
+        prefs.edit().remove(K_BOLLE + l.id).apply()
+        if (manuale == l.id) { manuale = null; autoAllaScelta = null; prefs.edit().remove(K_MANUALE_ID).remove(K_AUTO).apply() }
+    }
+
+    // Pagine a sinistra della Home
+
+    fun nuovaPagina(nome: String): Pagina? {
+        if (pagine.size >= Pagine.MAX_PAGINE) return null
+        val p = Pagina("p" + System.currentTimeMillis(), nome.trim().take(24), ai)
+        salvaPagine(pagine + p)
+        return p
+    }
+
+    private fun salvaPagine(nuove: List<Pagina>) {
+        pagine = nuove
+        prefs.edit().putString(K_PAGINE, Pagine.scriviPagine(nuove)).apply()
+        ricalcolaGruppi()
+    }
+
+    fun rinominaPagina(p: Pagina, nome: String) = salvaPagine(pagine.map { if (it.id == p.id) it.copy(nome = nome.trim().take(24)) else it })
+    fun aiPagina(p: Pagina, a: Ai) = salvaPagine(pagine.map { if (it.id == p.id) it.copy(ai = a) else it })
+    fun spostaPagina(p: Pagina, verso: Int) = salvaPagine(Pagine.sposta(pagine, pagine.indexOfFirst { it.id == p.id }, verso))
+
+    fun togliPagina(p: Pagina) {
+        prefs.edit().remove(K_PAGINA_APP + p.id).apply()
+        salvaPagine(pagine.filter { it.id != p.id })
+    }
+
+    fun aggiungiAPagina(id: String, chiave: String) {
+        val l = Gruppi.aggiungi(appPagine[id].orEmpty(), chiave)
+        appPagine = appPagine + (id to l)
+        prefs.edit().putString(K_PAGINA_APP + id, Gruppi.scrivi(l)).apply()
+    }
+
+    fun togliDaPagina(id: String, chiave: String) {
+        val l = Gruppi.togli(appPagine[id].orEmpty(), chiave)
+        appPagine = appPagine + (id to l)
+        prefs.edit().putString(K_PAGINA_APP + id, Gruppi.scrivi(l)).apply()
+    }
+
+    /** L'AI dello swipe dal basso: quella della pagina, o la preferita sulla Home. */
+    fun aiDi(paginaId: String?): Ai = pagine.firstOrNull { it.id == paginaId }?.ai ?: ai
+
+    // Gesti
+
+    fun impostaGesto(g: Gesto, azione: String) {
+        if (!Azioni.valida(azione)) return
+        gesti = gesti + (g to azione)
+        prefs.edit().putString(K_GESTO + g.name, azione).apply()
+    }
+
+    /** Le funzioni dei gesti che non riguardano la schermata (quelle le fa la schermata: cerca, AI, tutte le app). */
+    fun funzione(azione: String): Boolean = when {
+        Azioni.eApp(azione) -> apri(Azioni.chiave(azione))
+        azione == Azioni.TELEFONO -> telefono.avvia(Intent(Intent.ACTION_DIAL))
+        azione == Azioni.FOTOCAMERA -> telefono.avvia(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA))
+        azione == Azioni.NOTA -> apriSezione("notes")
+        azione == Azioni.SCANNER -> apriSezione("scanner")
+        azione == Azioni.FARMACI -> apriSezione("medicines")
+        azione == Azioni.VOCE -> listOf("eu.eurise.voice", "eu.eurise.voice.debug").firstNotNullOfOrNull { telefono.avviaPacchetto(it) }?.let { telefono.avvia(it) } ?: false
+        azione == Azioni.TORCIA -> cambiaTorcia()
+        else -> false
+    }
+
+    /** La torcia: accesa o spenta con il flash della fotocamera posteriore (nessun permesso: solo il flash). */
+    private fun cambiaTorcia(): Boolean = runCatching {
+        val cm = contesto.getSystemService(android.hardware.camera2.CameraManager::class.java)
+        val id = cm.cameraIdList.firstOrNull { c ->
+            val k = cm.getCameraCharacteristics(c)
+            k.get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE) == true &&
+                k.get(android.hardware.camera2.CameraCharacteristics.LENS_FACING) == android.hardware.camera2.CameraCharacteristics.LENS_FACING_BACK
+        } ?: return false
+        cm.setTorchMode(id, !torcia)
+        torcia = !torcia
+        true
+    }.getOrDefault(false)
+
+    // «Ti hanno cercato» e «Da rispondere»: lo swipe
+
+    fun richiama(a: Avviso) { Ascolto.richiama(contesto, a) }
+
+    /** Come toccare la notifica; se l'app non lo permette, si apre l'app. */
+    fun apriAvviso(a: Avviso) {
+        if (!Ascolto.apri(contesto, a)) app.firstOrNull { it.pacchetto == a.pacchetto }?.let { apri(it.chiave) }
+    }
+
+    /** I messaggi: l'app Messaggi della suite o quella degli SMS del telefono (prima della categoria Comunica). */
+    fun apriComunica() {
+        val lista = gruppi[Gruppo.Comunica.name].orEmpty()
+        val sms = ruoli["sms"]
+        (lista.firstOrNull { it.startsWith("eu.eurise.messages") || it.substringBefore('/') == sms } ?: lista.firstOrNull())?.let { apri(it) }
+    }
+    fun vista(a: Avviso) = Ascolto.vista(a)
+    fun piuTardi(a: Avviso) = Ascolto.piuTardi(a)
+
+    /** «Da fare»: una cosa da fare per oggi nell'app Eurise («Richiamare Giulia»), e l'avviso si toglie. */
+    fun daFare(a: Avviso) {
+        val chi = a.titolo.ifBlank { nomeDelPacchetto(a.pacchetto) }
+        val titolo = contesto.getString(if (a.chiamata) R.string.cosa_richiamare else R.string.cosa_rispondere, chi)
+        Ascolto.vista(a)
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { LettoreGiornata.aggiungiCosa(contesto, BuildConfig.HUB_PACKAGE, titolo) }
+            giornata = withContext(Dispatchers.IO) { LettoreGiornata.leggi(contesto, BuildConfig.HUB_PACKAGE) }
+        }
     }
 
     /** Un sito in un gruppo; falso se l'indirizzo non è un indirizzo web. */
@@ -234,8 +412,7 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
         val pulito = Siti.normalizza(indirizzo) ?: return false
         val chiave = Siti.chiave(pulito)
         prefs.edit().putString(K_SITO + chiave, nomeSito.trim().ifEmpty { Siti.nomeDa(pulito) }).apply()
-        val scheda = g.removePrefix("scheda:").takeIf { g.startsWith("scheda:") }?.let { runCatching { Scheda.valueOf(it) }.getOrNull() }
-        if (scheda != null) fissaInScheda(scheda, chiave) else aggiungi(g, chiave)
+        if (g.startsWith("pagina:")) aggiungiAPagina(g.removePrefix("pagina:"), chiave) else aggiungi(g, chiave)
         return true
     }
 
@@ -244,27 +421,25 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
         val ok = if (Siti.eSito(chiave)) telefono.apriSito(Siti.indirizzo(chiave)) else telefono.apri(chiave)
         if (ok && !Siti.eSito(chiave)) {
             usi = usi + (chiave to (usi[chiave] ?: 0) + 1)
-            val s = scheda
-            val inScheda = usiScheda[s].orEmpty()
-            usiScheda = usiScheda + (s to inScheda + (chiave to (inScheda[chiave] ?: 0) + 1))
             recenti = (listOf(chiave) + recenti.filter { it != chiave }).take(8)
-            prefs.edit().putString(K_USI, Usi.scrivi(usi)).putString(K_USI + "." + s.name, Usi.scrivi(usiScheda[s].orEmpty()))
-                .putString(K_RECENTI, recenti.joinToString("\n")).apply()
+            prefs.edit().putString(K_USI, Usi.scrivi(usi)).putString(K_RECENTI, recenti.joinToString("\n")).apply()
         }
         return ok
     }
 
     fun piuUsate(n: Int): List<String> = Usi.piuUsate(usi, app.map { it.chiave }, n)
 
-    /** Le app che servono adesso: quelle della scheda aperta. */
-    fun perAdesso(n: Int): List<String> = appDellaScheda(scheda).filter { !Siti.eSito(it) }.take(n)
+    /** Le app che servono adesso: le ultime aperte. */
+    fun perAdesso(n: Int): List<String> = recenti.filter { !Siti.eSito(it) }.take(n)
 
-    fun scegli(s: Scheda) {
-        val auto = Schede.automatica(LocalDateTime.now())
-        if (s == auto) { manuale = null; autoAllaScelta = null } else { manuale = s; autoAllaScelta = auto }
-        prefs.edit().putString(K_MANUALE, manuale?.name).putString(K_AUTO, autoAllaScelta?.name).apply()
+    fun scegli(l: Linguetta) {
+        adesso = LocalDateTime.now()
+        if (l.id == linguettaAuto().id) { manuale = null; autoAllaScelta = null } else { manuale = l.id; autoAllaScelta = Schede.automatica(adesso) }
+        prefs.edit().putString(K_MANUALE_ID, manuale).putString(K_AUTO, autoAllaScelta?.name).apply()
         viewModelScope.launch { leggiNotizie(); leggiOroscopo() }
     }
+
+    fun tornaAutomatica() = scegli(linguettaAuto())
 
     /**
      * «Chiudi la giornata»: con [rimanda] le cose aperte passano a domani; con [silenzio] le notifiche della posta e
@@ -284,7 +459,7 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
                 withContext(Dispatchers.IO) { LettoreGiornata.rimanda(contesto, BuildConfig.HUB_PACKAGE) }
                 giornata = withContext(Dispatchers.IO) { LettoreGiornata.leggi(contesto, BuildConfig.HUB_PACKAGE) }
             }
-            if (rimanda || silenzio) scegli(Scheda.Personale)
+            if (rimanda || silenzio) linguette.firstOrNull { it.tipo == Tipo.Personale }?.let { scegli(it) }
         }
     }
 
@@ -438,12 +613,15 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
     private companion object {
         const val K_NOME = "nome"
         const val K_MANCINO = "mancino"
-        const val K_MANUALE = "scheda.manuale"
+        const val K_MANUALE_ID = "linguetta.manuale"
+        const val K_LINGUETTE = "linguette"
+        const val K_BOLLE = "bolle."
+        const val K_PAGINE = "pagine"
+        const val K_PAGINA_APP = "pagina.app."
+        const val K_GESTO = "gesto."
         const val K_AUTO = "scheda.auto"
         const val K_GRUPPO = "gruppo."
         const val K_DOCK = "dock"
-        const val K_CTX = "scheda.app."
-        const val K_CTX_NO = "scheda.tolte."
         const val K_AI = "ai"
         const val K_SITO = "sito."
         const val K_USI = "usi"

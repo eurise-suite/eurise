@@ -44,6 +44,7 @@ class PostazioneProvider : ContentProvider() {
             C.METHOD_SCHEDULE -> schedule(context, extras)
             C.METHOD_NEWS -> news(context)
             C.METHOD_TASK -> task(context, arg, extras)
+            C.METHOD_ADD_TASK -> addTask(context, arg)
             C.METHOD_EVENT -> event(context, arg, extras)
             C.METHOD_SEARCH -> search(context, arg)
             C.METHOD_HOROSCOPE -> horoscope(context, extras)
@@ -92,6 +93,13 @@ class PostazioneProvider : ContentProvider() {
                 }
             }
         }.getOrDefault(false)
+        return Bundle().apply { putBoolean(C.KEY_OK, ok) }
+    }
+
+    /** Una cosa da fare per oggi con il titolo dato (ripulito: una riga, al più [C.MAX_TITLE] caratteri). */
+    private fun addTask(context: android.content.Context, title: String?): Bundle {
+        val t = title.orEmpty().lineSequence().firstOrNull().orEmpty().trim().take(C.MAX_TITLE)
+        val ok = t.isNotEmpty() && runCatching { runBlocking { EuriseData.create(context).tasks.add(t, due = LocalDate.now()) > 0 } }.getOrDefault(false)
         return Bundle().apply { putBoolean(C.KEY_OK, ok) }
     }
 
@@ -213,6 +221,7 @@ class PostazioneProvider : ContentProvider() {
         val doneToday = tasks.count { it.done && (it.completedAt ?: 0L) >= startOfDay }
         val shown = open.sortedWith(compareBy({ it.due }, { it.time })).take(C.MAX_TASKS)
         return Bundle().apply {
+            putBoolean(C.KEY_EV_PERM, data.calendar.hasPermission())
             putStringArray(C.KEY_EV_TITLE, events.map { it.first.title }.toTypedArray())
             putStringArray(C.KEY_EV_PLACE, events.map { it.first.location }.toTypedArray())
             putLongArray(C.KEY_EV_BEGIN, events.map { it.second }.toLongArray())

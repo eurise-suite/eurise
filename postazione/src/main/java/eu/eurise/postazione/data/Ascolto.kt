@@ -25,6 +25,12 @@ class Avviso(
     val apri: PendingIntent?,
     /** L'azione «Rispondi» della notifica, se l'app la offre: serve a «Rispondo domattina». */
     val rispondi: Notification.Action? = null,
+    /** Una chiamata persa («Ti hanno cercato»); altrimenti un messaggio o una mail («Da rispondere»). */
+    val chiamata: Boolean = false,
+    /** L'azione «Richiama» della notifica, se l'app del telefono la offre. */
+    val richiama: Notification.Action? = null,
+    /** Si può togliere dalle notifiche («Vista»). */
+    val cancellabile: Boolean = true,
 )
 
 /** Quello che sta suonando (o è in pausa) in un'app di musica o video. */
@@ -67,30 +73,56 @@ class AscoltoService : NotificationListenerService() {
                 runCatching { snoozeNotification(sbn.key, fino - ora) }.onSuccess { fermate.value = fermate.value + sbn.key }
             }
         }
-        avvisi.value = attive.filter { !(pausa && it.packageName in inPausa) }.mapNotNull { leggi(it) }.sortedByDescending { it.quando }.take(MAX)
+        avvisi.value = attive.filter { !(pausa && it.packageName in inPausa) }.mapNotNull { leggi(it) }
+            .filter { it.chiave !in nascosti.value }.sortedByDescending { it.quando }.take(MAX)
     }
 
+    /**
+     * Messaggi, posta e chiamate perse. Molte app non dichiarano la categoria: valgono anche le notifiche in stile
+     * conversazione, quelle con «Rispondi» e quelle dell'app del telefono e degli SMS scelte da Android.
+     */
     private fun leggi(sbn: StatusBarNotification): Avviso? {
         val n = sbn.notification ?: return null
         if (sbn.isOngoing || n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return null
-        val categoria = n.category ?: return null
-        if (categoria !in CATEGORIE) return null
+        if (sbn.packageName == packageName) return null
+        val categoria = n.category
+        val stile = n.extras?.getString(Notification.EXTRA_TEMPLATE).orEmpty()
+        val rispondi = n.actions?.firstOrNull { a -> a.remoteInputs?.any { it.allowFreeFormInput } == true }
+        val telefono = sbn.packageName == dialer
+        val chiamata = categoria == CATEGORIA_PERSA || (telefono && categoria != Notification.CATEGORY_CALL && categoria != Notification.CATEGORY_STATUS) ||
+            (categoria == Notification.CATEGORY_CALL && telefono)
+        val messaggio = categoria == Notification.CATEGORY_MESSAGE || categoria == Notification.CATEGORY_EMAIL ||
+            stile.endsWith("MessagingStyle") || rispondi != null || sbn.packageName == sms
+        if (!chiamata && !messaggio) return null
         val titolo = n.extras?.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
         val testo = n.extras?.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
         if (titolo.isBlank() && testo.isBlank()) return null
-        val rispondi = n.actions?.firstOrNull { a -> a.remoteInputs?.any { it.allowFreeFormInput } == true }
-        return Avviso(sbn.key, sbn.packageName, titolo, testo, sbn.postTime, n.contentIntent, rispondi)
+        val richiama = if (chiamata) n.actions?.firstOrNull { a -> a.remoteInputs == null && a.actionIntent != null && RICHIAMA.containsMatchIn(a.title?.toString().orEmpty()) } else null
+        return Avviso(sbn.key, sbn.packageName, titolo, testo, sbn.postTime, n.contentIntent, rispondi, chiamata, richiama, sbn.isClearable)
     }
 
+    private val dialer: String? by lazy { runCatching { getSystemService(android.telecom.TelecomManager::class.java)?.defaultDialerPackage }.getOrNull() }
+    private val sms: String? by lazy { runCatching { android.provider.Telephony.Sms.getDefaultSmsPackage(this) }.getOrNull() }
+
+    /** «Vista»: la notifica si toglie (se l'app lo permette), altrimenti sparisce solo dalla Postazione. */
+    internal fun togli(chiave: String) { runCatching { cancelNotification(chiave) } }
+
+    /** «Più tardi»: torna fra un'ora. */
+    internal fun rimanda(chiave: String) { runCatching { snoozeNotification(chiave, 60 * 60_000L) } }
+
     companion object {
-        private const val MAX = 6
-        private val CATEGORIE = setOf(Notification.CATEGORY_MESSAGE, Notification.CATEGORY_EMAIL, Notification.CATEGORY_CALL, "missed_call")
+        private const val MAX = 12
+        private const val CATEGORIA_PERSA = "missed_call"
+        private val RICHIAMA = Regex("(?i)richiam|call ?back|chiama|rappel|zurückrufen|devolver")
 
         internal const val K_FINO = "pausa.fino"
         internal const val K_APP = "pausa.app"
 
         /** Solo in memoria: si svuota quando l'accesso si spegne o l'app si chiude. */
         val avvisi = MutableStateFlow<List<Avviso>>(emptyList())
+
+        /** Gli avvisi «visti» che l'app non lascia togliere: spariscono solo dalla Postazione, finché la notifica c'è. */
+        val nascosti = MutableStateFlow<Set<String>>(emptySet())
 
         /** Le notifiche rimandate in questa pausa (le chiavi): per dire quante aspettano. */
         val fermate = MutableStateFlow<Set<String>>(emptySet())
@@ -145,6 +177,21 @@ object Ascolto {
             RemoteInput.addResultsToIntent(campi, intent, dati)
             azione.actionIntent.send(context, 0, intent)
         }.isSuccess
+    }
+
+    /** «Richiama»: l'azione della notifica se c'è, altrimenti come toccarla (apre l'app del telefono). */
+    fun richiama(context: Context, a: Avviso): Boolean =
+        a.richiama?.let { azione -> runCatching { azione.actionIntent.send() }.isSuccess } ?: apri(context, a)
+
+    fun vista(a: Avviso) {
+        if (a.cancellabile) AscoltoService.istanza?.togli(a.chiave)
+        AscoltoService.nascosti.value = AscoltoService.nascosti.value + a.chiave
+        AscoltoService.avvisi.value = AscoltoService.avvisi.value.filter { it.chiave != a.chiave }
+    }
+
+    fun piuTardi(a: Avviso) {
+        AscoltoService.istanza?.rimanda(a.chiave)
+        AscoltoService.avvisi.value = AscoltoService.avvisi.value.filter { it.chiave != a.chiave }
     }
 
     /** Come toccare la notifica. */
