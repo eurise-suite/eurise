@@ -26,13 +26,13 @@ data class App(val chiave: String, val nome: String) {
 
 /**
  * L'icona di un'app come la mostra la Postazione (tavola «Le icone a bolle», 26 novembre 2026): fuori chiaro di giorno e
- * scuro di notte, dentro il disegno nel colore dell'app. Le nostre hanno il disegno della suite; le altre il loro simbolo
- * nel colore che le contraddistingue; se il simbolo non si riesce a staccare, l'icona com'è dentro la stessa bolla.
+ * scuro di notte. Le nostre hanno il disegno della suite; le altre restano **come sono** (fondo, disegno e colori
+ * originali, scelta del proprietario del 27 novembre) e prendono solo la forma tonda, il filo e l'ombra delle bolle.
  */
 sealed interface Icona {
     class Nostra(val disegno: SuiteDrawings.Drawing) : Icona
-    class Simbolo(val sagoma: ImageBitmap, val colore: Color?) : Icona
-    class Intera(val immagine: ImageBitmap) : Icona
+    /** L'icona originale dell'app: a tutto tondo ([pieno]) con [fondo] sotto, oppure un disegno da mettere al centro. */
+    class Originale(val immagine: ImageBitmap, val fondo: Color?, val pieno: Boolean) : Icona
 }
 
 /** Le app del telefono e le loro icone, solo con le API di Android (nessuna lettura di dati delle app). */
@@ -73,10 +73,9 @@ class Telefono(private val context: Context) {
         icone.get("$chiave@$px")?.let { return it }
         val cn = ComponentName.unflattenFromString(chiave) ?: return null
         val letta = SuiteKeys.drawing(cn.packageName, cn.className)?.let { Icona.Nostra(it) } ?: runCatching {
-            val originale = pm.getActivityIcon(cn)
-            val simbolo = AppSymbols.of(originale, px)
-            if (simbolo != null) Icona.Simbolo(simbolo.bitmap, AppSymbols.dominantColor(originale) ?: simbolo.color)
-            else Icona.Intera(originale.toBitmap(px, px).asImageBitmap())
+            // Le app non nostre restano come sono (fondo, disegno, colori): prendono solo la forma della bolla.
+            val o = AppSymbols.original(pm.getActivityIcon(cn), px)
+            Icona.Originale(o.bitmap, o.fill, o.fullBleed)
         }.getOrNull() ?: return null
         icone.put("$chiave@$px", letta)
         return letta

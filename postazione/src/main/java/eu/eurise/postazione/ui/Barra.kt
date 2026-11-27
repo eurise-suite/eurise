@@ -39,6 +39,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -55,7 +56,6 @@ import eu.eurise.core.designsystem.icon.SuiteBubble
 import eu.eurise.core.designsystem.icon.SuiteDrawingCanvas
 import eu.eurise.core.designsystem.icon.SuiteSeries
 import eu.eurise.core.designsystem.icon.shimmer
-import eu.eurise.core.designsystem.icon.softTint
 import eu.eurise.postazione.PostazioneModel
 import eu.eurise.postazione.R
 import eu.eurise.postazione.data.Categoria
@@ -304,18 +304,22 @@ fun IconaApp(telefono: Telefono, chiave: String, misura: Dp, notte: Boolean) {
     val px = with(LocalDensity.current) { misura.roundToPx() }
     val icona by produceState<Icona?>(null, chiave, px) { value = withContext(Dispatchers.IO) { telefono.icona(chiave, px) } }
     val serie = if (notte) SuiteSeries.Dark else SuiteSeries.Light
-    SuiteBubble(serie, misura, CircleShape, emptyList(), Color.White, flat = true) {
-        when (val i = icona) {
-            is Icona.Nostra -> SuiteDrawingCanvas(i.disegno, serie, Modifier.size(misura))
-            is Icona.Simbolo -> Image(i.sagoma, null, Modifier.size(misura * 0.8f).softTint(shimmer(i.colore ?: senzaColore(notte), notte)))
-            is Icona.Intera -> Image(i.immagine, null, Modifier.size(misura * 0.86f).clip(CircleShape))
-            null -> Unit
+    when (val i = icona) {
+        // Le app non nostre: l'originale a tutto tondo, nella bolla piatta della suite (filo e ombra appena accennata).
+        is Icona.Originale -> if (i.pieno) {
+            SuiteBubble(serie, misura, CircleShape, emptyList(), Color.White, fill = i.fondo ?: Color.White, flat = true) {
+                Image(i.immagine, null, Modifier.size(misura), contentScale = ContentScale.FillBounds)
+            }
+        } else {
+            SuiteBubble(serie, misura, CircleShape, emptyList(), Color.White, flat = true) {
+                Image(i.immagine, null, Modifier.size(misura * 0.78f))
+            }
+        }
+        else -> SuiteBubble(serie, misura, CircleShape, emptyList(), Color.White, flat = true) {
+            if (i is Icona.Nostra) SuiteDrawingCanvas(i.disegno, serie, Modifier.size(misura))
         }
     }
 }
-
-/** Per le icone in bianco e nero, che un colore loro non l'hanno: inchiostro di giorno, carta di notte. */
-private fun senzaColore(notte: Boolean) = if (notte) Color(0xFFD5D9E0) else Color(0xFF3A3D45)
 
 /** Un sito messo in un gruppo: l'iniziale nel colore del gruppo, nella stessa bolla delle app. */
 @Composable

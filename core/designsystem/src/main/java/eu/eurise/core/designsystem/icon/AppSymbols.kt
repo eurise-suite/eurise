@@ -19,6 +19,12 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.core.graphics.drawable.toBitmap
 
+/**
+ * L'icona originale di un'app non nostra, pronta per la bolla: [fullBleed] vuol dire che riempie il tondo (con [fill]
+ * sotto, per le piastrelle di vecchio stile); altrimenti è un disegno da mettere al centro della bolla com'è.
+ */
+class OriginalIcon(val bitmap: ImageBitmap, val fill: Color?, val fullBleed: Boolean)
+
 /** Il simbolo di un'app non nostra: la sagoma (conta solo l'alfa) e, se si è potuto leggere, il colore del suo disegno. */
 class AppSymbol(val bitmap: ImageBitmap, val color: Color?)
 
@@ -123,6 +129,49 @@ object AppSymbols {
      */
     fun dominantColor(drawable: Drawable): Color? = dominantHsv(drawable)?.let { (hue, sat, value) ->
         Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, sat.coerceIn(0.45f, 1f), value.coerceIn(0.45f, 0.95f))))
+    }
+
+    /**
+     * L'icona originale **a tutto tondo**, per la bolla della suite (27 novembre 2026, scelta del proprietario: le app non
+     * nostre restano come sono, con il loro fondo e i loro colori, e prendono solo la forma e la finitura di Eurise).
+     * Adattiva: fondo e primo piano disegnati senza la maschera del telefono, presi i 72 dp centrali. Vecchio stile: se
+     * l'icona è una piastrella piena (quadrata, tonda, arrotondata) si allarga fino al bordo e il fondo prende il colore
+     * del suo bordo; se è un disegno su trasparente, [fill] è null e il disegno va al centro della bolla com'è.
+     */
+    fun original(drawable: Drawable, px: Int): OriginalIcon {
+        if (drawable is AdaptiveIconDrawable) {
+            val size = px * 3 / 2
+            val full = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(full)
+            listOfNotNull(drawable.background, drawable.foreground).forEach { layer ->
+                layer.setBounds(0, 0, size, size)
+                layer.draw(canvas)
+            }
+            return OriginalIcon(cropCenter(full).asImageBitmap(), null, true)
+        }
+        val bitmap = drawable.toBitmap(px, px, Bitmap.Config.ARGB_8888)
+        val w = bitmap.width
+        val h = bitmap.height
+        val pixels = IntArray(w * h).also { bitmap.getPixels(it, 0, w, 0, 0, w, h) }
+        var left = w; var top = h; var right = -1; var bottom = -1
+        for (y in 0 until h) for (x in 0 until w) if ((pixels[y * w + x] ushr 24) > 40) {
+            if (x < left) left = x; if (x > right) right = x; if (y < top) top = y; if (y > bottom) bottom = y
+        }
+        if (right < 0) return OriginalIcon(bitmap.asImageBitmap(), null, false)
+        val bw = right - left + 1
+        val bh = bottom - top + 1
+        // Quanto del cerchio inscritto nel riquadro è pieno: una piastrella lo riempie quasi tutto.
+        val cx = left + bw / 2f; val cy = top + bh / 2f; val r = minOf(bw, bh) / 2f * 0.92f
+        var dentro = 0; var pieni = 0
+        for (y in top..bottom) for (x in left..right) {
+            val dx = x - cx; val dy = y - cy
+            if (dx * dx + dy * dy <= r * r) { dentro++; if ((pixels[y * w + x] ushr 24) > 200) pieni++ }
+        }
+        if (dentro == 0 || pieni.toFloat() / dentro < 0.92f || bw < w / 2 || bh < h / 2) return OriginalIcon(bitmap.asImageBitmap(), null, false)
+        val tile = Bitmap.createBitmap(bitmap, left, top, bw, bh)
+        // Il colore del fondo: appena dentro il bordo sinistro, a metà altezza.
+        val bg = pixels[(top + bh / 2) * w + (left + maxOf(2, bw / 14)).coerceAtMost(right)]
+        return OriginalIcon(tile.asImageBitmap(), Color(bg).copy(alpha = 1f), true)
     }
 
     /** Le icone adattive stanno in un'area di 108 dp di cui si vedono i 72 centrali. */
