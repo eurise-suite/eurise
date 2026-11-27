@@ -48,7 +48,7 @@
     <string name="senza_eurise">Installa l\'app Eurise per vedere qui impegni e cose da fare. La Postazione funziona anche da sola.</string>
     <string name="viaggio_meta">Dove vai</string>
 
-    <string name="ventaglio_aiuto">Un tocco sulla categoria apre la preferita, quella con la stellina.</string>
+    <string name="ventaglio_aiuto">Tenendo premuta la categoria si apre subito la preferita, quella con la stellina.</string>
     <string name="aggiungi_app">Aggiungi un\'app</string>
     <string name="aggiungi_a">Aggiungi a «%1$s»</string>
     <string name="preferita">Preferita</string>

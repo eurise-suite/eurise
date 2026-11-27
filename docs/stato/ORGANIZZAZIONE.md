@@ -741,3 +741,9 @@ Centro privacy: tre servizi nuovi in `PrivacyService` (ReadModels, VoiceModels, 
 - Codice: `data/Pagine.kt`, `data/Sole.kt`, `ui/Cielo.kt`, `ui/BolleScheda.kt`, `ui/Gestione.kt`, `ui/PagineUi.kt`.
 - Da fare dopo la prova sul telefono: correzioni; spostare le bolle trascinandole; pagine anche con le bolle.
 
+## 27 novembre 2026, notte: Postazione, correzioni dopo la prova del giro 1151
+- Ricerca con fondo pieno e risultati dal basso; bolle vuote in una riga di icone; «Fine giornata» in una riga.
+- «Ti hanno cercato» dal Telefono della suite (`callBack`), «Da rispondere» anche dalle email di Eurise Email.
+- Righe senza scorrimento: il tocco apre il foglio con risposta (notifica, SMS, email) e Richiama/Apri, Vista, Più tardi,
+  Da fare. Meteo della Postazione anche con l'app Eurise in secondo piano.
+

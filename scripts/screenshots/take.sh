@@ -121,7 +121,7 @@ if [ -n "$POSTAZIONE" ] && [ -f "$POSTAZIONE" ]; then
     adb shell input keyevent KEYCODE_BACK; sleep 1
     tocca Impostazioni; shot p7-impostazioni "$theme" 3
     adb shell input keyevent KEYCODE_BACK; sleep 1; casa
-    tieni Lavoro ultimo; shot p5-ventaglio "$theme" 3
+    tocca Lavoro ultimo; shot p5-ventaglio "$theme" 3
     tocca "Modifica la categoria"; shot p6-categoria "$theme" 3
     adb shell input keyevent KEYCODE_BACK; sleep 1; casa
     # Giro 8: il cassetto per categorie a destra, le bolle da modificare, l'AI dal basso, i gesti.

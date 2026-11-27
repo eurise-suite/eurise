@@ -834,3 +834,19 @@ né telemetria trovata.
   app, Farmaci o un'app). La torcia usa `CameraManager.setTorchMode`: **nessun permesso nuovo**.
 - Nessun permesso nuovo nel manifesto della Postazione; resta senza INTERNET. Si installa sopra la precedente (le
   impostazioni vecchie delle schede si perdono: la dock di sei diventa di otto con Casa e Agenda).
+
+### Postazione, ottavo giro (27 novembre 2026, notte): correzioni dopo la prova del giro 1151
+- **Ricerca illeggibile**: il cassetto usava il foglio satinato quasi trasparente come fondo; ora ha un fondo pieno
+  (`Colori.pieno`). I risultati partono dal basso (persone subito sopra il campo, poi app, impegni, cose, note,
+  documenti, web e AI in cima).
+- **Lo scorrimento di lato nelle righe di «Ti hanno cercato» e «Da rispondere» è tolto**: si confondeva con quello delle
+  pagine e, verso sinistra, «Vista» **toglieva la notifica dal telefono** (probabile causa delle email «che non
+  arrivano»). Ora il tocco apre un foglio con la risposta e le azioni; nulla parte senza Invia.
+- **Porta nuova `callBack` del `PeopleProvider` di Eurise Telefono** (solo suite, `PeopleContract.allowed`): la lista «Da
+  richiamare» dei Recenti. Provata sull'emulatore: la curiosa resta fuori (`richiamare CHIUSA`).
+- La Postazione legge anche le email da leggere di Eurise Email (`recent`, già esistente, solo suite). Tutto dietro il
+  nuovo interruttore **«Telefono ed Email della suite»** (impostazioni della Postazione e centro privacy, 10 tacchette,
+  sul telefono); le risposte agli SMS partono da Eurise Messaggi (`send`, già esistente) solo con Invia.
+- Eurise Email dichiara `CATEGORY_EMAIL` sulle sue notifiche. Meteo: senza posizione (app Eurise in secondo piano)
+  `MeteoRepository.cached()` usa l'ultima previsione scaricata, senza rete.
+

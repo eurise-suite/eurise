@@ -68,8 +68,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * La dock in basso: otto categorie con la loro icona, le stesse in ogni scheda (un tocco apre la preferita, tenere premuto
- * apre il ventaglio) e la lente con la stellina di Eurise dal lato della mano (un tocco cerca ovunque, tenere premuto
+ * La dock in basso: otto categorie con la loro icona, le stesse in ogni scheda (un tocco apre il ventaglio con le sue app, tenere
+ * premuto apre la preferita) e la lente con la stellina di Eurise dal lato della mano (un tocco cerca ovunque, tenere premuto
  * chiama Alfred).
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -104,8 +104,9 @@ fun Barra(
                 val a = aspetto(c)
                 Column(
                     Modifier.weight(1f).combinedClickable(
-                        onClick = { onGruppo(c.id) },
-                        onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onVentaglio(c.id) },
+                        // Scelta del proprietario (27 novembre, notte): il tocco apre le app della categoria, tenere premuto la preferita.
+                        onClick = { onVentaglio(c.id) },
+                        onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onGruppo(c.id) },
                     ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
@@ -148,7 +149,7 @@ fun Binario(
         model.dock.take(Gruppi.IN_DOCK).reversed().forEach { c ->
             val a = aspetto(c)
             Column(
-                Modifier.combinedClickable(onClick = { onGruppo(c.id) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onVentaglio(c.id) }),
+                Modifier.combinedClickable(onClick = { onVentaglio(c.id) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onGruppo(c.id) }),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
@@ -296,7 +297,7 @@ fun EditorCategoria(model: PostazioneModel, id: String, onChiudi: () -> Unit) {
 @Composable
 private fun Voce(col: Colori, onClick: () -> Unit, contenuto: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
     Row(
-        Modifier.fillMaxWidth().height(60.dp).background(col.foglio, RoundedCornerShape(20.dp)).clickable { onClick() }
+        Modifier.fillMaxWidth().height(60.dp).background(col.pieno, RoundedCornerShape(20.dp)).clickable { onClick() }
             .padding(start = 10.dp, end = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         content = contenuto,

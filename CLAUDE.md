@@ -147,6 +147,8 @@ ricerca "totale" su tutta la suite. Tenere molte app in un APK aiuta sia l'integ
   vederlo (`SecretEye` e `secretText` in `core/designsystem`, `component/Secret.kt`).
 - Tocco breve = l'opzione preferita; pressione lunga = l'elenco delle opzioni, con la stellina per scegliere il preferito
   e «Aggiungi» (da un'app installata o dal web) dove ha senso. Vale ovunque ci sia una scelta di servizio.
+  Eccezione decisa dal proprietario (27 novembre 2026): nella dock della Postazione il tocco apre le app della categoria
+  (ventaglio) e la pressione lunga apre subito la preferita.
 - Sempre massima attenzione all'ergonomia: ciò che si usa spesso sta dove arriva il pollice. Se serve, la stessa funzione
   si declina diversamente su un formato diverso (telefono, tablet, computer) invece di copiare la disposizione.
 - Mano dominante: impostazione della suite (destra di base, sinistra per i mancini). La lente della ricerca e i comandi
