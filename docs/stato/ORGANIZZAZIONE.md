@@ -752,3 +752,9 @@ Centro privacy: tre servizi nuovi in `PrivacyService` (ReadModels, VoiceModels, 
   reazioni, cita, copia, foto e vocali. Togliere una chiamata la toglie dal Telefono; togliere un'email la segna letta.
 - Telefono: × e «Togli tutte» in «Da richiamare». Chat: aprire una persona segna tutto come letto; «Segna tutte come lette».
 
+## 28 novembre 2026, notte: Postazione, correzioni dopo la prova del giro 1165 (giro 1169)
+- «Da rispondere» e «Ti hanno cercato»: ogni riga ha il simbolo monocromatico dell'app (quello della notifica), senza il
+  nome scritto; il tocco apre la bolla; nella bolla i comandi sono icone tonde (Togli/Letto, Archivia, Più tardi, Da fare,
+  SMS, Richiama o Leggi dal lato della mano).
+- Le file che scorrono di lato (impegni, linguette, dock del cassetto) non trascinano più le pagine.
+

@@ -3,8 +3,9 @@
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
 ### Per ripartire (aggiornato il 27 novembre 2026)
-- **Ultimo giro pubblicato**: **1165** (27 novembre, notte: porte `dismissCallBack`, `markSeen`, `markRead` provate
-  sull'emulatore; vedi in fondo). Prima: **1157** (27 novembre, notte: correzioni della Postazione dopo la prova, porta `callBack` di
+- **Ultimo giro pubblicato**: **1169** (28 novembre, notte: Postazione, «Da rispondere» con il simbolo dell'app e il
+  pop-up al tocco, file che non trascinano le pagine; nessun permesso nuovo; vedi in fondo). Prima: **1165** (27 novembre, notte: porte `dismissCallBack`, `markSeen`, `markRead` provate
+  sull'emulatore). Prima: **1157** (27 novembre, notte: correzioni della Postazione dopo la prova, porta `callBack` di
   Telefono provata sull'emulatore con il Telefono ora dentro la prova delle porte). Prima: **1151** (27 novembre, sera: settimo giro della Postazione, cielo vivo, bolle, pagine, cassetto per
   categorie, AI dal basso, gesti; porta `addTask` provata sull'emulatore; vedi in fondo). Prima: **1147** (27 novembre,
   pomeriggio: sesto giro della Postazione; porte e avvio provati sull'emulatore, Postazione 0,8 s a freddo). Prima:
@@ -866,4 +867,15 @@ né telemetria trovata.
   leggere (altrimenti si apre la chat); le foto si riducono a 1080 px.
 - Telefono: × e «Togli tutte» in «Da richiamare» (`CallBackDismiss`, sul telefono; una nuova chiamata persa torna).
 - Chat: aprendo una persona i suoi SMS, le chiamate perse e le email diventano letti; «Segna tutte come lette».
+
+### Postazione, 28 novembre 2026, notte (giro 1169): correzioni dopo la prova del giro 1165
+- **Impegni e pagine**: arrivata in fondo, la fila degli impegni passava il resto del trascinamento e lo slancio al pager
+  (scorrimento annidato), che cambiava pagina. Ora `restaNellaFila` (`ui/Gestione.kt`) trattiene ciò che resta in
+  orizzontale nelle file della Home e del cassetto (impegni, linguette, dock delle categorie). **Provato
+  sull'emulatore** (`take.sh`, schermata `p14-impegni-in-fondo`): quattro scorrimenti oltre il fondo, la Home resta.
+- **«Da rispondere»** (richiesta del proprietario): niente nome dell'app scritto, ma il simbolo piccolo della sua notifica
+  (`Notification.smallIcon`, già monocromatico), letto **in memoria** come il resto della notifica, mai su disco; se
+  non si legge, il disegno della suite. Il tocco apre subito la bolla, come nella Scrivania (niente tendina); comandi
+  solo a icone, nome con TalkBack e tenendo premuto.
+- Nessun permesso nuovo, nessuna porta nuova, nessun cambio di firma: si installa sopra. La Postazione resta senza rete.
 
