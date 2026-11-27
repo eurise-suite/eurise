@@ -3,7 +3,8 @@
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
 ### Per ripartire (aggiornato il 27 novembre 2026)
-- **Ultimo giro pubblicato**: **1157** (27 novembre, notte: correzioni della Postazione dopo la prova, porta `callBack` di
+- **Ultimo giro pubblicato**: **1165** (27 novembre, notte: porte `dismissCallBack`, `markSeen`, `markRead` provate
+  sull'emulatore; vedi in fondo). Prima: **1157** (27 novembre, notte: correzioni della Postazione dopo la prova, porta `callBack` di
   Telefono provata sull'emulatore con il Telefono ora dentro la prova delle porte). Prima: **1151** (27 novembre, sera: settimo giro della Postazione, cielo vivo, bolle, pagine, cassetto per
   categorie, AI dal basso, gesti; porta `addTask` provata sull'emulatore; vedi in fondo). Prima: **1147** (27 novembre,
   pomeriggio: sesto giro della Postazione; porte e avvio provati sull'emulatore, Postazione 0,8 s a freddo). Prima:
@@ -855,7 +856,7 @@ né telemetria trovata.
 - La prova delle porte ora installa anche Eurise Telefono e la curiosa lo «vede» (`<queries>`): prima la porta nuova
   risultava chiusa solo perché il Telefono mancava. Avvio a freddo della Postazione 1,27 s sull'emulatore.
 
-### Notte del 27 novembre: comunicazioni che si tolgono davvero (giro successivo al 1157)
+### Notte del 27 novembre: comunicazioni che si tolgono davvero (giro 1165)
 - **Tre porte nuove, tutte solo per la suite** (`PeopleContract.allowed`, controllato a ogni chiamata):
   `dismissCallBack` (Telefono: «Non richiamare»), `markSeen` (Email: segna come letta un'email, anche nella casella, in un
   thread dell'app Email) e `markRead` (Messaggi, Telefono, Email: tutto ciò che viene da una persona diventa letto).
