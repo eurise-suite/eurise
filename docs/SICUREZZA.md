@@ -3,7 +3,8 @@
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
 ### Per ripartire (aggiornato il 27 novembre 2026)
-- **Ultimo giro pubblicato**: **1151** (27 novembre, sera: settimo giro della Postazione, cielo vivo, bolle, pagine, cassetto per
+- **Ultimo giro pubblicato**: **1157** (27 novembre, notte: correzioni della Postazione dopo la prova, porta `callBack` di
+  Telefono provata sull'emulatore con il Telefono ora dentro la prova delle porte). Prima: **1151** (27 novembre, sera: settimo giro della Postazione, cielo vivo, bolle, pagine, cassetto per
   categorie, AI dal basso, gesti; porta `addTask` provata sull'emulatore; vedi in fondo). Prima: **1147** (27 novembre,
   pomeriggio: sesto giro della Postazione; porte e avvio provati sull'emulatore, Postazione 0,8 s a freddo). Prima:
   **1140** (27 novembre: correzioni del proprietario dopo la prova della Postazione sul telefono e
@@ -835,7 +836,7 @@ né telemetria trovata.
 - Nessun permesso nuovo nel manifesto della Postazione; resta senza INTERNET. Si installa sopra la precedente (le
   impostazioni vecchie delle schede si perdono: la dock di sei diventa di otto con Casa e Agenda).
 
-### Postazione, ottavo giro (27 novembre 2026, notte): correzioni dopo la prova del giro 1151
+### Postazione, ottavo giro (27 novembre 2026, notte, giro 1157): correzioni dopo la prova del giro 1151
 - **Ricerca illeggibile**: il cassetto usava il foglio satinato quasi trasparente come fondo; ora ha un fondo pieno
   (`Colori.pieno`). I risultati partono dal basso (persone subito sopra il campo, poi app, impegni, cose, note,
   documenti, web e AI in cima).
@@ -849,4 +850,7 @@ né telemetria trovata.
   sul telefono); le risposte agli SMS partono da Eurise Messaggi (`send`, già esistente) solo con Invia.
 - Eurise Email dichiara `CATEGORY_EMAIL` sulle sue notifiche. Meteo: senza posizione (app Eurise in secondo piano)
   `MeteoRepository.cached()` usa l'ultima previsione scaricata, senza rete.
-
+- Dock della Postazione: il tocco apre le app della categoria, la pressione lunga la preferita (scelta del proprietario,
+  eccezione scritta in CLAUDE.md, «Ergonomia»).
+- La prova delle porte ora installa anche Eurise Telefono e la curiosa lo «vede» (`<queries>`): prima la porta nuova
+  risultava chiusa solo perché il Telefono mancava. Avvio a freddo della Postazione 1,27 s sull'emulatore.
