@@ -207,7 +207,6 @@
     <!-- Impegni e cose da fare: azioni. -->
     <string name="apri">Apri</string>
     <string name="altro">Altro</string>
-    <string name="apri_calendario">Apri nel Calendario</string>
     <string name="apri_attivita">Apri nelle Attività</string>
     <string name="apri_farmaci">Apri i Farmaci</string>
     <string name="elimina">Elimina</string>

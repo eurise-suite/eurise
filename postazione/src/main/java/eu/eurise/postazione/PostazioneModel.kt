@@ -234,7 +234,8 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
         val pulito = Siti.normalizza(indirizzo) ?: return false
         val chiave = Siti.chiave(pulito)
         prefs.edit().putString(K_SITO + chiave, nomeSito.trim().ifEmpty { Siti.nomeDa(pulito) }).apply()
-        aggiungi(g, chiave)
+        val scheda = g.removePrefix("scheda:").takeIf { g.startsWith("scheda:") }?.let { runCatching { Scheda.valueOf(it) }.getOrNull() }
+        if (scheda != null) fissaInScheda(scheda, chiave) else aggiungi(g, chiave)
         return true
     }
 
@@ -300,7 +301,8 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
 
     /** «Mettile lì»: le prime cose da fare prendono un orario dentro lo spazio libero. */
     fun mettiNelloSpazio(spazio: Intervallo) {
-        val ids = giornata.cose.take(Liberi.quante(spazio, giornata.aperte)).map { it.id }.toLongArray()
+        // Le dosi dei farmaci hanno già il loro orario: non si spostano.
+        val ids = giornata.cose.filter { !it.farmaco }.let { c -> c.take(Liberi.quante(spazio, c.size)) }.map { it.id }.toLongArray()
         if (ids.isEmpty()) return
         viewModelScope.launch {
             withContext(Dispatchers.IO) { LettoreGiornata.metti(contesto, BuildConfig.HUB_PACKAGE, ids, spazio.inizio) }
