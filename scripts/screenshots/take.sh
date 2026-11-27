@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Schermate per F-Droid dal telefono simulato (GitHub Actions, android-emulator-runner).
 # Dati inventati (DemoDataReceiver, solo nella versione di prova), ora fissata alle 9:30, Perla e poi Notte.
-# Uso: take.sh <apk di prova> <cartella di uscita>
+# Uso: take.sh <apk di prova> <cartella di uscita> [apk della Postazione]
 set -euo pipefail
 APK="$1"
 OUT="$2"
+POSTAZIONE="${3:-}"
+QUI="$(cd "$(dirname "$0")" && pwd)"
 PKG=eu.eurise.hub.debug
 mkdir -p "$OUT"
 
@@ -86,4 +88,50 @@ for theme in perla notte; do
   section scanner;    shot 12-scanner "$theme"
 done
 adb shell cmd uimode night no
+
+# Eurise Postazione (27 novembre): le tre schede, la lente che cerca ovunque, le AI, il ventaglio, la categoria, le
+# impostazioni, e lo schermo largo. Si tocca per testo (uiautomator), così non dipende dai pixel.
+if [ -n "$POSTAZIONE" ] && [ -f "$POSTAZIONE" ]; then
+  PZ=eu.eurise.postazione.debug
+  adb install -r -g "$POSTAZIONE"
+  adb shell pm grant "$PZ" android.permission.READ_CONTACTS 2>/dev/null || true
+  adb shell cmd notification allow_listener "$PZ/eu.eurise.postazione.data.AscoltoService" 2>/dev/null || true
+  adb shell cmd role add-role-holder android.app.role.HOME "$PZ" || true
+  dove() { # testo, primo|ultimo → "x y" (vuoto se non c'è)
+    adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 || true
+    adb exec-out cat /sdcard/ui.xml > /tmp/ui.xml 2>/dev/null || true
+    python3 "$QUI/trova.py" /tmp/ui.xml "$1" "${2:-primo}" 2>/dev/null || true
+  }
+  tocca() { local p; p=$(dove "$1" "${2:-primo}"); if [ -n "$p" ]; then adb shell input tap $p; else echo "  (non trovato: $1)"; fi; }
+  tieni() { local p; p=$(dove "$1" "${2:-primo}"); if [ -n "$p" ]; then set -- $p; adb shell input swipe "$1" "$2" "$1" "$2" 900; else echo "  (non trovato: $1)"; fi; }
+  casa() { adb shell input keyevent KEYCODE_HOME; sleep 2; adb shell input keyevent KEYCODE_HOME; sleep 3; }
+  settime 0930
+  for theme in perla notte; do
+    if [ "$theme" = notte ]; then adb shell cmd uimode night yes; else adb shell cmd uimode night no; fi
+    adb shell am force-stop "$PZ"
+    echo "Postazione, tema $theme"
+    adb shell am start -n "$PZ/eu.eurise.postazione.PostazioneActivity" >/dev/null; sleep 6
+    casa; shot p1-lavoro "$theme" 4
+    adb shell input swipe 540 1700 540 700 400; shot p1b-lavoro-giu "$theme" 3
+    casa; tocca Personale; shot p2-personale "$theme" 5
+    adb shell input swipe 540 1700 540 700 400; shot p2b-personale-giu "$theme" 3
+    casa; tocca Viaggio; shot p3-viaggio "$theme" 4
+    casa; tocca Lavoro; sleep 2; tocca Cerca ultimo; sleep 2; adb shell input text "pr"; shot p4-lente "$theme" 4
+    tieni "Chiedi a Alfred"; shot p4b-ai "$theme" 3
+    adb shell input keyevent KEYCODE_BACK; sleep 1
+    tocca Impostazioni; shot p7-impostazioni "$theme" 3
+    adb shell input keyevent KEYCODE_BACK; sleep 1; casa
+    tieni Lavoro ultimo; shot p5-ventaglio "$theme" 3
+    tocca "Modifica la categoria"; shot p6-categoria "$theme" 3
+    adb shell input keyevent KEYCODE_BACK; sleep 1; casa
+  done
+  # Schermo largo (tablet orizzontale): due colonne e la dock in colonna dal lato della mano.
+  adb shell cmd uimode night no
+  adb shell wm size 2560x1600; adb shell wm density 320; sleep 3
+  adb shell am force-stop "$PZ"; adb shell am start -n "$PZ/eu.eurise.postazione.PostazioneActivity" >/dev/null; sleep 6
+  casa; shot p8-tablet perla 4
+  tocca Personale; shot p8b-tablet-personale perla 4
+  adb shell wm size reset; adb shell wm density reset
+  adb shell am force-stop "$PZ"
+fi
 ls -la "$OUT"

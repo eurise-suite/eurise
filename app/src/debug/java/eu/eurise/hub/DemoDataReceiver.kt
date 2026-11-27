@@ -6,6 +6,7 @@ import android.content.Intent
 import android.util.Log
 import eu.eurise.core.data.calendar.EventDraft
 import eu.eurise.core.data.model.Task
+import eu.eurise.core.data.model.TaskList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,6 +35,8 @@ class DemoDataReceiver : BroadcastReceiver() {
                 data.tasks.add("Prenotare il treno per Torino", due = today.plusDays(1))
                 data.tasks.add("Chiamare l'idraulico", due = today.plusDays(2))
                 data.tasks.add("Rinnovare la carta d'identità")
+                // Una dose di farmaco, come la mettono i promemoria (Postazione: «Presa» / «Salta»).
+                runCatching { data.tasks.add("Vitamina D · 1 compressa", due = today, time = LocalTime.of(20, 0), listId = TaskList.MEDICINES) }
 
                 val calendar = data.calendar.createLocalCalendar("Eurise", 0xFF6F93D6.toInt())
                 if (calendar != null) {

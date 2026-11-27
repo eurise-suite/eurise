@@ -9,6 +9,7 @@ on:
       - ".github/workflows/screenshots.yml"
       - "scripts/screenshots/**"
       - "app/src/debug/**"
+      - "postazione/src/main/**"
 
 permissions:
   contents: write
@@ -33,7 +34,7 @@ jobs:
       - name: Compila l'APK di prova
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon :app:assembleDebug
+          ./gradlew --no-daemon :app:assembleDebug :postazione:assembleDebug
 
       # L'emulatore ha bisogno della virtualizzazione (KVM) della macchina di GitHub.
       - name: Abilita KVM
@@ -51,7 +52,7 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -timezone Europe/Rome
-          script: bash scripts/screenshots/take.sh "$(ls app/build/outputs/apk/debug/*.apk | head -1)" build/screenshots
+          script: bash scripts/screenshots/take.sh "$(ls app/build/outputs/apk/debug/*.apk | head -1)" build/screenshots "$(ls postazione/build/outputs/apk/debug/*.apk | head -1)"
 
       - name: Carica le schermate
         if: always()
