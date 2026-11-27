@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.focus.focusRequester
@@ -254,7 +256,16 @@ private fun ContenutoBolla(model: PostazioneModel, l: Linguetta, b: Bolla, col: 
             when {
                 !model.ascolto -> AccendiAscolto(col) { model.aggiorna() }
                 lista.isEmpty() -> Text(stringResource(if (chiamate) R.string.b_nessuna_chiamata else R.string.niente_da_rispondere), color = col.sotto, fontSize = 13.sp)
-                else -> lista.take(n).forEach { a -> RigaContatto(model, a, col) }
+                // Come la tendina delle notifiche: per app, l'ultima in cima; ogni riga si apre lì con le sue azioni.
+                else -> lista.take(maxOf(n, 3)).groupBy { it.pacchetto }.forEach { (_, delApp) ->
+                    if (!chiamate && lista.map { it.pacchetto }.distinct().size > 1) {
+                        Text(
+                            delApp.first().app.ifBlank { model.nomeDi(delApp.first().pacchetto) } + if (delApp.size > 1) " · ${delApp.size}" else "",
+                            color = col.sotto, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                    delApp.forEach { a -> RigaContatto(model, a, col) }
+                }
             }
         }
         TipoBolla.DaFare, TipoBolla.Farmaci -> {
@@ -407,39 +418,75 @@ private fun iconaAvviso(a: Avviso): ImageVector = when {
 }
 
 /**
- * Una chiamata da richiamare o un messaggio, in una riga pulita: icona piccola monocromatica, chi e quando, una riga di
- * testo; a destra (dal lato della mano) Richiama per le chiamate e la × che la toglie. Il tocco apre la bolla con tutto.
+ * Una chiamata da richiamare o un messaggio, come nella tendina delle notifiche: chiusa è una riga (icona piccola
+ * monocromatica, chi, quando, una riga di testo, ▾); il tocco la apre lì, con il testo intero e le azioni scritte
+ * (Richiama, Rispondi, Segna come letto, Archivia, Da fare, Più tardi, Togli). Rispondere, ascoltare un audio o vedere una
+ * foto si fa nella bolla.
  */
 @Composable
 private fun RigaContatto(model: PostazioneModel, a: Avviso, col: Colori) {
-    var aperto by remember(a.chiave) { mutableStateOf(false) }
-    val azioni: @Composable () -> Unit = {
-        if (a.chiamata) Icon(
-            EuriseIcons.phone(), stringResource(R.string.sw_richiama),
-            Modifier.size(40.dp).clickable { model.richiama(a) }.padding(11.dp), tint = col.accento,
-        )
-        Icon(
-            EuriseIcons.close(), stringResource(R.string.av_togli),
-            Modifier.size(40.dp).clickable { model.vista(a) }.padding(12.dp), tint = col.sotto,
-        )
-    }
-    Row(Modifier.fillMaxWidth().clickable { aperto = true }.padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (model.mancino) azioni()
-        Icon(iconaAvviso(a), null, Modifier.size(17.dp), tint = col.sotto)
-        Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    a.titolo + if (a.quante > 1) " · ${a.quante}" else "", color = col.inchiostro, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+    var aperta by remember(a.chiave) { mutableStateOf(false) }
+    var bolla by remember(a.chiave) { mutableStateOf(false) }
+    Column(
+        Modifier.fillMaxWidth().background(if (aperta) col.riquadro else Color.Transparent, RoundedCornerShape(14.dp))
+            .clickable { aperta = !aperta }.padding(start = if (aperta) 10.dp else 0.dp, end = 0.dp, top = 4.dp, bottom = if (aperta) 6.dp else 4.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(iconaAvviso(a), null, Modifier.size(17.dp), tint = col.sotto)
+            Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        a.titolo + if (a.quante > 1) " · ${a.quante}" else "", color = col.inchiostro, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                    )
+                    Text("  " + quandoBreve(a.quando, model), color = col.sotto, fontSize = 11.5.sp, maxLines = 1)
+                }
+                val sotto = a.testo.ifBlank { if (a.chiamata) stringResource(R.string.av_persa) else "" }
+                if (sotto.isNotBlank()) Text(
+                    sotto, color = col.sotto, fontSize = 12.5.sp, maxLines = if (aperta) 6 else 1, overflow = TextOverflow.Ellipsis,
                 )
-                Text("  " + quandoBreve(a.quando, model), color = col.sotto, fontSize = 11.5.sp, maxLines = 1)
             }
-            val sotto = a.testo.ifBlank { if (a.chiamata) stringResource(R.string.av_persa) else "" }
-            if (sotto.isNotBlank()) Text(sotto, color = col.sotto, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (a.chiamata && !aperta) Icon(
+                EuriseIcons.phone(), stringResource(R.string.sw_richiama),
+                Modifier.size(40.dp).clickable { model.richiama(a) }.padding(11.dp), tint = col.accento,
+            )
+            Icon(
+                if (aperta) EuriseIcons.chevronUp() else EuriseIcons.chevronDown(), null,
+                Modifier.size(36.dp).padding(10.dp), tint = col.sotto,
+            )
         }
-        if (!model.mancino) azioni()
+        if (aperta) {
+            if (a.foto != null || a.storia.any { it.foto || it.audio }) {
+                Text(
+                    stringResource(if (a.storia.any { it.audio }) R.string.av_ascolta else R.string.av_vedi), color = col.accento, fontSize = 12.5.sp,
+                    fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 29.dp, top = 4.dp).clickable { bolla = true },
+                )
+            }
+            // Le azioni scritte, come nella tendina; dal lato della mano la più usata.
+            val azioni = buildList<Pair<Int, () -> Unit>> {
+                if (a.chiamata) add(R.string.sw_richiama to { model.richiama(a) })
+                if (model.puoRispondere(a)) add((if (a.chiamata) R.string.av_sms_breve else R.string.av_rispondi_breve) to { bolla = true })
+                else add(R.string.sw_apri to { model.apriAvviso(a) })
+                if (a.archivia != null) add(R.string.av_archivia to { model.archivia(a) })
+                if (!a.chiamata && (a.letto != null || a.rifMail.isNotEmpty())) add(R.string.av_letto to { model.vista(a) })
+                add(R.string.sw_da_fare to { model.daFare(a) })
+                add(R.string.sw_dopo to { model.piuTardi(a) })
+                if (a.chiamata || (a.letto == null && a.rifMail.isEmpty())) add((if (a.chiamata) R.string.av_non_richiamare else R.string.av_togli) to { model.vista(a) })
+            }
+            androidx.compose.foundation.layout.FlowRow(
+                Modifier.fillMaxWidth().padding(start = 21.dp, top = 6.dp),
+                horizontalArrangement = if (model.mancino) Arrangement.Start else Arrangement.End,
+            ) {
+                azioni.forEach { (t, fai) ->
+                    Text(
+                        stringResource(t), color = col.accento, fontSize = 13.5.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable { fai() }.padding(horizontal = 8.dp, vertical = 9.dp),
+                    )
+                }
+            }
+        }
     }
-    if (aperto) FoglioAvviso(model, a, col) { aperto = false }
+    if (bolla) FoglioAvviso(model, a, col) { bolla = false }
 }
 
 private fun quandoBreve(ms: Long, model: PostazioneModel): String {
@@ -467,7 +514,7 @@ private fun FoglioAvviso(model: PostazioneModel, a: Avviso, col: Colori, onChiud
         val pieno = cita?.let { "«" + it.take(80) + "»\n" + corpo } ?: corpo
         model.rispondi(a, pieno.trim()) { ok -> esito = ok; if (ok) { model.vista(a); onChiudi() } }
     }
-    val storia = a.storia.ifEmpty { listOfNotNull(a.testo.takeIf { it.isNotBlank() }?.let { null to it }) }
+    val storia = a.storia.ifEmpty { listOfNotNull(a.testo.takeIf { it.isNotBlank() }?.let { eu.eurise.postazione.data.Messaggio(null, it) }) }
     val scorri = androidx.compose.foundation.rememberScrollState()
     LaunchedEffect(scorri.maxValue) { scorri.scrollTo(scorri.maxValue) }
     androidx.compose.ui.window.Dialog(onDismissRequest = onChiudi, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
@@ -504,7 +551,10 @@ private fun FoglioAvviso(model: PostazioneModel, a: Avviso, col: Colori, onChiud
                     Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(scorri),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    storia.forEachIndexed { i, (chi, corpo) ->
+                    a.foto?.let { b -> FotoBolla(b.asImageBitmap()) }
+                    storia.forEachIndexed { i, m ->
+                        val chi = m.chi
+                        val corpo = m.testo
                         val forma = RoundedCornerShape(topStart = 6.dp, topEnd = 18.dp, bottomEnd = 18.dp, bottomStart = 18.dp)
                         Column(
                             Modifier.padding(end = 36.dp).background(if (scelto == i) col.prossimo else col.riquadro, forma)
@@ -512,7 +562,9 @@ private fun FoglioAvviso(model: PostazioneModel, a: Avviso, col: Colori, onChiud
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                         ) {
                             if (!chi.isNullOrBlank()) Text(chi, color = col.accento, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            Text(corpo, color = col.inchiostro, fontSize = 14.sp, lineHeight = 20.sp)
+                            if (m.foto) FotoDaUri(m.uri!!, col) { model.apriAvviso(a); onChiudi() }
+                            if (m.audio) Audio(m.uri!!, col) { model.apriAvviso(a); onChiudi() }
+                            if (corpo.isNotBlank()) Text(corpo, color = col.inchiostro, fontSize = 14.sp, lineHeight = 20.sp)
                         }
                         if (scelto == i) androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             if (a.rispondi != null) listOf("👍", "❤️", "😂", "🙏").forEach { e ->
@@ -591,6 +643,66 @@ private fun FoglioAvviso(model: PostazioneModel, a: Avviso, col: Colori, onChiud
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun FotoBolla(img: androidx.compose.ui.graphics.ImageBitmap) {
+    androidx.compose.foundation.Image(
+        img, null, Modifier.fillMaxWidth().heightIn(max = 260.dp).clip(RoundedCornerShape(14.dp)),
+        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+    )
+}
+
+/**
+ * La foto allegata a un messaggio: si legge (ridotta) solo se Android ce la lascia leggere; se no, «Apri nella chat».
+ */
+@Composable
+private fun FotoDaUri(uri: android.net.Uri, col: Colori, onApri: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var img by remember(uri) { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    var fallita by remember(uri) { mutableStateOf(false) }
+    LaunchedEffect(uri) {
+        img = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                val src = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
+                android.graphics.ImageDecoder.decodeBitmap(src) { d, info, _ ->
+                    val lato = maxOf(info.size.width, info.size.height)
+                    if (lato > 1080) d.setTargetSampleSize((lato + 1079) / 1080)
+                }.asImageBitmap()
+            }.getOrNull()
+        }
+        fallita = img == null
+    }
+    img?.let { FotoBolla(it) }
+    if (fallita) Text(
+        stringResource(R.string.av_foto_in_app), color = col.accento, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.clickable { onApri() }.padding(vertical = 6.dp),
+    )
+}
+
+/** Un audio (vocale) allegato: si ascolta qui se Android lo lascia leggere, se no si apre la chat. */
+@Composable
+private fun Audio(uri: android.net.Uri, col: Colori, onApri: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var suona by remember(uri) { mutableStateOf(false) }
+    val lettore = remember { mutableStateOf<android.media.MediaPlayer?>(null) }
+    androidx.compose.runtime.DisposableEffect(uri) { onDispose { lettore.value?.release(); lettore.value = null } }
+    Row(
+        Modifier.background(col.prossimo, RoundedCornerShape(16.dp)).clickable {
+            if (suona) { lettore.value?.release(); lettore.value = null; suona = false; return@clickable }
+            val p = runCatching {
+                android.media.MediaPlayer().apply {
+                    setDataSource(context, uri); prepare(); start()
+                    setOnCompletionListener { suona = false }
+                }
+            }.getOrNull()
+            if (p == null) onApri() else { lettore.value = p; suona = true }
+        }.padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(if (suona) EuriseIcons.pause() else EuriseIcons.play(), null, Modifier.size(16.dp), tint = col.accento)
+        Text(" " + stringResource(if (suona) R.string.av_ferma else R.string.av_ascolta), color = col.accento, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 

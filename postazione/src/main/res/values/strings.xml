@@ -378,4 +378,9 @@
     <string name="av_leggi">Leggi</string>
     <string name="av_archivia">Archivia</string>
     <string name="av_letto">Segna come letto</string>
+    <string name="av_ascolta">Ascolta</string>
+    <string name="av_ferma">Ferma</string>
+    <string name="av_vedi">Vedi la foto</string>
+    <string name="av_rispondi_breve">Rispondi</string>
+    <string name="av_foto_in_app">La foto si apre nella chat</string>
 </resources>

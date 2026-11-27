@@ -38,8 +38,10 @@ class Avviso(
     val indirizzo: String = "",
     /** Quante (chiamate perse, email da leggere) dietro questa riga. */
     val quante: Int = 1,
-    /** I messaggi arrivati nella notifica, dal più vecchio: chi scrive (se c'è) e testo. */
-    val storia: List<Pair<String?, String>> = emptyList(),
+    /** I messaggi arrivati nella notifica, dal più vecchio: chi scrive, testo, ed eventuale foto o audio. */
+    val storia: List<Messaggio> = emptyList(),
+    /** La foto della notifica (stile «immagine grande»), se l'app la mette. */
+    val foto: android.graphics.Bitmap? = null,
     /** «Segna come letto» e «Archivia» della notifica, se l'app li offre. */
     val letto: Notification.Action? = null,
     val archivia: Notification.Action? = null,
@@ -47,6 +49,12 @@ class Avviso(
     val app: String = "",
 ) {
     val dallaSuite: Boolean get() = numero.isNotEmpty() || rifMail.isNotEmpty()
+}
+
+/** Un messaggio di una conversazione: [uri] e [tipo] quando l'app allega una foto o un audio alla notifica. */
+class Messaggio(val chi: String?, val testo: String, val uri: android.net.Uri? = null, val tipo: String = "") {
+    val foto: Boolean get() = uri != null && tipo.startsWith("image/")
+    val audio: Boolean get() = uri != null && tipo.startsWith("audio/")
 }
 
 /** Quello che sta suonando (o è in pausa) in un'app di musica o video. */
@@ -122,23 +130,30 @@ class AscoltoService : NotificationListenerService() {
         return Avviso(
             sbn.key, sbn.packageName, n.extras?.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE)?.toString()?.takeIf { it.isNotBlank() } ?: titolo,
             testo, sbn.postTime, n.contentIntent, rispondi, chiamata, richiama, sbn.isClearable,
-            storia = storia(n), letto = letto, archivia = archivia, app = app,
+            storia = storia(n), foto = foto(n), letto = letto, archivia = archivia, app = app,
         )
     }
 
     /** I messaggi di una notifica in stile conversazione (WhatsApp, Signal, Messaggi…), al più gli ultimi dieci. */
     @Suppress("DEPRECATION")
-    private fun storia(n: Notification): List<Pair<String?, String>> {
+    private fun storia(n: Notification): List<Messaggio> {
         val lista = n.extras?.getParcelableArray(Notification.EXTRA_MESSAGES) ?: return emptyList()
-        // Ogni messaggio è un Bundle con «text» e «sender» o «sender_person» (com'è scritto da MessagingStyle).
+        // Ogni messaggio è un Bundle con «text», «sender» o «sender_person», e «uri»/«type» per foto e audio.
         return runCatching {
             lista.mapNotNull { p ->
                 val b = p as? android.os.Bundle ?: return@mapNotNull null
-                val t = b.getCharSequence("text")?.toString()?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                val t = b.getCharSequence("text")?.toString().orEmpty()
+                val uri = b.getParcelable("uri") as? android.net.Uri
+                if (t.isBlank() && uri == null) return@mapNotNull null
                 val chi = (b.getParcelable("sender_person") as? android.app.Person)?.name?.toString() ?: b.getCharSequence("sender")?.toString()
-                chi to t
+                Messaggio(chi, t, uri, b.getString("type").orEmpty())
             }.takeLast(10)
         }.getOrDefault(emptyList())
+    }
+
+    @Suppress("DEPRECATION")
+    private fun foto(n: Notification): android.graphics.Bitmap? =
+        runCatching { n.extras?.getParcelable(Notification.EXTRA_PICTURE) as? android.graphics.Bitmap }.getOrNull()
     }
 
     private val dialer: String? by lazy { runCatching { getSystemService(android.telecom.TelecomManager::class.java)?.defaultDialerPackage }.getOrNull() }
