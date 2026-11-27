@@ -708,3 +708,25 @@ Centro privacy: tre servizi nuovi in `PrivacyService` (ReadModels, VoiceModels, 
   tema e per voce) e `AppIcon.kt`; `SuiteIcons.Series` è diventata `SuiteSeries`. Chi tocca le icone: i disegni si
   cambiano in `scripts/icone_disegni.json`, poi `python3 scripts/icone.py` e `python3 scripts/icone_kotlin.py`.
 - Da fare: tavola del tablet da aggiornare alle icone a bolle; «Fotocamera» ora ha il disegno anche nella Scrivania.
+
+## 27 novembre 2026: Postazione, correzioni dopo la prova sul telefono (dalla chat di Sicurezza, giro 1140)
+- **Lente che cerca ovunque**: app (le prime otto), persone (con i contatti accesi: chiama e scrivi), impegni, cose da
+  fare, note, documenti, poi «Cerca sul web» e «Chiedi a…» (Alfred di base; tenere premuto o la freccia: Lumo, Le Chat,
+  Claude, Perplexity, ChatGPT, con le tacchette e la stellina per la preferita). Il campo resta in basso.
+- **Dock fissa di sei categorie** (Lavoro, Foto, Mappe, Web e AI, Musica, Comunica accanto alla lente), uguale in tutte
+  le schede. Dal ventaglio: app con stellina e togli, «Aggiungi un'app», **«Modifica la categoria»** (una delle 16
+  pronte, oppure nome e icona a piacere tra 36, e il posto con le frecce).
+- **Le app di ogni scheda**: «Le tue app per il lavoro / per te / in viaggio», 8 al massimo: prima quelle fissate (di
+  partenza o aggiunte con +), poi le più aperte mentre quella scheda era davanti; tenere premuto per fissarla o toglierla.
+- **Impegni**: le schede che scorrono hanno tutte la stessa misura (282 × 170); tocco = l'impegno nel Calendario
+  dell'app Eurise; ⋯ = Apri, Naviga, Elimina (solo se non si ripete, con conferma).
+- **Cose da fare e farmaci**: il quadratino = fatta (o dose presa), tocco = apri nelle Attività (o nei Farmaci), ⋯ = a
+  domani, elimina (la dose si salta). Compaiono anche in Personale e Viaggio quando ce ne sono.
+- **Meteo**: apre la sezione Meteo dell'app Eurise.
+- **Oroscopo** in Personale (dall'app Eurise, servizio del centro privacy; il segno si cambia toccandolo, lo stesso della
+  Scrivania). Le notizie spente portano al centro privacy.
+- **Interruttori** Notifiche, Contatti, Posizione nelle impostazioni della Postazione e nel centro privacy dell'app Eurise.
+- Parti dell'app Eurise toccate: `PostazioneProvider` (task, event, search, horoscope), `OpenFoundActivity`, sezioni
+  `event:` e `task:` in `EuriseHub`, `RecentFilesRepository.byId`, riga «Postazione» in `PrivacyRoute`.
+- Da fare: schermate dall'emulatore; tavole sulla tela con le icone a bolle; tablet con le app delle schede.
+

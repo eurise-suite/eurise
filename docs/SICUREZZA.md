@@ -2,8 +2,11 @@
 
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
-### Per ripartire (aggiornato il 26 novembre 2026, notte fonda)
-- **Ultimo giro pubblicato**: **1138** (26 novembre, notte fonda: **Postazione completa** con le **icone a bolle** per tutte le app, anche non nostre, e le **icone nuove del bestiario** su tutti gli APK; nessun permesso nuovo in questo giro; sezioni «Postazione» in fondo). Prima: 1133 (Postazione completata e bestiario, porte `giornata`, `rimanda`, `orari` provate sull'emulatore), 1130 (schede complete; accesso alle notifiche e contatti spenti di base). Ancora prima: 1128 (primo APK della Postazione), 1122 (25 novembre: Flatpak di nuovo verde, tutto schermo nei documenti). **Da guardare**: «Vulnerabilità note» è rosso su `prova-sicurezza` dal 26 mattina per CVE-2026-137063 (media, 6.8) in `third_party/leptonica`: nessuna correzione disponibile, da valutare (usata solo dall'OCR dello Scanner). Prossimo: «Di' Alfred» aspetta la scelta del
+### Per ripartire (aggiornato il 27 novembre 2026)
+- **Ultimo giro pubblicato**: **1140** (27 novembre: correzioni del proprietario dopo la prova della Postazione sul telefono e
+  Postazione completata per poterla valutare: lente che cerca ovunque, dock di sei categorie a scelta, app di ogni scheda,
+  azioni su impegni, cose da fare e farmaci, oroscopo, interruttori nel centro privacy; porte nuove provate sull'emulatore;
+  Mappe 147 con l'icona del bestiario; sezione «Postazione, quinto giro» in fondo). Prima: **1138** (26 novembre, notte fonda: **Postazione completa** con le **icone a bolle** per tutte le app, anche non nostre, e le **icone nuove del bestiario** su tutti gli APK; nessun permesso nuovo in questo giro; sezioni «Postazione» in fondo). Prima: 1133 (Postazione completata e bestiario, porte `giornata`, `rimanda`, `orari` provate sull'emulatore), 1130 (schede complete; accesso alle notifiche e contatti spenti di base). Ancora prima: 1128 (primo APK della Postazione), 1122 (25 novembre: Flatpak di nuovo verde, tutto schermo nei documenti). **Da guardare**: «Vulnerabilità note» è rosso su `prova-sicurezza` dal 26 mattina per CVE-2026-137063 (media, 6.8) in `third_party/leptonica`: nessuna correzione disponibile, da valutare (usata solo dall'OCR dello Scanner). Prossimo: «Di' Alfred» aspetta la scelta del
   proprietario sul modello (prove in `docs/stato/ALFRED.md`); Password Famiglia aspetta le tavole; zxing 3.5.4 aspetta un
   passo nel flusso delle impronte.
 - **Rami**: si lavora su `prova-sicurezza` (verifica delle librerie bloccante, «strict», come su `brand` dal 21 novembre), poi avanti veloce su
@@ -737,3 +740,54 @@ né telemetria trovata.
   due i lavori. Da ricordare: prima di pubblicare, unire `origin/brand` e guardare il nome della pre-release.
 - Resta da fare: gli interruttori della Postazione nel centro privacy dell'app Eurise; l'oroscopo; le schermate nuove
   non sono ancora state viste girare (solo compilate e provate nelle porte).
+
+### Postazione, quinto giro (27 novembre 2026): correzioni dopo la prova sul telefono (giro 1140)
+- **Richieste del proprietario**: lente che cerca ovunque (app, contatti, impegni, documenti, web, AI con una preferita e
+  le altre a pressione lunga); dock con le stesse icone in ogni scheda e una categoria in più, con nome, icona e app a
+  scelta; nelle schede le app più usate in quel contesto (di partenza e scelte); schede che scorrono tutte della stessa
+  altezza; impegni, cose da fare e farmaci da chiudere, rimandare, eliminare e aprire nell'app giusta; il meteo apre la
+  nostra app Meteo. Più ciò che mancava ancora: oroscopo e interruttori nel centro privacy.
+- **Nessun permesso nuovo nella Postazione**, nessun cambio di firma o di pacchetto: si installa sopra. Resta **senza
+  rete** (passo «Postazione senza rete» verde). Unica aggiunta in `<queries>`: `WEB_SEARCH` («Cerca sul web»).
+- **Porte nuove nel fornitore `…hub.postazione`** dell'app Eurise, con lo stesso controllo di firma (`callerAllowed`):
+  - `task` (fatta, a domani, elimina): solo attività vere e aperte; le dosi dei farmaci non vanno a domani.
+  - `event` (elimina): solo se il calendario si può scrivere e l'evento **non si ripete** (mai una serie intera da qui);
+    la Postazione chiede sempre conferma.
+  - `search`: impegni, cose da fare, note, documenti, al più 4 per tipo, testo da 2 a 80 caratteri. **Le note bloccate
+    non compaiono mai** (`NoteLock.isLocked`, nemmeno il titolo). Dei documenti passa solo nome e cartella, e solo se
+    l'app Eurise ha già l'accesso ai file: mai l'indirizzo né il contenuto.
+  - `horoscope`: lo legge l'app Eurise con il servizio «Oroscopo» del centro privacy (spento di base: risponde solo «spento»
+    e i nomi dei segni). La Postazione non va in rete.
+- **`OpenFoundActivity`** (app Eurise, protetta dal permesso della suite nel manifesto): apre impegno, attività, nota,
+  farmaci. Un documento **non arriva mai come indirizzo da fuori**: si riprende dal suo numero in MediaStore con le stesse
+  regole della ricerca (`RecentFilesRepository.byId`: solo tipi di lavoro, niente cartelle nascoste o di altre app) e si
+  passa con il solo permesso di lettura. Sezioni nuove della navigazione: `event:<id>:<inizio>` e `task:<id>` (solo
+  navigazione).
+- **Contatti nella lente**: li legge la Postazione stessa, con il permesso «Contatti» già chiesto per i preferiti (la
+  spiegazione ora dice anche la lente); nome e numero, nulla esce.
+- **AI della lente**: Alfred di base (resta sul telefono, `AlfredActivity` con il testo). Le altre si aprono nel browser
+  con la domanda **solo al tocco**: Lumo (CH, 8 tacchette), Le Chat (EU, 6), poi i servizi chiusi statunitensi in fondo
+  con una o due tacchette (Claude 2, Perplexity 2, ChatGPT 1). Mettere la stellina su un servizio chiuso mostra prima
+  l'avviso (`PrivacyConsentSheet`: cosa va, a chi, leggi USA, come tornare indietro), come vuole la regola «Servizi
+  chiusi». «Cerca sul web» usa il Browser di Eurise se c'è (`WEB_SEARCH`), altrimenti il browser del telefono.
+- **Interruttori nel centro privacy** (fatto il «da fare» dei giri precedenti): la Postazione ha un fornitore
+  `<pacchetto>.hub` (`CentroPrivacy`, contratto `AppHubContract`) con il permesso della suite e **risponde solo all'app
+  Eurise** (`callerIsHub`). Tre righe: Notifiche, Contatti, Posizione (10 tacchette, «Telefono»). Spegnere (da lì o dalle
+  impostazioni della Postazione) vale subito: i dati in memoria si svuotano, l'accesso alle notifiche si stacca
+  (`requestUnbind`) e i permessi si restituiscono ad Android alla chiusura (`revokeSelfPermissionsOnKill`, Android 13+).
+  Accendere porta alla Postazione (alias `DaEurise`, protetto dal permesso della suite) e passa dalla spiegazione. Nel
+  conteggio dei «servizi accesi» del centro privacy queste righe non contano: non escono dal telefono.
+- **Correzione trovata strada facendo**: «Lavoro in pausa» rimandava anche le notifiche dell'app Eurise (che è nel gruppo
+  Lavoro con Note e File), cioè anche i **promemoria dei farmaci** e gli avvisi delle riunioni. Ora l'app Eurise non va
+  mai in pausa.
+- **Dock e app delle schede**: solo preferenze private (`SharedPreferences`, fuori dal backup come il resto); i siti
+  aggiunti passano sempre da `Siti.normalizza`.
+- **Prova sull'emulatore** (Prova delle porte, con la Postazione installata): la «curiosa» resta fuori da `cerca`,
+  `fatta`, `elimina`, `oroscopo`, `trovata` (OpenFoundActivity) e `interruttori`; l'«amica» con la stessa chiave entra
+  in `cerca` e `trovata`, ma **non** negli interruttori (solo l'app Eurise). Test nuovi in `GruppiTest` (dock, app delle
+  schede, indirizzi delle AI).
+- **Correzioni dentro altre aree**: `feature/privacy` (riga Postazione), `feature/launcher` (`RecentFilesRepository.byId`),
+  `app` (fornitore, `OpenFoundActivity`, sezioni), annotate in `docs/stato/ORGANIZZAZIONE.md`.
+- Resta da fare: vedere le schermate della Postazione girare sull'emulatore (finora solo avviata e provata nelle porte);
+  le tavole della Postazione sulla tela con le icone a bolle; il motore di Office con l'icona nuova al suo giro;
+  CVE-2026-137063 in leptonica.
