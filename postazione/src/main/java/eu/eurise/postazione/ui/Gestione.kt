@@ -45,7 +45,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +72,19 @@ import eu.eurise.postazione.data.Pagine
 import eu.eurise.postazione.data.Tipo
 import eu.eurise.postazione.data.Verso
 import kotlin.math.abs
+
+/**
+ * Uno scorrimento di lato cominciato dentro una fila (impegni, linguette, dock del cassetto) resta lì: arrivata in fondo,
+ * la fila si ferma e non porta con sé le pagine della Postazione, né trascinando né con lo slancio. Le pagine si cambiano
+ * scorrendo fuori dalle file.
+ */
+private object RestaNellaFila : NestedScrollConnection {
+    override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource) = Offset(available.x, 0f)
+    override suspend fun onPostFling(consumed: Velocity, available: Velocity) = Velocity(available.x, 0f)
+}
+
+/** Vedi [RestaNellaFila]: va prima del modificatore che fa scorrere la fila. */
+fun Modifier.restaNellaFila(): Modifier = nestedScroll(RestaNellaFila)
 
 /**
  * I gesti a due e tre dita: si guardano le dita prima dei figli; appena ce ne sono due o più il movimento è del gesto (la

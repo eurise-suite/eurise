@@ -229,7 +229,7 @@ fun CassettoCategorie(model: PostazioneModel, col: Colori, giri: Int, onModifica
         // La dock delle categorie.
         val voci = model.dock.map { it.id } + TUTTE
         LazyRow(
-            Modifier.padding(start = 8.dp, end = 8.dp, bottom = 12.dp, top = 4.dp).fillMaxWidth().height(80.dp).background(col.barra, RoundedCornerShape(26.dp)),
+            Modifier.restaNellaFila().padding(start = 8.dp, end = 8.dp, bottom = 12.dp, top = 4.dp).fillMaxWidth().height(80.dp).background(col.barra, RoundedCornerShape(26.dp)),
             contentPadding = PaddingValues(horizontal = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically,

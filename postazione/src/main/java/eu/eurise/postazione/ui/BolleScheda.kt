@@ -228,7 +228,7 @@ private fun ContenutoBolla(model: PostazioneModel, l: Linguetta, b: Bolla, col: 
                 !g.collegata -> Text(stringResource(R.string.senza_eurise), color = col.sotto, fontSize = 13.sp)
                 !g.calendario -> Riga(stringResource(R.string.calendario_senza_permesso), stringResource(R.string.apri), col) { model.apriSezione("calendar") }
                 g.impegni.isEmpty() -> Text(stringResource(R.string.nessun_impegno), color = col.sotto, fontSize = 13.5.sp)
-                largo -> LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                largo -> LazyRow(Modifier.restaNellaFila(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(g.impegni.size, key = { g.impegni[it].id.toString() + ":" + g.impegni[it].inizio }) { i ->
                         val e = g.impegni[i]
                         SchedaImpegno(e, i == 0, l.tipo == Tipo.Viaggio, model.adesso, col,

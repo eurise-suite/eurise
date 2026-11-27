@@ -325,7 +325,7 @@ private fun Linguette(model: PostazioneModel, col: Colori, suCielo: Color, onBol
     var nuova by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
     Row(Modifier.fillMaxWidth().padding(start = 10.dp), verticalAlignment = Alignment.Bottom) {
-        Row(Modifier.weight(1f).horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.Bottom) {
+        Row(Modifier.weight(1f).restaNellaFila().horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.Bottom) {
             model.linguette.forEachIndexed { i, l ->
                 val nome = nomeLinguetta(l)
                 val tocco = Modifier.combinedClickable(

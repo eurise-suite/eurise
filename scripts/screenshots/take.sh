@@ -112,6 +112,21 @@ if [ -n "$POSTAZIONE" ] && [ -f "$POSTAZIONE" ]; then
     echo "Postazione, tema $theme"
     adb shell am start -n "$PZ/eu.eurise.postazione.PostazioneActivity" >/dev/null; sleep 6
     casa; shot p1-lavoro "$theme" 4
+    if [ "$theme" = perla ]; then
+      # Gli impegni scorrono fino in fondo e oltre: la Postazione deve restare sulla Home (giro 1165, «la fila resta lì»).
+      p=$(dove "Prossimi impegni")
+      if [ -n "$p" ]; then
+        set -- $p; y=$(( $2 + 330 ))
+        for _ in 1 2 3 4; do adb shell input swipe 980 $y 60 $y 120; sleep 1; done
+        shot p14-impegni-in-fondo "$theme" 2
+        if [ -n "$(dove "Prossimi impegni")" ]; then echo "  impegni in fondo: la Home resta"; else echo "  impegni in fondo: LA PAGINA È CAMBIATA"; fi
+        for _ in 1 2 3 4; do adb shell input swipe 60 $y 980 $y 120; sleep 1; done
+        if [ -n "$(dove "Prossimi impegni")" ]; then echo "  impegni in cima: la Home resta"; else echo "  impegni in cima: LA PAGINA È CAMBIATA"; fi
+        casa
+      else
+        echo "  (non trovato: Prossimi impegni)"
+      fi
+    fi
     adb shell input swipe 540 1700 540 700 400; shot p1b-lavoro-giu "$theme" 3
     casa; tocca Personale; shot p2-personale "$theme" 5
     adb shell input swipe 540 1700 540 700 400; shot p2b-personale-giu "$theme" 3
