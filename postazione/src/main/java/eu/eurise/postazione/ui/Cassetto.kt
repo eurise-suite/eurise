@@ -113,6 +113,7 @@ fun Cassetto(
     val mostrate = if (ovunque) trovateApp.take(8) else trovateApp
     LaunchedEffect(cercaSubito) { if (cercaSubito) runCatching { fuoco.requestFocus() } }
     LaunchedEffect(testo, scegliPer) {
+        runCatching { griglia.scrollToItem(0) }
         if (scegliPer == null) { delay(220); model.cerca(testo) }
     }
     val titoloScelta = scegliPer?.let { id ->
@@ -125,7 +126,7 @@ fun Cassetto(
     val rapido = chiave.isEmpty() && !tutteAperte
     val perChiave = remember(tutte) { tutte.associateBy { it.chiave } }
 
-    Box(Modifier.fillMaxSize().background(col.foglio)) {
+    Box(Modifier.fillMaxSize().background(col.pieno)) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
             Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -157,10 +158,12 @@ fun Cassetto(
                     }
                 }
                 if (model.mancino) indice()
+                // Cercando, i risultati partono dal basso: il primo è appena sopra il campo, sotto il pollice.
                 LazyVerticalGrid(
                     GridCells.Fixed(4), Modifier.weight(1f), state = griglia,
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp, if (chiave.isNotEmpty()) Alignment.Bottom else Alignment.Top),
+                    reverseLayout = chiave.isNotEmpty(),
                 ) {
                     if (scegliPer != null && chiave.isEmpty()) {
                         item(span = { GridItemSpan(maxLineSpan) }) {
@@ -184,8 +187,8 @@ fun Cassetto(
                             ) { Text(stringResource(R.string.rapido_tutte), color = col.accento, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
                         }
                     } else {
-                        items(mostrate, key = { it.chiave }) { a -> Tessera(a, model, col, onScelta) }
-                        if (ovunque) ovunque(model, testo, col, onImpostazioni)
+                        if (ovunque) ovunque(model, testo, mostrate, col, onScelta, onImpostazioni)
+                        else items(mostrate, key = { it.chiave }) { a -> Tessera(a, model, col, onScelta) }
                     }
                 }
                 if (!model.mancino) indice()
@@ -245,30 +248,36 @@ private fun Tessera(a: App, model: PostazioneModel, col: Colori, onScelta: (Stri
 private val GiornoOra = DateTimeFormatter.ofPattern("EEE d MMM · H:mm", java.util.Locale.ITALIAN)
 private val SoloGiorno = DateTimeFormatter.ofPattern("EEE d MMM", java.util.Locale.ITALIAN)
 
-/** I risultati della lente oltre alle app: tutto letto sul telefono; web e AI partono solo al tocco. */
-private fun LazyGridScope.ovunque(model: PostazioneModel, testo: String, col: Colori, onImpostazioni: () -> Unit) {
+/**
+ * I risultati della lente, dal basso (la griglia è rovesciata): prima, appena sopra il campo, le persone, poi le app,
+ * impegni, cose, note, documenti e in cima web e AI. Ogni gruppo ha il titolo sopra di sé. Tutto letto sul telefono;
+ * web e AI partono solo al tocco.
+ */
+private fun LazyGridScope.ovunque(
+    model: PostazioneModel, testo: String, app: List<App>, col: Colori, onScelta: (String) -> Unit, onImpostazioni: () -> Unit,
+) {
     val q = testo.trim()
     val pieno: androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
     if (model.persone.isNotEmpty()) {
-        item(key = "t:persone", span = pieno) { Titolo(R.string.cerca_contatti, col) }
         model.persone.forEach { p ->
             item(key = "p:" + p.id, span = pieno) {
                 RigaRisultato(EuriseIcons.person(), p.nome, p.numero, col, onClick = { model.apriPersona(p) }) {
                     if (p.numero.isNotBlank()) {
                         Icon(
-                            EuriseIcons.phone(), stringResource(R.string.chiama), Modifier.size(40.dp).clickable {
+                            EuriseIcons.phone(), stringResource(R.string.chiama), Modifier.size(44.dp).clickable {
                                 model.telefono.avvia(android.content.Intent(android.content.Intent.ACTION_DIAL, android.net.Uri.fromParts("tel", p.numero, null)))
-                            }.padding(10.dp), tint = col.accento,
+                            }.padding(11.dp), tint = col.accento,
                         )
                         Icon(
-                            EuriseIcons.message(), stringResource(R.string.scrivi), Modifier.size(40.dp).clickable {
+                            EuriseIcons.message(), stringResource(R.string.scrivi), Modifier.size(44.dp).clickable {
                                 model.telefono.avvia(android.content.Intent(android.content.Intent.ACTION_SENDTO, android.net.Uri.fromParts("smsto", p.numero, null)))
-                            }.padding(10.dp), tint = col.accento,
+                            }.padding(11.dp), tint = col.accento,
                         )
                     }
                 }
             }
         }
+        item(key = "t:persone", span = pieno) { Titolo(R.string.cerca_contatti, col) }
     } else if (!model.contatti) {
         item(key = "t:contatti-spenti", span = pieno) {
             Text(
@@ -277,6 +286,10 @@ private fun LazyGridScope.ovunque(model: PostazioneModel, testo: String, col: Co
             )
         }
     }
+    if (app.isNotEmpty()) {
+        items(app, key = { "a:" + it.chiave }) { a -> Tessera(a, model, col, onScelta) }
+        item(key = "t:app", span = pieno) { Titolo(R.string.cerca_app, col) }
+    }
     val gruppi = listOf(
         PostazioneContract.KIND_EVENT to R.string.cerca_impegni, PostazioneContract.KIND_TASK to R.string.cerca_cose,
         PostazioneContract.KIND_NOTE to R.string.cerca_note, PostazioneContract.KIND_FILE to R.string.cerca_documenti,
@@ -284,8 +297,8 @@ private fun LazyGridScope.ovunque(model: PostazioneModel, testo: String, col: Co
     gruppi.forEach { (tipo, titolo) ->
         val lista = model.trovate.filter { it.tipo == tipo }
         if (lista.isNotEmpty()) {
-            item(key = "t:$tipo", span = pieno) { Titolo(titolo, col) }
             lista.forEach { t -> item(key = "$tipo:${t.id}", span = pieno) { RigaTrovata(model, t, col) } }
+            item(key = "t:$tipo", span = pieno) { Titolo(titolo, col) }
         }
     }
     item(key = "web", span = pieno) {
@@ -458,6 +471,7 @@ fun Impostazioni(model: PostazioneModel, onChiudi: () -> Unit, onPagine: () -> U
                     Triple(Uso.Notifiche, model.ascolto, R.string.cp_notifiche to R.string.cp_notifiche_d),
                     Triple(Uso.Contatti, model.contatti, R.string.cp_contatti to R.string.cp_contatti_d),
                     Triple(Uso.Posizione, model.posizione, R.string.cp_posizione to R.string.cp_posizione_d),
+                    Triple(Uso.Suite, Uso.Suite.acceso(context), R.string.cp_suite to R.string.cp_suite_d),
                 ).forEach { (uso, acceso, testi) ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f).padding(end = 8.dp)) {
@@ -486,6 +500,7 @@ fun Impostazioni(model: PostazioneModel, onChiudi: () -> Unit, onPagine: () -> U
             Uso.Notifiche -> listOf(R.string.ascolto_titolo, R.string.ascolto_letto, R.string.ascolto_esce, R.string.ascolto_chi, R.string.ascolto_indietro)
             Uso.Contatti -> listOf(R.string.preferiti_titolo, R.string.preferiti_letto, R.string.preferiti_esce, R.string.preferiti_chi, R.string.preferiti_indietro)
             Uso.Posizione -> listOf(R.string.auto_consenso, R.string.auto_letto, R.string.auto_esce, R.string.auto_chi, R.string.auto_indietro)
+            Uso.Suite -> listOf(R.string.cp_suite, R.string.su_letto, R.string.su_esce, R.string.su_chi, R.string.su_indietro)
         }
         PrivacyConsentSheet(
             title = stringResource(titolo), read = stringResource(letto), out = stringResource(esce),
@@ -498,6 +513,7 @@ fun Impostazioni(model: PostazioneModel, onChiudi: () -> Unit, onPagine: () -> U
                     Uso.Notifiche -> if (!Ascolto.permesso(context)) Ascolto.impostazioni(context)
                     Uso.Contatti -> if (!Preferiti.concesso(context)) contatti.launch(Manifest.permission.READ_CONTACTS)
                     Uso.Posizione -> if (!Posto.concesso(context)) posizione.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                    Uso.Suite -> Unit
                 }
                 model.aggiorna()
             },

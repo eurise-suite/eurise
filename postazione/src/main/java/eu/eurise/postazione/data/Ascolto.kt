@@ -31,7 +31,16 @@ class Avviso(
     val richiama: Notification.Action? = null,
     /** Si può togliere dalle notifiche («Vista»). */
     val cancellabile: Boolean = true,
-)
+    /** Dalle app della suite e non da una notifica: il numero da richiamare (Telefono)… */
+    val numero: String = "",
+    /** …o l'email da aprire in Eurise Email («casella:uid») con l'indirizzo di chi scrive. */
+    val rifMail: String = "",
+    val indirizzo: String = "",
+    /** Quante (chiamate perse, email da leggere) dietro questa riga. */
+    val quante: Int = 1,
+) {
+    val dallaSuite: Boolean get() = numero.isNotEmpty() || rifMail.isNotEmpty()
+}
 
 /** Quello che sta suonando (o è in pausa) in un'app di musica o video. */
 data class Brano(val titolo: String, val artista: String, val pacchetto: String, val suona: Boolean)
@@ -92,7 +101,8 @@ class AscoltoService : NotificationListenerService() {
         val chiamata = categoria == CATEGORIA_PERSA || (telefono && categoria != Notification.CATEGORY_CALL && categoria != Notification.CATEGORY_STATUS) ||
             (categoria == Notification.CATEGORY_CALL && telefono)
         val messaggio = categoria == Notification.CATEGORY_MESSAGE || categoria == Notification.CATEGORY_EMAIL ||
-            stile.endsWith("MessagingStyle") || rispondi != null || sbn.packageName == sms
+            stile.endsWith("MessagingStyle") || stile.endsWith("InboxStyle") || rispondi != null || sbn.packageName == sms ||
+            POSTA.any { sbn.packageName.startsWith(it) }
         if (!chiamata && !messaggio) return null
         val titolo = n.extras?.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
         val testo = n.extras?.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
@@ -113,6 +123,11 @@ class AscoltoService : NotificationListenerService() {
     companion object {
         private const val MAX = 12
         private const val CATEGORIA_PERSA = "missed_call"
+        /** App di posta che non sempre dichiarano la categoria «email». */
+        private val POSTA = listOf(
+            "eu.eurise.mail", "com.google.android.gm", "eu.faircode.email", "com.fsck.k9", "net.thunderbird", "ch.protonmail",
+            "de.tutao.tutanota", "com.microsoft.office.outlook", "foundation.e.mail", "com.samsung.android.email",
+        )
         private val RICHIAMA = Regex("(?i)richiam|call ?back|chiama|rappel|zurückrufen|devolver")
 
         internal const val K_FINO = "pausa.fino"

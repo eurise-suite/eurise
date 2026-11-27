@@ -36,6 +36,7 @@ public class Prova extends Activity {
             secrets(suffix);
             call("accessi", "content://eu.eurise.password" + suffix + ".logins", "status", null);
             call("sms", "content://eu.eurise.messages" + suffix + ".persone", "recent", null);
+            call("richiamare", "content://eu.eurise.phone" + suffix + ".persone", "callBack", null);
             call("tastiera", "content://eu.eurise.keyboard" + suffix + ".eurise.backup", "apply", null);
             apri("backup", "content://eu.eurise.password" + suffix + ".eurise.backup/export");
             call("aspetto", "content://eu.eurise.hub" + suffix + ".appearance", "hand", null);

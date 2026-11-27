@@ -11,7 +11,10 @@ import android.os.Build
  * oltre) e l'accesso alle notifiche si stacca. Riaccendere passa sempre dalla spiegazione nella Postazione.
  */
 enum class Uso(val chiave: String) {
-    Notifiche("uso.notifiche"), Contatti("uso.contatti"), Posizione("uso.posizione");
+    Notifiche("uso.notifiche"), Contatti("uso.contatti"), Posizione("uso.posizione"),
+
+    /** Chiamate da richiamare (Eurise Telefono) ed email da leggere (Eurise Email): restano nella suite, sul telefono. */
+    Suite("uso.suite");
 
     fun acceso(context: Context): Boolean = prefs(context).getBoolean(chiave, true)
 
@@ -26,6 +29,7 @@ enum class Uso(val chiave: String) {
             }
             Contatti -> restituisci(context, Manifest.permission.READ_CONTACTS)
             Posizione -> restituisci(context, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+            Suite -> Unit
         }
     }
 

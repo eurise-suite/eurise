@@ -351,4 +351,22 @@
     <string name="cat_togli">Togli la categoria</string>
     <string name="cat_posto_aiuto">Le prime %1$d stanno nella dock della Home; tutte nel cassetto.</string>
     <string name="imp_schermata">Schermata</string>
+    <!-- 27 novembre, sera: bolle vuote in una riga, foglio di un messaggio -->
+    <string name="cerca_app">App</string>
+    <string name="bc_impegni">Impegni</string>
+    <string name="bc_chiamate">Chiamate</string>
+    <string name="bc_messaggi">Messaggi</string>
+    <string name="av_persa">Chiamata persa</string>
+    <string name="av_quante">%1$d volte</string>
+    <string name="av_sms">Scrivi un SMS…</string>
+    <string name="av_mail">Rispondi via email…</string>
+    <string name="av_rispondi">Rispondi…</string>
+    <string name="av_non_partita">Non è partita: aprila nell\'app.</string>
+    <string name="fine_chiudi_breve">Chiudi</string>
+    <string name="cp_suite">Telefono ed Email della suite</string>
+    <string name="cp_suite_d">Chiamate da richiamare ed email da leggere, chieste a Eurise Telefono ed Eurise Email.</string>
+    <string name="su_letto">Le chiamate perse da richiamare (numero, nome in Rubrica, ora) e le email delle persone ancora da leggere (chi scrive, oggetto).</string>
+    <string name="su_esce">Niente: passano solo tra le app Eurise firmate con la stessa chiave, sul telefono. La Postazione non ha la rete.</string>
+    <string name="su_chi">Solo tu, sulla Postazione. Telefono ed Email non vengono cambiati.</string>
+    <string name="su_indietro">Spegni l\'interruttore qui o nel centro privacy dell\'app Eurise: si ferma subito.</string>
 </resources>

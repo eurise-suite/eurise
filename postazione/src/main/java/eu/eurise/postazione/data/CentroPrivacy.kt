@@ -35,6 +35,7 @@ class CentroPrivacy : ContentProvider() {
         H.Service(Uso.Notifiche.name, context.getString(R.string.cp_notifiche), context.getString(R.string.cp_notifiche_d), 10, "Phone", Ascolto.acceso(context)),
         H.Service(Uso.Contatti.name, context.getString(R.string.cp_contatti), context.getString(R.string.cp_contatti_d), 10, "Phone", Preferiti.permesso(context)),
         H.Service(Uso.Posizione.name, context.getString(R.string.cp_posizione), context.getString(R.string.cp_posizione_d), 10, "Phone", Posto.permesso(context)),
+        H.Service(Uso.Suite.name, context.getString(R.string.cp_suite), context.getString(R.string.cp_suite_d), 10, "Phone", Uso.Suite.acceso(context)),
     )
 
     override fun query(uri: Uri, p: Array<out String>?, s: String?, a: Array<out String>?, o: String?): Cursor? = null

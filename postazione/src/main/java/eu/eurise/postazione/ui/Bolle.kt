@@ -311,29 +311,30 @@ private fun RigaAccendi(testo: String, col: Colori, onAccendi: () -> Unit) {
 /** La scheda di fine giornata: le cose aperte passano a domani, il lavoro va in silenzio, si passa a Personale. */
 @Composable
 fun FineGiornata(model: PostazioneModel, col: Colori) {
+    // Una riga sola (27 novembre, sera): cosa succede chiudendo, «Chiudi» sotto il pollice, × per «Non oggi».
     val aperte = model.giornata.aperte
-    var rimanda by remember { mutableStateOf(true) }
-    var silenzio by remember { mutableStateOf(true) }
-    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).background(col.prossimo, RoundedCornerShape(18.dp))) {
-        Box(Modifier.width(5.dp).fillMaxHeight().background(col.lente, RoundedCornerShape(topStart = 18.dp, bottomStart = 18.dp)))
-        Column(Modifier.weight(1f).padding(start = 13.dp, end = 14.dp, top = 13.dp, bottom = 13.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(stringResource(R.string.fine_titolo), color = col.accento, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            Text(stringResource(R.string.fine_stacca), color = col.inchiostro, fontSize = 19.sp, fontWeight = FontWeight.Bold)
-            if (aperte > 0) Spunta(pluralStringResource(R.plurals.fine_aperte, aperte, aperte), rimanda, col) { rimanda = !rimanda }
-            else Text(stringResource(R.string.fine_tutto_fatto), color = col.sotto, fontSize = 13.5.sp)
-            if (model.ascolto) Spunta(stringResource(R.string.fine_silenzio), silenzio, col) { silenzio = !silenzio }
-            Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(
-                    Modifier.weight(1.5f).height(40.dp).background(col.lente, RoundedCornerShape(12.dp))
-                        .clickable { model.chiudiGiornata(rimanda || aperte == 0, silenzio && model.ascolto) },
-                    contentAlignment = Alignment.Center,
-                ) { Text(stringResource(R.string.fine_chiudi), color = Color.White, fontSize = 13.5.sp, fontWeight = FontWeight.Bold) }
-                Box(
-                    Modifier.weight(1f).height(40.dp).background(col.foglio, RoundedCornerShape(12.dp)).clickable { model.chiudiGiornata(false, false) },
-                    contentAlignment = Alignment.Center,
-                ) { Text(stringResource(R.string.fine_non_oggi), color = col.inchiostro, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold) }
-            }
+    val cosa = listOfNotNull(
+        if (aperte > 0) pluralStringResource(R.plurals.fine_aperte, aperte, aperte) else null,
+        if (model.ascolto) stringResource(R.string.fine_silenzio) else null,
+    ).joinToString(" · ").ifEmpty { stringResource(R.string.fine_tutto_fatto) }
+    Row(
+        Modifier.fillMaxWidth().background(col.prossimo, RoundedCornerShape(18.dp)).padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(EuriseIcons.moon(), null, Modifier.size(20.dp), tint = col.accento)
+        Column(Modifier.weight(1f).padding(start = 12.dp, end = 8.dp)) {
+            Text(stringResource(R.string.fine_chiudi), color = col.inchiostro, fontSize = 14.5.sp, fontWeight = FontWeight.Bold)
+            Text(cosa, color = col.sotto, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
+        Box(
+            Modifier.height(40.dp).background(col.lente, RoundedCornerShape(12.dp)).clickable { model.chiudiGiornata(true, model.ascolto) }
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.Center,
+        ) { Text(stringResource(R.string.fine_chiudi_breve), color = Color.White, fontSize = 13.5.sp, fontWeight = FontWeight.Bold) }
+        Icon(
+            EuriseIcons.close(), stringResource(R.string.fine_non_oggi),
+            Modifier.size(40.dp).clickable { model.chiudiGiornata(false, false) }.padding(11.dp), tint = col.sotto,
+        )
     }
 }
 

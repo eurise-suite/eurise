@@ -60,6 +60,7 @@ attesa "$r" segreti CHIUSA "la curiosa non legge i segreti affidati all'app Euri
 attesa "$r" affida CHIUSA "la curiosa non affida né rilegge segreti"
 attesa "$r" accessi CHIUSA "la curiosa non arriva alle password dei siti"
 attesa "$r" sms CHIUSA "la curiosa non legge gli SMS"
+attesa "$r" richiamare CHIUSA "la curiosa non legge le chiamate da richiamare del Telefono"
 attesa "$r" tastiera CHIUSA "la curiosa non comanda il ripristino della Tastiera"
 attesa "$r" aspetto CHIUSA "la curiosa non legge le impostazioni della suite"
 attesa "$r" giornata CHIUSA "la curiosa non legge impegni e cose da fare (Postazione)"

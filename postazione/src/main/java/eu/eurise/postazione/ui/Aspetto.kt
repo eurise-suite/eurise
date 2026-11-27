@@ -42,6 +42,8 @@ class Colori(
     val lente: Brush,
     /** Il fondo delle bolle sopra il foglio satinato: un filo più pieno, perché si legga sempre. */
     val bolla: Color,
+    /** Il fondo pieno delle schermate sopra la Home (ricerca, cassetto): lì il cielo non deve trasparire. */
+    val pieno: Color = if (notte) Color(0xFF141922) else Color(0xFFF6F4EF),
 )
 
 /** I colori della Postazione: carta e inchiostro uguali per tutti, l'accento a scelta; di sera l'accento si spegne. */

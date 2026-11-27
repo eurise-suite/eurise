@@ -105,6 +105,8 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                 .setContentText(if (count == 1) subject else context.getString(R.string.ml_new_last, from, subject))
                 .setContentIntent(open)
                 .setAutoCancel(true)
+                // La categoria dice ad Android (e alla Postazione, «Da rispondere») che è posta da leggere.
+                .setCategory(NotificationCompat.CATEGORY_EMAIL)
                 .build()
             runCatching { NotificationManagerCompat.from(context).notify(7, n) }
         }

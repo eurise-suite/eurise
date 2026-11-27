@@ -3,6 +3,7 @@ package eu.eurise.postazione
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -16,7 +17,9 @@ import eu.eurise.postazione.data.Notizia
 import eu.eurise.postazione.data.Posto
 import eu.eurise.postazione.data.Ascolto
 import eu.eurise.postazione.data.AscoltoService
+import eu.eurise.core.suite.PeopleContract
 import eu.eurise.postazione.data.Avviso
+import eu.eurise.postazione.data.DallaSuite
 import eu.eurise.postazione.data.Brano
 import eu.eurise.postazione.data.Giornata
 import eu.eurise.postazione.data.Ai
@@ -101,6 +104,8 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
     /** Accesso alle notifiche acceso (da Android): «Da rispondere» e musica. */
     var ascolto by mutableStateOf(false); private set
     var avvisi by mutableStateOf<List<Avviso>>(emptyList()); private set
+    private var notifiche: List<Avviso> = emptyList()
+    private var suite = DallaSuite.Letto(emptyList(), false, false)
     var brano by mutableStateOf<Brano?>(null); private set
     var contatti by mutableStateOf(false); private set
     var preferiti by mutableStateOf<List<Preferito>>(emptyList()); private set
@@ -147,7 +152,7 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
     val fineGiornata: Boolean get() = Schede.fineGiornata(adesso) && chiusa != adesso.toLocalDate().toString()
 
     init {
-        viewModelScope.launch { AscoltoService.avvisi.collect { avvisi = it } }
+        viewModelScope.launch { AscoltoService.avvisi.collect { notifiche = it; unisci() } }
         viewModelScope.launch { AscoltoService.fermate.collect { inAttesa = it.size } }
     }
 
@@ -163,6 +168,7 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
             ricalcolaGruppi()
             giornata = withContext(Dispatchers.IO) { LettoreGiornata.leggi(contesto, BuildConfig.HUB_PACKAGE) }
             preferiti = withContext(Dispatchers.IO) { Preferiti.leggi(contesto) }
+            leggiSuite()
             leggiMusica()
             leggiNotizie()
             leggiOroscopo()
@@ -171,7 +177,32 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
 
     fun tic() {
         adesso = LocalDateTime.now()
-        viewModelScope.launch { leggiMusica() }
+        viewModelScope.launch { leggiMusica(); if (System.currentTimeMillis() - suiteAlle > 60_000L) leggiSuite() }
+    }
+
+    private var suiteAlle = 0L
+
+    /** Eurise Telefono risponde: «Ti hanno cercato» non dipende dalle notifiche. */
+    val chiamateDallaSuite: Boolean get() = suite.telefono
+
+    /** La prima app di un gruppo (per l'icona «In ascolto» quando non suona niente). */
+    fun apriGruppo(id: String) { gruppi[id].orEmpty().firstOrNull()?.let { apri(it) } }
+
+    private suspend fun leggiSuite() {
+        suiteAlle = System.currentTimeMillis()
+        suite = withContext(Dispatchers.IO) { DallaSuite.leggi(contesto) }
+        unisci()
+    }
+
+    /**
+     * Notifiche e app della suite insieme: dove Telefono o Email rispondono, le loro notifiche non contano (la lista della
+     * suite resta anche dopo averle aperte, e ha il numero o l'email per rispondere da qui).
+     */
+    private fun unisci() {
+        val tel = PeopleContract.packageOf(contesto, PeopleContract.App.Phone)
+        val mail = PeopleContract.packageOf(contesto, PeopleContract.App.Mail)
+        val restano = notifiche.filter { n -> !(suite.telefono && n.pacchetto == tel) && !(suite.posta && n.pacchetto == mail) }
+        avvisi = (suite.avvisi + restano).sortedByDescending { it.quando }
     }
 
     /** Solo con la scheda Personale davanti, e al più ogni venti minuti: le legge l'app Eurise, con le sue regole. */
@@ -380,11 +411,35 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
 
     // «Ti hanno cercato» e «Da rispondere»: lo swipe
 
-    fun richiama(a: Avviso) { Ascolto.richiama(contesto, a) }
+    fun richiama(a: Avviso) {
+        if (a.numero.isNotEmpty()) DallaSuite.richiama(contesto, a.numero) else Ascolto.richiama(contesto, a)
+    }
 
-    /** Come toccare la notifica; se l'app non lo permette, si apre l'app. */
+    /** Come toccare la notifica (o aprire l'email in Eurise Email); se non si può, si apre l'app. */
     fun apriAvviso(a: Avviso) {
-        if (!Ascolto.apri(contesto, a)) app.firstOrNull { it.pacchetto == a.pacchetto }?.let { apri(it.chiave) }
+        val fatto = when {
+            a.rifMail.isNotEmpty() -> DallaSuite.apriMail(contesto, a)
+            a.numero.isNotEmpty() -> { funzione(Azioni.TELEFONO); true }
+            else -> Ascolto.apri(contesto, a)
+        }
+        if (!fatto) app.firstOrNull { it.pacchetto == a.pacchetto }?.let { apri(it.chiave) }
+    }
+
+    /** Si può rispondere da qui: con l'azione «Rispondi» della notifica, con un SMS (chiamate perse) o scrivendo l'email. */
+    fun puoRispondere(a: Avviso): Boolean = a.rispondi != null || a.numero.isNotEmpty() || a.rifMail.isNotEmpty()
+
+    /** La risposta scritta da te; vero se è partita (l'email si apre in scrittura, l'invio lo fai tu). */
+    fun rispondi(a: Avviso, testo: String, fatto: (Boolean) -> Unit) {
+        if (testo.isBlank()) return
+        when {
+            a.rispondi != null -> fatto(Ascolto.rispondi(contesto, a, testo))
+            a.rifMail.isNotEmpty() -> { DallaSuite.rispondiMail(contesto, a, testo); fatto(true) }
+            a.numero.isNotEmpty() -> viewModelScope.launch {
+                val ok = withContext(Dispatchers.IO) { DallaSuite.sms(contesto, a.numero, testo) }
+                if (!ok) telefono.avvia(Intent(Intent.ACTION_SENDTO, Uri.fromParts("smsto", a.numero, null)).putExtra("sms_body", testo))
+                fatto(ok)
+            }
+        }
     }
 
     /** I messaggi: l'app Messaggi della suite o quella degli SMS del telefono (prima della categoria Comunica). */
@@ -393,14 +448,28 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
         val sms = ruoli["sms"]
         (lista.firstOrNull { it.startsWith("eu.eurise.messages") || it.substringBefore('/') == sms } ?: lista.firstOrNull())?.let { apri(it) }
     }
-    fun vista(a: Avviso) = Ascolto.vista(a)
-    fun piuTardi(a: Avviso) = Ascolto.piuTardi(a)
+
+    fun vista(a: Avviso) {
+        if (a.dallaSuite) DallaSuite.nascondi(contesto, a, perUnOra = false) else Ascolto.vista(a)
+        togliDallaLista(a)
+    }
+
+    fun piuTardi(a: Avviso) {
+        if (a.dallaSuite) DallaSuite.nascondi(contesto, a, perUnOra = true) else Ascolto.piuTardi(a)
+        togliDallaLista(a)
+    }
+
+    private fun togliDallaLista(a: Avviso) {
+        suite = DallaSuite.Letto(suite.avvisi.filter { it.chiave != a.chiave }, suite.telefono, suite.posta)
+        notifiche = notifiche.filter { it.chiave != a.chiave }
+        unisci()
+    }
 
     /** «Da fare»: una cosa da fare per oggi nell'app Eurise («Richiamare Giulia»), e l'avviso si toglie. */
     fun daFare(a: Avviso) {
         val chi = a.titolo.ifBlank { nomeDelPacchetto(a.pacchetto) }
         val titolo = contesto.getString(if (a.chiamata) R.string.cosa_richiamare else R.string.cosa_rispondere, chi)
-        Ascolto.vista(a)
+        vista(a)
         viewModelScope.launch {
             withContext(Dispatchers.IO) { LettoreGiornata.aggiungiCosa(contesto, BuildConfig.HUB_PACKAGE, titolo) }
             giornata = withContext(Dispatchers.IO) { LettoreGiornata.leggi(contesto, BuildConfig.HUB_PACKAGE) }

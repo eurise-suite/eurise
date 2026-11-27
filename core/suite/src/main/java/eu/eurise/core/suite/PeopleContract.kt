@@ -26,6 +26,8 @@ object PeopleContract {
     const val METHOD_SEARCH = "search"
     /** Manda un SMS (Messaggi). */
     const val METHOD_SEND = "send"
+    /** Telefono: le chiamate da richiamare, la stessa lista «Da richiamare» dei Recenti (per la Postazione). */
+    const val METHOD_CALLBACK = "callBack"
 
     /** Chat: chi sono io sulla Chat (per il link dell'invito) e se un contatto è già unito a una persona della Chat. */
     const val METHOD_ME = "me"
@@ -199,6 +201,10 @@ object PeopleContract {
     /** L'ultima cosa per indirizzo da [app] (fuori dal thread principale). Vuoto se l'app non c'è o non ha i permessi. */
     fun recent(context: Context, app: App, since: Long = 0L): List<Recent> =
         unpackRecent(call(context, app, METHOD_RECENT, Bundle().apply { putLong(EXTRA_SINCE, since) }))
+
+    /** Da richiamare secondo Eurise Telefono (fuori dal thread principale); null se il Telefono non c'è o non risponde. */
+    fun callBack(context: Context): List<Recent>? =
+        call(context, App.Phone, METHOD_CALLBACK, null)?.let { unpackRecent(it) }
 
     /** Il filo con questi numeri ed email da [app] (fuori dal thread principale). */
     fun items(context: Context, app: App, phones: List<String>, emails: List<String>, limit: Int = 200): List<Item> {

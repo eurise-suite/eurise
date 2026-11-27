@@ -298,7 +298,7 @@ private fun Testata(model: PostazioneModel, colore: Color, modifier: Modifier) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val meteo = model.giornata.meteo
-            Icon(iconaCielo(meteo?.cielo), null, Modifier.size(16.dp), tint = colore)
+            Icon(iconaCielo(meteo?.cielo, model.cielo.fase.let { it == eu.eurise.postazione.data.Fase.Notte || it == eu.eurise.postazione.data.Fase.Sera }), null, Modifier.size(16.dp), tint = colore)
             Text(" " + (meteo?.let { rigaMeteo(it, adesso) } ?: stringResource(R.string.apri_meteo)), color = colore, fontSize = 13.5.sp, fontWeight = FontWeight.Medium)
             Icon(EuriseIcons.chevronRight(), null, Modifier.size(12.dp), tint = colore.copy(alpha = 0.6f))
         }
@@ -390,8 +390,8 @@ private fun Linguette(model: PostazioneModel, col: Colori, suCielo: Color, onBol
     tipo?.let { l -> TipoDialog(l, onScelta = { model.tipoLinguetta(l, it) }, onChiudi = { tipo = null }) }
 }
 
-internal fun iconaCielo(cielo: String?): ImageVector = when (cielo) {
-    null, "Clear" -> EuriseIcons.sun()
+internal fun iconaCielo(cielo: String?, notte: Boolean = false): ImageVector = when (cielo) {
+    null, "Clear" -> if (notte) EuriseIcons.moon() else EuriseIcons.sun()
     "Fog" -> EuriseIcons.fog()
     "Drizzle", "Rain", "Showers" -> EuriseIcons.rain()
     "Snow" -> EuriseIcons.snow()

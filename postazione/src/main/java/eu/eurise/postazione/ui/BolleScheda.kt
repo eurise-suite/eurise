@@ -22,6 +22,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -112,7 +115,10 @@ fun FoglioBolle(
         if (l.tipo == Tipo.Lavoro && model.giornata.collegata && model.fineGiornata && !modifica) {
             item(key = "fine") { Box(Modifier.background(col.bolla, RoundedCornerShape(18.dp)).padding(6.dp)) { FineGiornata(model, col) } }
         }
-        Pagine.righe(bolle).forEach { riga ->
+        // Le bolle che non hanno niente da dire diventano una riga sola di icone (tavola del 27 novembre, sera).
+        val vuote = if (modifica) emptyList() else bolle.filter { vuota(model, it) }
+        val piene = bolle - vuote.toSet()
+        Pagine.righe(piene).forEach { riga ->
             item(key = riga.joinToString { it.tipo.name }) {
                 if (riga.size == 2) {
                     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -126,6 +132,7 @@ fun FoglioBolle(
                 } else BollaVista(model, l, riga.first(), col, modifica, onModifica, Modifier.fillMaxWidth())
             }
         }
+        if (vuote.isNotEmpty()) item(key = "vuote") { StrisciaVuote(model, vuote, col) }
         if (bolle.isEmpty() && !modifica) item { Riga(stringResource(R.string.b_vuoto), stringResource(R.string.b_aggiungi), col) { onModifica(true); aggiungi = true } }
         if (modifica) item(key = "aggiungi") {
             Box(
@@ -244,7 +251,7 @@ private fun ContenutoBolla(model: PostazioneModel, l: Linguetta, b: Bolla, col: 
             when {
                 !model.ascolto -> AccendiAscolto(col) { model.aggiorna() }
                 lista.isEmpty() -> Text(stringResource(if (chiamate) R.string.b_nessuna_chiamata else R.string.niente_da_rispondere), color = col.sotto, fontSize = 13.sp)
-                else -> lista.take(n).forEach { a -> RigaSwipe(model, a, col) }
+                else -> lista.take(n).forEach { a -> RigaContatto(model, a, col) }
             }
         }
         TipoBolla.DaFare, TipoBolla.Farmaci -> {
@@ -320,20 +327,205 @@ private fun ContenutoBolla(model: PostazioneModel, l: Linguetta, b: Bolla, col: 
     }
 }
 
+/** Vero se la bolla non ha niente da dire adesso: allora è solo un'icona nella riga in fondo. */
+private fun vuota(model: PostazioneModel, b: Bolla): Boolean {
+    val g = model.giornata
+    return when (b.tipo) {
+        TipoBolla.Prossimo -> g.collegata && g.calendario && g.impegni.isEmpty()
+        TipoBolla.Cercato -> model.avvisi.none { it.chiamata } && (model.ascolto || model.chiamateDallaSuite)
+        TipoBolla.Rispondere -> model.avvisi.none { !it.chiamata } && model.ascolto
+        TipoBolla.DaFare -> g.collegata && g.aperte == 0 && g.cose.none { !it.farmaco && it.id !in model.toccate }
+        TipoBolla.Farmaci -> g.collegata && g.cose.none { it.farmaco && it.id !in model.toccate }
+        TipoBolla.Meteo -> g.meteo == null
+        TipoBolla.Ascolto -> model.ascolto && model.brano == null
+        TipoBolla.Notizie -> g.collegata && model.notizie.isNullOrEmpty()
+        TipoBolla.Oroscopo -> model.oroscopo == null
+        TipoBolla.Preferiti, TipoBolla.Auto -> false
+    }
+}
+
+private fun iconaBolla(t: TipoBolla): ImageVector = when (t) {
+    TipoBolla.Prossimo -> EuriseIcons.calendar(); TipoBolla.Cercato -> EuriseIcons.phone(); TipoBolla.Rispondere -> EuriseIcons.chat()
+    TipoBolla.DaFare -> EuriseIcons.task(); TipoBolla.Farmaci -> EuriseIcons.clock(); TipoBolla.Meteo -> EuriseIcons.sun()
+    TipoBolla.Ascolto -> EuriseIcons.music(); TipoBolla.Notizie -> EuriseIcons.news(); TipoBolla.Oroscopo -> EuriseIcons.star()
+    TipoBolla.Preferiti -> EuriseIcons.star(); TipoBolla.Auto -> EuriseIcons.car()
+}
+
+/** Dove porta l'icona di una bolla vuota: l'app o la sezione che le fa da casa. */
+private fun apriCasa(model: PostazioneModel, t: TipoBolla) {
+    when (t) {
+        TipoBolla.Prossimo -> model.apriSezione("calendar")
+        TipoBolla.Cercato -> model.funzione(eu.eurise.postazione.data.Azioni.TELEFONO)
+        TipoBolla.Rispondere -> model.apriComunica()
+        TipoBolla.DaFare -> model.apriSezione("tasks")
+        TipoBolla.Farmaci -> model.apriSezione("medicines")
+        TipoBolla.Meteo -> model.apriSezione("weather")
+        TipoBolla.Ascolto -> model.apriGruppo(eu.eurise.postazione.data.Gruppo.Musica.name)
+        TipoBolla.Notizie -> model.apriSezione("today")
+        TipoBolla.Oroscopo -> model.apriSezione("today")
+        else -> Unit
+    }
+}
+
+/** Le bolle vuote in una riga: icona monocromatica e nome corto; il tocco apre la loro app. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun StrisciaVuote(model: PostazioneModel, vuote: List<Bolla>, col: Colori) {
+    androidx.compose.foundation.layout.FlowRow(
+        Modifier.fillMaxWidth().background(col.bolla, RoundedCornerShape(18.dp)).padding(horizontal = 4.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+    ) {
+        vuote.forEach { b ->
+            Column(
+                Modifier.widthIn(min = 64.dp).clickable { apriCasa(model, b.tipo) }.padding(horizontal = 6.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(iconaBolla(b.tipo), null, Modifier.size(20.dp), tint = col.sotto)
+                Text(
+                    stringResource(nomeCorto(b.tipo)), color = col.sotto, fontSize = 10.5.sp, maxLines = 1,
+                    overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+@androidx.annotation.StringRes
+private fun nomeCorto(t: TipoBolla): Int = when (t) {
+    TipoBolla.Prossimo -> R.string.bc_impegni; TipoBolla.Cercato -> R.string.bc_chiamate; TipoBolla.Rispondere -> R.string.bc_messaggi
+    else -> nomeBolla(t)
+}
+
 /**
- * Una chiamata persa o un messaggio, con lo swipe come nella Scrivania: verso destra Richiama (o Apri), verso sinistra
- * Vista, Più tardi, Da fare.
+ * Una chiamata da richiamare o un messaggio: il tocco apre il foglio con la risposta e le azioni (niente scorrimento
+ * di lato, che si confondeva con quello delle pagine).
  */
 @Composable
-private fun RigaSwipe(model: PostazioneModel, a: Avviso, col: Colori) {
-    val destra = if (a.chiamata) Azione(stringResource(R.string.sw_richiama), EuriseIcons.phone(), col.accento) { model.richiama(a) }
-    else Azione(stringResource(R.string.sw_apri), EuriseIcons.chat(), col.accento) { model.apriAvviso(a) }
-    val sinistra = listOf(
-        Azione(stringResource(R.string.sw_vista), EuriseIcons.check(), Color(0xFF62615C)) { model.vista(a) },
-        Azione(stringResource(R.string.sw_dopo), EuriseIcons.clock(), Color(0xFFB45309)) { model.piuTardi(a) },
-        Azione(stringResource(R.string.sw_da_fare), EuriseIcons.task(), col.accento) { model.daFare(a) },
-    )
-    SwipeRiga(destra, sinistra, col) { RigaAvviso(model, a, col) }
+private fun RigaContatto(model: PostazioneModel, a: Avviso, col: Colori) {
+    var aperto by remember(a.chiave) { mutableStateOf(false) }
+    val chiave = model.app.firstOrNull { it.pacchetto == a.pacchetto }?.chiave
+    Row(
+        Modifier.fillMaxWidth().clickable { aperto = true }.padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (chiave != null) IconaApp(model.telefono, chiave, 34.dp, col.notte)
+        else Box(Modifier.size(34.dp).background(col.riquadro, CircleShape), contentAlignment = Alignment.Center) {
+            Icon(if (a.chiamata) EuriseIcons.phone() else EuriseIcons.chat(), null, Modifier.size(17.dp), tint = col.sotto)
+        }
+        Column(Modifier.weight(1f).padding(start = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    a.titolo + if (a.quante > 1) " · ${a.quante}" else "", color = col.inchiostro, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+                )
+                Text(quandoBreve(a.quando, model), color = col.sotto, fontSize = 12.sp, modifier = Modifier.padding(start = 8.dp))
+            }
+            val sotto = a.testo.ifBlank { if (a.chiamata) stringResource(R.string.av_persa) else "" }
+            if (sotto.isNotBlank()) Text(sotto, color = col.sotto, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        // Il gesto più usato a portata di pollice: richiamare.
+        if (a.chiamata) Icon(
+            EuriseIcons.phone(), stringResource(R.string.sw_richiama),
+            Modifier.padding(start = 6.dp).size(40.dp).background(col.prossimo, CircleShape).clickable { model.richiama(a) }.padding(10.dp), tint = col.accento,
+        )
+    }
+    if (aperto) FoglioAvviso(model, a, col) { aperto = false }
+}
+
+private fun quandoBreve(ms: Long, model: PostazioneModel): String {
+    val d = java.time.Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).toLocalDateTime()
+    return if (d.toLocalDate() == model.adesso.toLocalDate()) orario(ms)
+    else d.format(java.time.format.DateTimeFormatter.ofPattern("EEE d", java.util.Locale.ITALIAN))
+}
+
+/**
+ * Il foglio di un messaggio o di una chiamata: il testo intero, la risposta scritta qui (con l'azione «Rispondi» della
+ * notifica, un SMS da Messaggi o l'email da finire) e le azioni Richiama o Apri, Vista, Più tardi, Da fare. Nulla parte
+ * da solo: solo con Invia.
+ */
+@Composable
+private fun FoglioAvviso(model: PostazioneModel, a: Avviso, col: Colori, onChiudi: () -> Unit) {
+    var testo by remember { mutableStateOf("") }
+    var esito by remember { mutableStateOf<Boolean?>(null) }
+    androidx.compose.ui.window.Dialog(onDismissRequest = onChiudi, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        Box(Modifier.fillMaxSize().clickable(remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) { onChiudi() }) {
+            Column(
+                Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().navigationBarsPadding().padding(10.dp)
+                    .background(col.pieno, RoundedCornerShape(26.dp))
+                    .clickable(remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) {}
+                    .padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val chiave = model.app.firstOrNull { it.pacchetto == a.pacchetto }?.chiave
+                    if (chiave != null) IconaApp(model.telefono, chiave, 40.dp, col.notte)
+                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                        Text(a.titolo, color = col.inchiostro, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            (if (a.chiamata) stringResource(R.string.av_persa) + " · " else "") + quandoBreve(a.quando, model) +
+                                if (a.quante > 1) " · " + stringResource(R.string.av_quante, a.quante) else "",
+                            color = col.sotto, fontSize = 12.5.sp,
+                        )
+                    }
+                }
+                if (a.testo.isNotBlank()) Text(
+                    a.testo, color = col.inchiostro, fontSize = 14.5.sp, maxLines = 8, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth().background(col.riquadro, RoundedCornerShape(14.dp)).padding(12.dp),
+                )
+                if (model.puoRispondere(a)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        androidx.compose.foundation.text.BasicTextField(
+                            testo, { testo = it.take(1000) },
+                            Modifier.weight(1f).background(col.riquadro, RoundedCornerShape(16.dp)).padding(horizontal = 14.dp, vertical = 13.dp),
+                            textStyle = androidx.compose.ui.text.TextStyle(color = col.inchiostro, fontSize = 15.sp),
+                            cursorBrush = androidx.compose.ui.graphics.SolidColor(col.accento), maxLines = 4,
+                            decorationBox = { campo ->
+                                Box {
+                                    if (testo.isEmpty()) Text(
+                                        stringResource(if (a.chiamata) R.string.av_sms else if (a.rifMail.isNotEmpty()) R.string.av_mail else R.string.av_rispondi),
+                                        color = col.sotto, fontSize = 15.sp,
+                                    )
+                                    campo()
+                                }
+                            },
+                        )
+                        Box(
+                            Modifier.padding(start = 8.dp).size(48.dp).background(col.lente, RoundedCornerShape(16.dp))
+                                .clickable(enabled = testo.isNotBlank()) { model.rispondi(a, testo) { ok -> esito = ok; if (ok) { model.vista(a); onChiudi() } } },
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(EuriseIcons.send(), stringResource(R.string.ai_invia), Modifier.size(20.dp), tint = Color.White) }
+                    }
+                    if (testo.isEmpty() && !a.chiamata) {
+                        val presto = stringResource(R.string.domattina_testo)
+                        Text(
+                            presto, color = col.accento, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.background(col.prossimo, RoundedCornerShape(14.dp)).clickable { testo = presto }.padding(horizontal = 12.dp, vertical = 7.dp),
+                        )
+                    }
+                    if (esito == false) Text(stringResource(R.string.av_non_partita), color = Color(0xFFB3261E), fontSize = 12.5.sp)
+                }
+                // Le azioni, tutte della stessa larghezza; la principale dal lato della mano.
+                val principale: Pair<Int, () -> Unit> = if (a.chiamata) R.string.sw_richiama to { model.richiama(a) } else R.string.sw_apri to { model.apriAvviso(a) }
+                val altre = listOf<Pair<Int, () -> Unit>>(
+                    R.string.sw_vista to { model.vista(a) }, R.string.sw_dopo to { model.piuTardi(a) }, R.string.sw_da_fare to { model.daFare(a) },
+                )
+                val tutte = if (model.mancino) listOf(principale) + altre else altre + principale
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    tutte.forEach { (t, fai) ->
+                        val prima = t == principale.first
+                        Box(
+                            Modifier.weight(1f).height(46.dp)
+                                .then(if (prima) Modifier.background(col.lente, RoundedCornerShape(14.dp)) else Modifier.background(col.riquadro, RoundedCornerShape(14.dp)))
+                                .clickable { fai(); onChiudi() },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(stringResource(t), color = if (prima) Color.White else col.inchiostro, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 class Azione(val testo: String, val icona: ImageVector, val colore: Color, val esegui: () -> Unit)

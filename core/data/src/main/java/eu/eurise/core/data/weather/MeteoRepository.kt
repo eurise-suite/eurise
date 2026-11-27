@@ -49,7 +49,9 @@ class MeteoRepository(context: Context) {
 
     private fun build(network: Boolean, force: Boolean = false, withPollen: Boolean = true): MeteoState? {
         val loc = location()
-        if (loc == null && !network) return null
+        // Senza posizione (per esempio la chiede la Postazione mentre l'app Eurise è in secondo piano, e Android non la dà):
+        // vale l'ultima previsione scaricata, che è già del posto giusto. Nessuna richiesta in rete.
+        if (loc == null && !network) return lastForecast()
         if (loc == null) return MeteoState(null, null, null, emptyList(), 0, needsLocation = true)
         val (lat, lon) = loc
         val place = place(lat, lon, network)
@@ -137,6 +139,13 @@ class MeteoRepository(context: Context) {
     }
 
     /** Ultima posizione approssimata nota, senza chiederne una nuova (niente GPS acceso apposta). */
+    private fun lastForecast(): MeteoState? {
+        if (!PrivacyCenter.allowed(PrivacyService.Weather)) return null
+        val file = File(dir, "forecast.json").takeIf { it.exists() } ?: return null
+        val forecast = runCatching { MeteoParse.forecast(file.readText()) }.getOrNull() ?: return null
+        return MeteoState(null, forecast, null, emptyList(), file.lastModified())
+    }
+
     private fun location(): Pair<Double, Double>? {
         if (!hasLocationPermission()) return null
         val lm = app.getSystemService(LocationManager::class.java) ?: return null
