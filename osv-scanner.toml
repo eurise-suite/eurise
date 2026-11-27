@@ -5,3 +5,8 @@
 id = "CVE-2026-1260"
 ignoreUntil = 2026-12-31
 reason = "protobuf-lite dentro SentencePiece (copia browsermt/slimt): legge solo i modelli di traduzione scaricati in HTTPS dal server di Mozilla, mai file dell'utente. Da aggiornare con slimt entro fine anno."
+
+[[IgnoredVulns]]
+id = "CVE-2026-137063"
+ignoreUntil = 2027-03-31
+reason = "Leptonica: heap overflow in l_byteaInitFromStream (file oltre 1 GB). Corretta a monte da c493a77 (20 novembre 2026), già nella nostra copia (ramo principale c82d516, aggiornata il 27 novembre). OSV non ha ancora una versione corretta perché la 1.88 non è uscita; in più la funzione non si raggiunge: Eurise passa a Leptonica solo pixel già decodificati da Android, mai file. Da togliere con il passaggio alla 1.88."
