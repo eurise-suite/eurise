@@ -3,8 +3,10 @@
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
 ### Per ripartire (aggiornato il 27 novembre 2026)
-- **Ultimo giro pubblicato**: **1147** (27 novembre, pomeriggio: sesto giro della Postazione, vedi in fondo; porte e
-  avvio provati sull'emulatore, Postazione 0,8 s a freddo, «Vulnerabilità note» di nuovo verde). Prima: **1140** (27 novembre: correzioni del proprietario dopo la prova della Postazione sul telefono e
+- **Ultimo giro pubblicato**: **1151** (27 novembre, sera: settimo giro della Postazione, cielo vivo, bolle, pagine, cassetto per
+  categorie, AI dal basso, gesti; porta `addTask` provata sull'emulatore; vedi in fondo). Prima: **1147** (27 novembre,
+  pomeriggio: sesto giro della Postazione; porte e avvio provati sull'emulatore, Postazione 0,8 s a freddo). Prima:
+  **1140** (27 novembre: correzioni del proprietario dopo la prova della Postazione sul telefono e
   Postazione completata per poterla valutare: lente che cerca ovunque, dock di sei categorie a scelta, app di ogni scheda,
   azioni su impegni, cose da fare e farmaci, oroscopo, interruttori nel centro privacy; porte nuove provate sull'emulatore;
   Mappe 147 con l'icona del bestiario; sezione «Postazione, quinto giro» in fondo; nel pomeriggio il sesto giro:
@@ -810,3 +812,25 @@ né telemetria trovata.
   nessuna funzione tolta. OSV la segnala ancora perché la 1.88 non è uscita: eccezione in `osv-scanner.toml` fino al
   31 marzo 2027, da togliere con la 1.88. In Eurise la funzione non si raggiunge comunque (solo pixel già decodificati).
 - **Motore di Office**: lanciato il giro 70 su `brand` (icona del bestiario, circa sei ore); si pubblica al giro dopo.
+
+### Postazione, settimo giro (27 novembre 2026, sera): cielo vivo, bolle, pagine, gesti (giro 1151)
+- Fatto dalle tavole del giro 8 (pagina «giro8» della tela), approvate dal proprietario.
+- **Cielo**: fasi del giorno (alba, mattino presto, giorno, pomeriggio, tramonto, sera, notte) da alba e tramonto
+  calcolati **sul telefono** (formule NOAA, `data/Sole.kt`; posizione dell'auto se c'è, altrimenti la longitudine del fuso
+  e 43° N). Nessun dato nuovo esce. Sole che si sposta, luna e stelle a destra di notte, nuvole, pioggia a trattini,
+  neve, temporale con bagliore; pioggia e neve sfumano prima dell'orologio. Foglio e dock satinati quasi trasparenti.
+- **Linguette** rinominabili, da aggiungere (fino a 6) e togliere, ognuna con un «quando si apre da sola»; **bolle** per
+  linguetta: aggiungi, togli, quattro misure, sposta. Le app non stanno più nelle schede.
+- **Ti hanno cercato**: scorrere a destra = Richiama (o Apri), a sinistra = Vista, Più tardi (un'ora), Da fare.
+  Riconoscimento più largo (app telefono e SMS predefinite, `MessagingStyle`, azione di risposta). Il calendario senza
+  permesso nell'app Eurise ora si dice (`evPerm`) invece di una bolla vuota.
+- **Porta nuova `addTask`** di `PostazioneProvider` (solo app della suite, `SuiteAccess.callerAllowed`): una cosa da fare
+  per oggi, titolo ripulito a una riga e al più 120 caratteri. **Provata sull'emulatore**: la curiosa resta fuori
+  (`aggiungi CHIUSA` in `prova-porte-emulatore.sh`).
+- **Dock a 8 categorie** senza aloni; a destra della Home il **cassetto per categorie** (fino a 10 + A–Z): app spostate o
+  copiate a gruppi, categorie nuove, togli. A sinistra le **pagine** dell'utente (fino a 6) con le loro app e la loro AI.
+- **Swipe dal basso = AI** della pagina (la domanda esce solo con Invia; i servizi chiusi passano dall'avviso con le
+  tacchette). **Gesti a 2 e 3 dita** a scelta (Telefono, Fotocamera, Nota, Torcia, Scanner, Voce, Cerca, AI, Tutte le
+  app, Farmaci o un'app). La torcia usa `CameraManager.setTorchMode`: **nessun permesso nuovo**.
+- Nessun permesso nuovo nel manifesto della Postazione; resta senza INTERNET. Si installa sopra la precedente (le
+  impostazioni vecchie delle schede si perdono: la dock di sei diventa di otto con Casa e Agenda).

@@ -730,3 +730,14 @@ Centro privacy: tre servizi nuovi in `PrivacyService` (ReadModels, VoiceModels, 
   `event:` e `task:` in `EuriseHub`, `RecentFilesRepository.byId`, riga «Postazione» in `PrivacyRoute`.
 - Da fare: schermate dall'emulatore; tavole sulla tela con le icone a bolle; tablet con le app delle schede.
 
+## 27 novembre 2026, sera: Postazione, giro 8 delle tavole (dalla chat di Sicurezza, giro 1151)
+- Cielo che cambia con l'ora (alba e tramonto calcolati sul telefono) e con il tempo (sereno, nuvoloso, coperto, pioggia,
+  neve, temporale); foglio satinato quasi trasparente; saluto anche «Buonanotte».
+- Linguette personali (nome, aggiungi, togli, quando si aprono da sole) con le loro bolle (aggiungi, togli, Piccola,
+  Media, Larga, Grande, sposta); niente più app nelle schede; impegni tutti della stessa misura su due righe.
+- «Ti hanno cercato» con lo scorrimento come nella Scrivania; «Da fare» crea la cosa nell'app Eurise (`addTask`).
+- Dock di 8 categorie senza aloni; cassetto per categorie a destra (fino a 10, app spostate o copiate a gruppi); pagine
+  a sinistra con app e AI proprie; swipe dal basso = AI; gesti a due e tre dita a scelta (Impostazioni → Gesti).
+- Codice: `data/Pagine.kt`, `data/Sole.kt`, `ui/Cielo.kt`, `ui/BolleScheda.kt`, `ui/Gestione.kt`, `ui/PagineUi.kt`.
+- Da fare dopo la prova sul telefono: correzioni; spostare le bolle trascinandole; pagine anche con le bolle.
+
