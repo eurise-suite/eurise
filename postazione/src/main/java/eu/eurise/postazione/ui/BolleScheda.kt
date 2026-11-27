@@ -256,16 +256,8 @@ private fun ContenutoBolla(model: PostazioneModel, l: Linguetta, b: Bolla, col: 
             when {
                 !model.ascolto -> AccendiAscolto(col) { model.aggiorna() }
                 lista.isEmpty() -> Text(stringResource(if (chiamate) R.string.b_nessuna_chiamata else R.string.niente_da_rispondere), color = col.sotto, fontSize = 13.sp)
-                // Come la tendina delle notifiche: per app, l'ultima in cima; ogni riga si apre lì con le sue azioni.
-                else -> lista.take(maxOf(n, 3)).groupBy { it.pacchetto }.forEach { (_, delApp) ->
-                    if (!chiamate && lista.map { it.pacchetto }.distinct().size > 1) {
-                        Text(
-                            delApp.first().app.ifBlank { model.nomeDi(delApp.first().pacchetto) } + if (delApp.size > 1) " · ${delApp.size}" else "",
-                            color = col.sotto, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                    delApp.forEach { a -> RigaContatto(model, a, col) }
-                }
+                // L'app si riconosce dal suo simbolo, senza scriverne il nome; il tocco apre la bolla (come nella Scrivania).
+                else -> lista.take(maxOf(n, 3)).forEach { a -> RigaContatto(model, a, col) }
             }
         }
         TipoBolla.DaFare, TipoBolla.Farmaci -> {
@@ -418,73 +410,56 @@ private fun iconaAvviso(a: Avviso): ImageVector = when {
 }
 
 /**
- * Una chiamata da richiamare o un messaggio, come nella tendina delle notifiche: chiusa è una riga (icona piccola
- * monocromatica, chi, quando, una riga di testo, ▾); il tocco la apre lì, con il testo intero e le azioni scritte
- * (Richiama, Rispondi, Segna come letto, Archivia, Da fare, Più tardi, Togli). Rispondere, ascoltare un audio o vedere una
- * foto si fa nella bolla.
+ * Il simbolo dell'app che ha scritto: quello piccolo della sua notifica, già monocromatico, nel colore dato. Per le righe
+ * che vengono dalla suite (Telefono, Email) e se il simbolo non si legge, il disegno della suite (telefono, posta, chat).
+ */
+@Composable
+private fun SimboloAvviso(a: Avviso, misura: androidx.compose.ui.unit.Dp, tinta: Color) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val px = with(LocalDensity.current) { misura.roundToPx() }.coerceAtLeast(1)
+    val img by androidx.compose.runtime.produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, a.chiave, px) {
+        val ic = a.simbolo ?: return@produceState
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                val d = ic.loadDrawable(context) ?: return@runCatching null
+                val bmp = android.graphics.Bitmap.createBitmap(px, px, android.graphics.Bitmap.Config.ARGB_8888)
+                d.setBounds(0, 0, px, px); d.draw(android.graphics.Canvas(bmp))
+                bmp.asImageBitmap()
+            }.getOrNull()
+        }
+    }
+    val i = img
+    if (i != null) androidx.compose.foundation.Image(i, null, Modifier.size(misura), colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(tinta))
+    else Icon(iconaAvviso(a), null, Modifier.size(misura), tint = tinta)
+}
+
+/**
+ * Una chiamata da richiamare o un messaggio in una riga, come nella Scrivania: il simbolo dell'app, chi, quando, una riga
+ * di testo; per le chiamate il telefono per richiamare subito. Il tocco apre la bolla con la risposta e i comandi.
  */
 @Composable
 private fun RigaContatto(model: PostazioneModel, a: Avviso, col: Colori) {
-    var aperta by remember(a.chiave) { mutableStateOf(false) }
     var bolla by remember(a.chiave) { mutableStateOf(false) }
-    Column(
-        Modifier.fillMaxWidth().background(if (aperta) col.riquadro else Color.Transparent, RoundedCornerShape(14.dp))
-            .clickable { aperta = !aperta }.padding(start = if (aperta) 10.dp else 0.dp, end = 0.dp, top = 4.dp, bottom = if (aperta) 6.dp else 4.dp),
+    Row(
+        Modifier.fillMaxWidth().clickable { bolla = true }.padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(iconaAvviso(a), null, Modifier.size(17.dp), tint = col.sotto)
-            Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        a.titolo + if (a.quante > 1) " · ${a.quante}" else "", color = col.inchiostro, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
-                    )
-                    Text("  " + quandoBreve(a.quando, model), color = col.sotto, fontSize = 11.5.sp, maxLines = 1)
-                }
-                val sotto = a.testo.ifBlank { if (a.chiamata) stringResource(R.string.av_persa) else "" }
-                if (sotto.isNotBlank()) Text(
-                    sotto, color = col.sotto, fontSize = 12.5.sp, maxLines = if (aperta) 6 else 1, overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (a.chiamata && !aperta) Icon(
-                EuriseIcons.phone(), stringResource(R.string.sw_richiama),
-                Modifier.size(40.dp).clickable { model.richiama(a) }.padding(11.dp), tint = col.accento,
-            )
-            Icon(
-                if (aperta) EuriseIcons.chevronUp() else EuriseIcons.chevronDown(), null,
-                Modifier.size(36.dp).padding(10.dp), tint = col.sotto,
-            )
-        }
-        if (aperta) {
-            if (a.foto != null || a.storia.any { it.foto || it.audio }) {
+        SimboloAvviso(a, 17.dp, col.sotto)
+        Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    stringResource(if (a.storia.any { it.audio }) R.string.av_ascolta else R.string.av_vedi), color = col.accento, fontSize = 12.5.sp,
-                    fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 29.dp, top = 4.dp).clickable { bolla = true },
+                    a.titolo + if (a.quante > 1) " · ${a.quante}" else "", color = col.inchiostro, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
                 )
+                Text("  " + quandoBreve(a.quando, model), color = col.sotto, fontSize = 11.5.sp, maxLines = 1)
             }
-            // Le azioni scritte, come nella tendina; dal lato della mano la più usata.
-            val azioni = buildList<Pair<Int, () -> Unit>> {
-                if (a.chiamata) add(R.string.sw_richiama to { model.richiama(a) })
-                if (model.puoRispondere(a)) add((if (a.chiamata) R.string.av_sms_breve else R.string.av_rispondi_breve) to { bolla = true })
-                else add(R.string.sw_apri to { model.apriAvviso(a) })
-                if (a.archivia != null) add(R.string.av_archivia to { model.archivia(a) })
-                if (!a.chiamata && (a.letto != null || a.rifMail.isNotEmpty())) add(R.string.av_letto to { model.vista(a) })
-                add(R.string.sw_da_fare to { model.daFare(a) })
-                add(R.string.sw_dopo to { model.piuTardi(a) })
-                if (a.chiamata || (a.letto == null && a.rifMail.isEmpty())) add((if (a.chiamata) R.string.av_non_richiamare else R.string.av_togli) to { model.vista(a) })
-            }
-            androidx.compose.foundation.layout.FlowRow(
-                Modifier.fillMaxWidth().padding(start = 21.dp, top = 6.dp),
-                horizontalArrangement = if (model.mancino) Arrangement.Start else Arrangement.End,
-            ) {
-                azioni.forEach { (t, fai) ->
-                    Text(
-                        stringResource(t), color = col.accento, fontSize = 13.5.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable { fai() }.padding(horizontal = 8.dp, vertical = 9.dp),
-                    )
-                }
-            }
+            val sotto = a.testo.ifBlank { if (a.chiamata) stringResource(R.string.av_persa) else "" }
+            if (sotto.isNotBlank()) Text(sotto, color = col.sotto, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
+        if (a.chiamata) Icon(
+            EuriseIcons.phone(), stringResource(R.string.sw_richiama),
+            Modifier.size(40.dp).clickable { model.richiama(a) }.padding(11.dp), tint = col.accento,
+        )
     }
     if (bolla) FoglioAvviso(model, a, col) { bolla = false }
 }
@@ -528,12 +503,11 @@ private fun FoglioAvviso(model: PostazioneModel, a: Avviso, col: Colori, onChiud
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(iconaAvviso(a), null, Modifier.size(20.dp), tint = col.accento)
+                    SimboloAvviso(a, 20.dp, col.accento)
                     Column(Modifier.weight(1f).padding(start = 12.dp)) {
                         Text(a.titolo, color = col.inchiostro, fontSize = 16.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
                             listOfNotNull(
-                                a.app.takeIf { it.isNotBlank() } ?: model.nomeDi(a.pacchetto).takeIf { it.isNotBlank() },
                                 if (a.chiamata) stringResource(R.string.av_persa) else null,
                                 quandoBreve(a.quando, model),
                                 if (a.quante > 1) stringResource(R.string.av_quante, a.quante) else null,
@@ -541,10 +515,7 @@ private fun FoglioAvviso(model: PostazioneModel, a: Avviso, col: Colori, onChiud
                             color = col.sotto, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
                     }
-                    Text(
-                        stringResource(R.string.sw_apri), color = col.accento, fontSize = 13.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable { model.apriAvviso(a); onChiudi() }.padding(8.dp),
-                    )
+                    Tasto(EuriseIcons.external(), stringResource(R.string.sw_apri), col) { model.apriAvviso(a); onChiudi() }
                 }
                 // I messaggi, come in una chat; tenendone premuto uno, le sue azioni.
                 if (storia.isNotEmpty()) Column(
@@ -570,17 +541,16 @@ private fun FoglioAvviso(model: PostazioneModel, a: Avviso, col: Colori, onChiud
                             if (a.rispondi != null) listOf("👍", "❤️", "😂", "🙏").forEach { e ->
                                 Text(e, fontSize = 18.sp, modifier = Modifier.background(col.riquadro, CircleShape).clickable { manda(e) }.padding(horizontal = 9.dp, vertical = 5.dp))
                             }
-                            if (model.puoRispondere(a)) Gettone(EuriseIcons.reply(), stringResource(R.string.av_cita), col) {
+                            if (model.puoRispondere(a)) Tasto(EuriseIcons.reply(), stringResource(R.string.av_cita), col) {
                                 cita = corpo; scelto = null; runCatching { fuoco.requestFocus() }
                             }
-                            Gettone(EuriseIcons.copy(), stringResource(R.string.av_copia), col) {
+                            Tasto(EuriseIcons.copy(), stringResource(R.string.av_copia), col) {
                                 val cm = context.getSystemService(android.content.ClipboardManager::class.java)
                                 cm?.setPrimaryClip(android.content.ClipData.newPlainText("", corpo)); scelto = null
                             }
-                            Gettone(EuriseIcons.task(), stringResource(R.string.sw_da_fare), col) { model.daFare(a, corpo); scelto = null }
+                            Tasto(EuriseIcons.task(), stringResource(R.string.sw_da_fare), col) { model.daFare(a, corpo); scelto = null }
                         }
                     }
-                    if (scelto == null && !a.chiamata) Text(stringResource(R.string.av_tieni), color = col.sotto, fontSize = 11.sp, modifier = Modifier.padding(start = 4.dp))
                 }
                 if (model.puoRispondere(a)) {
                     cita?.let { q ->
@@ -622,24 +592,29 @@ private fun FoglioAvviso(model: PostazioneModel, a: Avviso, col: Colori, onChiud
                     }
                     if (esito == false) Text(stringResource(R.string.av_non_partita), color = Color(0xFFB3261E), fontSize = 12.5.sp)
                 }
-                // Le azioni: piccole, monocromatiche, tutte a portata di pollice.
-                androidx.compose.foundation.layout.FlowRow(
-                    Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
+                // I comandi: icone monocromatiche in una fila, dal lato della mano; tenendone premuto uno se ne legge il nome.
+                Row(
+                    Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp, if (model.mancino) Alignment.Start else Alignment.End),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (a.chiamata) {
-                        Gettone(EuriseIcons.phone(), stringResource(R.string.sw_richiama), col, forte = true) { model.richiama(a); onChiudi() }
-                        if (a.numero.isNotEmpty()) Gettone(EuriseIcons.message(), stringResource(R.string.av_sms_breve), col) { runCatching { fuoco.requestFocus() } }
-                    } else if (a.rifMail.isNotEmpty()) {
-                        Gettone(EuriseIcons.mail(), stringResource(R.string.av_leggi), col, forte = true) { model.apriAvviso(a); onChiudi() }
+                    val comandi = buildList<@Composable () -> Unit> {
+                        if (!a.chiamata && (a.letto != null || a.rifMail.isNotEmpty())) {
+                            add { Tasto(EuriseIcons.check(), stringResource(R.string.av_letto), col) { model.vista(a); onChiudi() } }
+                        } else {
+                            add { Tasto(EuriseIcons.close(), stringResource(if (a.chiamata) R.string.av_non_richiamare else R.string.av_togli), col) { model.vista(a); onChiudi() } }
+                        }
+                        if (a.archivia != null) add { Tasto(EuriseIcons.folder(), stringResource(R.string.av_archivia), col) { model.archivia(a); onChiudi() } }
+                        add { Tasto(EuriseIcons.clock(), stringResource(R.string.sw_dopo), col) { model.piuTardi(a); onChiudi() } }
+                        add { Tasto(EuriseIcons.task(), stringResource(R.string.sw_da_fare), col) { model.daFare(a); onChiudi() } }
+                        if (a.chiamata) {
+                            if (a.numero.isNotEmpty()) add { Tasto(EuriseIcons.message(), stringResource(R.string.av_sms_breve), col) { runCatching { fuoco.requestFocus() } } }
+                            add { Tasto(EuriseIcons.phone(), stringResource(R.string.sw_richiama), col, forte = true) { model.richiama(a); onChiudi() } }
+                        } else if (a.rifMail.isNotEmpty()) {
+                            add { Tasto(EuriseIcons.mail(), stringResource(R.string.av_leggi), col, forte = true) { model.apriAvviso(a); onChiudi() } }
+                        }
                     }
-                    Gettone(EuriseIcons.task(), stringResource(R.string.sw_da_fare), col) { model.daFare(a); onChiudi() }
-                    Gettone(EuriseIcons.clock(), stringResource(R.string.sw_dopo), col) { model.piuTardi(a); onChiudi() }
-                    if (a.archivia != null) Gettone(EuriseIcons.folder(), stringResource(R.string.av_archivia), col) { model.archivia(a); onChiudi() }
-                    if (!a.chiamata && (a.letto != null || a.rifMail.isNotEmpty())) {
-                        Gettone(EuriseIcons.check(), stringResource(R.string.av_letto), col) { model.vista(a); onChiudi() }
-                    } else {
-                        Gettone(EuriseIcons.close(), stringResource(if (a.chiamata) R.string.av_non_richiamare else R.string.av_togli), col) { model.vista(a); onChiudi() }
-                    }
+                    // Il più usato (Richiama, Leggi) sta sotto il pollice: per ultimo a destra, per primo a sinistra.
+                    (if (model.mancino) comandi.reversed() else comandi).forEach { it() }
                 }
             }
         }
@@ -717,6 +692,24 @@ private fun Gettone(icona: ImageVector, testo: String, col: Colori, forte: Boole
         Icon(icona, null, Modifier.size(15.dp), tint = if (forte) col.accento else col.sotto)
         Text(" " + testo, color = if (forte) col.accento else col.inchiostro, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
+}
+
+/**
+ * Un comando della bolla: solo l'icona, in un tondo; il nome lo leggono TalkBack e, tenendolo premuto, un avviso breve.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun Tasto(icona: ImageVector, nome: String, col: Colori, forte: Boolean = false, onClick: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Box(
+        Modifier.size(44.dp).background(if (forte) col.prossimo else col.riquadro, CircleShape)
+            .combinedClickable(
+                onClickLabel = nome, role = androidx.compose.ui.semantics.Role.Button,
+                onLongClick = { android.widget.Toast.makeText(context, nome, android.widget.Toast.LENGTH_SHORT).show() },
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) { Icon(icona, nome, Modifier.size(19.dp), tint = if (forte) col.accento else col.sotto) }
 }
 
 /** Le bolle che si possono aggiungere alla linguetta (quelle che non ha). */

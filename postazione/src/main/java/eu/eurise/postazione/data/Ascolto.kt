@@ -47,6 +47,11 @@ class Avviso(
     val archivia: Notification.Action? = null,
     /** Il nome dell'app che ha mandato la notifica («WhatsApp», «Email»). */
     val app: String = "",
+    /**
+     * Il simbolo piccolo della notifica (quello della barra di stato): è già monocromatico e dice l'app senza scriverla.
+     * Resta in memoria come il resto della notifica.
+     */
+    val simbolo: android.graphics.drawable.Icon? = null,
 ) {
     val dallaSuite: Boolean get() = numero.isNotEmpty() || rifMail.isNotEmpty()
 }
@@ -130,7 +135,7 @@ class AscoltoService : NotificationListenerService() {
         return Avviso(
             sbn.key, sbn.packageName, n.extras?.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE)?.toString()?.takeIf { it.isNotBlank() } ?: titolo,
             testo, sbn.postTime, n.contentIntent, rispondi, chiamata, richiama, sbn.isClearable,
-            storia = storia(n), foto = foto(n), letto = letto, archivia = archivia, app = app,
+            storia = storia(n), foto = foto(n), letto = letto, archivia = archivia, app = app, simbolo = n.smallIcon,
         )
     }
 
