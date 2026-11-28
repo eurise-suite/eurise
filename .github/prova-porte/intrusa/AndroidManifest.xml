@@ -14,6 +14,7 @@
         <package android:name="eu.eurise.messages.debug" />
         <package android:name="eu.eurise.keyboard.debug" />
         <package android:name="eu.eurise.phone.debug" />
+        <package android:name="eu.eurise.mail.debug" />
     </queries>
     <application android:label="Curiosa">
         <activity android:name=".Prova" android:exported="true" />
