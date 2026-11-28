@@ -3,7 +3,8 @@
 Il lavoro continua nel progetto **«Eurise Sicurezza»** (chat dedicata), che tiene questo file come suo stato.
 
 ### Per ripartire (aggiornato il 27 novembre 2026)
-- **Ultimo giro pubblicato**: **1169** (28 novembre, notte: Postazione, «Da rispondere» con il simbolo dell'app e il
+- **Ultimo giro pubblicato**: **1175** (28 novembre, mattina: porta nuova `trash` di Eurise Email provata
+  sull'emulatore, «Elimina» negli SMS; vedi in fondo). Prima: **1169** (28 novembre, notte: Postazione, «Da rispondere» con il simbolo dell'app e il
   pop-up al tocco, file che non trascinano le pagine; nessun permesso nuovo; vedi in fondo). Prima: **1165** (27 novembre, notte: porte `dismissCallBack`, `markSeen`, `markRead` provate
   sull'emulatore). Prima: **1157** (27 novembre, notte: correzioni della Postazione dopo la prova, porta `callBack` di
   Telefono provata sull'emulatore con il Telefono ora dentro la prova delle porte). Prima: **1151** (27 novembre, sera: settimo giro della Postazione, cielo vivo, bolle, pagine, cassetto per
@@ -878,4 +879,21 @@ né telemetria trovata.
   non si legge, il disegno della suite. Il tocco apre subito la bolla, come nella Scrivania (niente tendina); comandi
   solo a icone, nome con TalkBack e tenendo premuto.
 - Nessun permesso nuovo, nessuna porta nuova, nessun cambio di firma: si installa sopra. La Postazione resta senza rete.
+
+### Postazione, Email, Messaggi, Eurise: 28 novembre 2026, mattina (giro 1175)
+- **Porta nuova `trash` del `PeopleProvider` di Eurise Email** (solo suite, `PeopleContract.allowed`): sposta nel
+  Cestino della casella l'email «casella:uid»; dall'elenco sul telefono sparisce solo se lo spostamento riesce. Si
+  recupera dal Cestino. **Provata sull'emulatore**: `cestino=CHIUSA risposta vuota` per la curiosa. Per provarla la
+  prova delle porte ora installa anche Email (artefatto `email-debug`, `queries` della curiosa): prima la porta
+  risultava «Unknown authority», cioè non provata, e la prova lo segnalava come errore.
+- **Eurise Messaggi**: la notifica di un SMS ha «Elimina» (azione semantica DELETE, PendingIntent esplicito e immutabile
+  verso il ricevitore non esportato): toglie quel solo SMS ricevuto (stessa conversazione e stesso testo), non la
+  conversazione; riesce solo se Messaggi è l'app degli SMS.
+- **Postazione**: il cestino nella bolla chiede due tocchi (il primo lo fa rosso). Usa la porta `trash` per Eurise
+  Email, altrimenti l'«Elimina» che la notifica già offre; se l'app non lo offre, il cestino non compare.
+- **Eurise (`PostazioneProvider.today`)**: senza impegni nelle prossime 36 ore manda quelli del primo giorno che ne ha
+  (fino a 30 giorni). Stessa porta di prima, solo suite; stessi campi.
+- Interfaccia della Postazione (nessun effetto sulla sicurezza): dock senza scritte, app delle categorie e ventaglio dal
+  basso, indice A–Z dal lato della mano, «+» per aggiungere bolle.
+- Nessun permesso nuovo, nessun cambio di firma: si installa sopra.
 

@@ -758,3 +758,15 @@ Centro privacy: tre servizi nuovi in `PrivacyService` (ReadModels, VoiceModels, 
   SMS, Richiama o Leggi dal lato della mano).
 - Le file che scorrono di lato (impegni, linguette, dock del cassetto) non trascinano più le pagine.
 
+## 28 novembre 2026, mattina: Postazione, giro 1175
+- Bolla di risposta: cestino «Elimina» (due tocchi): email di Eurise Email nel Cestino, SMS di Eurise Messaggi (solo
+  quello), altre app con la loro azione «Elimina» se c'è.
+- Bolle: «+» accanto alle linguette (aggiungi una bolla, modifica, nuova linguetta) e «+ Aggiungi una bolla» in fondo a
+  ogni scheda.
+- Dock senza scritte (Home, cassetto, schermi larghi); app delle categorie dal basso; indice A–Z dal lato della mano in
+  «Tutte».
+- Ventaglio rifatto: pannello pieno sopra la dock, app dal basso con la preferita in fondo, pressione lunga per
+  «Rendi preferita»/«Togli», + e matita in cima.
+- «Prossimi impegni»: se oggi e domani non c'è niente, il primo giorno con impegni (fino a 30 giorni), con il giorno
+  davanti all'orario e «TRA N GIORNI».
+
