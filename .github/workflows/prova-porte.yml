@@ -52,14 +52,14 @@ jobs:
           run-id: ${{ steps.giro.outputs.id }}
           github-token: ${{ github.token }}
           path: artefatti
-          pattern: "eurise-{debug,password-debug,messaggi-debug,tastiera-debug,postazione-debug,telefono-debug}-*"
+          pattern: "eurise-{debug,password-debug,messaggi-debug,tastiera-debug,postazione-debug,telefono-debug,email-debug}-*"
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           run-id: ${{ steps.giro.outputs.prima }}
           github-token: ${{ github.token }}
           path: scaricati
-          pattern: "eurise-{debug,password-debug,messaggi-debug,tastiera-debug,postazione-debug,telefono-debug}-*"
+          pattern: "eurise-{debug,password-debug,messaggi-debug,tastiera-debug,postazione-debug,telefono-debug,email-debug}-*"
 
       - name: APK «prima», «dopo» e le due app di prova
         env:
