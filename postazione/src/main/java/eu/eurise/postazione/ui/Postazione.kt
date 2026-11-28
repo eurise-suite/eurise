@@ -430,6 +430,18 @@ internal fun rigaMeteo(m: Meteo, adesso: LocalDateTime): String {
 
 internal fun orario(ms: Long): String = Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).toLocalTime().format(Ora)
 
+/** Il giorno davanti all'orario se l'impegno non è oggi: «Domani · », «lun 30 · »; vuoto se è oggi. */
+@Composable
+internal fun giornoImpegno(inizio: Long, adesso: LocalDateTime): String {
+    val giorno = Instant.ofEpochMilli(inizio).atZone(ZoneId.systemDefault()).toLocalDate()
+    val oggi = adesso.toLocalDate()
+    return when {
+        !giorno.isAfter(oggi) -> ""
+        giorno == oggi.plusDays(1) -> stringResource(R.string.impegno_domani) + " · "
+        else -> giorno.format(DateTimeFormatter.ofPattern("EEE d", Locale.getDefault())) + " · "
+    }
+}
+
 @Composable
 internal fun richiamo(e: Impegno, adesso: LocalDateTime, primo: Boolean): String {
     val ora = adesso.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -438,7 +450,10 @@ internal fun richiamo(e: Impegno, adesso: LocalDateTime, primo: Boolean): String
     val testa = if (primo) stringResource(R.string.prossimo) else stringResource(R.string.poi)
     return when {
         ora >= e.inizio && ora < e.fine -> stringResource(R.string.adesso)
-        inizio.isAfter(adesso.toLocalDate()) -> stringResource(R.string.domani)
+        inizio == adesso.toLocalDate().plusDays(1) -> stringResource(R.string.domani)
+        // Il primo impegno fra qualche giorno, quando nelle prossime ore non c'è niente.
+        inizio.isAfter(adesso.toLocalDate()) ->
+            stringResource(R.string.tra_giorni, java.time.temporal.ChronoUnit.DAYS.between(adesso.toLocalDate(), inizio).toInt())
         // Solo «tra 29 min»: con «Prossimo ·» davanti il nome dell'impegno restava tagliato (schermate del giro 1151).
         min < 60 -> stringResource(R.string.tra_min, maxOf(min, 1))
         min < 24 * 60 -> stringResource(R.string.tra_ore, min / 60)
@@ -481,7 +496,7 @@ internal fun SchedaImpegno(
                 }
             }
         }
-        val tempo = if (e.tuttoIlGiorno) stringResource(R.string.tutto_il_giorno) else orario(e.inizio) + "–" + orario(e.fine)
+        val tempo = giornoImpegno(e.inizio, adesso) + if (e.tuttoIlGiorno) stringResource(R.string.tutto_il_giorno) else orario(e.inizio) + "–" + orario(e.fine)
         Text(
             listOf(tempo, e.luogo).filter { it.isNotBlank() }.joinToString(" · "),
             color = col.sotto, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(end = 6.dp),

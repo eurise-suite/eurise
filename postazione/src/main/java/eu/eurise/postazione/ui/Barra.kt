@@ -51,6 +51,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import eu.eurise.core.designsystem.icon.EuriseIcons
@@ -170,52 +172,69 @@ private fun Divisore(col: Colori) {
 }
 
 /**
- * Il ventaglio di una categoria: le sue app (la prima è la preferita), «Aggiungi un'app», togli, e in fondo «Modifica la
- * categoria» (nome, icona, o un'altra categoria al suo posto). Sta sopra la dock.
+ * Il ventaglio di una categoria: un pannello pieno appoggiato sopra la dock, dal lato della mano. Le app partono dal
+ * basso, con la preferita (stellina) in fondo, vicino al dito; il tocco apre, la pressione lunga offre «Preferita» e
+ * «Togli». In cima, piccoli: il nome della categoria, + per aggiungere un'app e la matita per modificarla.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Ventaglio(model: PostazioneModel, id: String, col: Colori, largo: Boolean, onChiudi: () -> Unit, onAggiungi: () -> Unit, onModifica: () -> Unit) {
     val c = model.categoria(id) ?: return
     val lista = model.gruppi[id].orEmpty()
     val a = aspetto(c)
+    val haptic = LocalHapticFeedback.current
+    var scelte by remember { mutableStateOf<String?>(null) }
     Box(
-        Modifier.fillMaxSize().background(col.fondo.copy(alpha = 0.72f))
+        Modifier.fillMaxSize().background(col.fondo.copy(alpha = 0.9f))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onChiudi() },
     ) {
         Column(
-            // Sul telefono sopra la barra; sugli schermi larghi accanto al binario, dal lato della mano.
+            // Sul telefono sopra la dock; sugli schermi larghi accanto al binario, dal lato della mano.
             Modifier.align(if (largo) (if (model.mancino) Alignment.CenterStart else Alignment.CenterEnd) else if (model.mancino) Alignment.BottomStart else Alignment.BottomEnd)
                 .navigationBarsPadding()
-                .padding(start = if (largo) 116.dp else 16.dp, end = if (largo) 116.dp else 16.dp, bottom = if (largo) 16.dp else 108.dp).width(280.dp)
-                .heightIn(max = 560.dp).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(start = if (largo) 116.dp else 12.dp, end = if (largo) 116.dp else 12.dp, bottom = if (largo) 16.dp else AltezzaDock + 18.dp)
+                .width(264.dp).heightIn(max = 520.dp)
+                .background(col.pieno, RoundedCornerShape(24.dp))
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
+                .padding(6.dp),
         ) {
-            Text(a.nome, color = col.inchiostro, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp))
-            Text(stringResource(R.string.ventaglio_aiuto), color = col.sotto, fontSize = 12.5.sp, modifier = Modifier.padding(start = 6.dp, bottom = 4.dp))
-            if (lista.isEmpty()) Text(stringResource(R.string.gruppo_vuoto), color = col.sotto, fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp))
-            lista.forEachIndexed { i, chiave ->
-                Voce(col, onClick = { if (model.apri(chiave)) onChiudi() }) {
-                    if (Siti.eSito(chiave)) IconaSito(model.nomeDi(chiave), a.tinta, 40.dp, col.notte) else IconaApp(model.telefono, chiave, 40.dp, col.notte)
-                    Text(model.nomeDi(chiave), color = col.inchiostro, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1,
-                        overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(start = 12.dp))
-                    Icon(
-                        EuriseIcons.star(), stringResource(if (i == 0) R.string.preferita else R.string.rendi_preferita),
-                        Modifier.size(34.dp).clickable(enabled = i != 0) { model.preferita(id, chiave) }.padding(7.dp),
-                        tint = if (i == 0) col.accento else col.sotto.copy(alpha = 0.5f),
-                    )
-                    Icon(
-                        EuriseIcons.close(), stringResource(R.string.togli),
-                        Modifier.size(34.dp).clickable { model.togli(id, chiave) }.padding(8.dp), tint = col.sotto,
-                    )
+            Row(Modifier.fillMaxWidth().padding(start = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(a.icona, null, Modifier.size(17.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta)
+                Text(a.nome, color = col.inchiostro, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).padding(start = 8.dp))
+                Icon(EuriseIcons.plus(), stringResource(R.string.aggiungi_app), Modifier.size(40.dp).clickable { onAggiungi() }.padding(10.dp), tint = col.accento)
+                Icon(EuriseIcons.pencil(), stringResource(R.string.modifica_categoria), Modifier.size(40.dp).clickable { onModifica() }.padding(11.dp), tint = col.accento)
+            }
+            if (lista.isEmpty()) Text(stringResource(R.string.gruppo_vuoto), color = col.sotto, fontSize = 13.sp, modifier = Modifier.padding(10.dp))
+            Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState(), reverseScrolling = true)) {
+                // Dal basso: la preferita (la prima) è l'ultima riga, la più vicina al pollice.
+                lista.withIndex().reversed().forEach { (i, chiave) ->
+                    Box {
+                        Row(
+                            Modifier.fillMaxWidth().height(54.dp).clip(RoundedCornerShape(16.dp))
+                                .combinedClickable(
+                                    onClick = { if (model.apri(chiave)) onChiudi() },
+                                    onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); scelte = chiave },
+                                ).padding(horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (Siti.eSito(chiave)) IconaSito(model.nomeDi(chiave), a.tinta, 38.dp, col.notte) else IconaApp(model.telefono, chiave, 38.dp, col.notte)
+                            Text(model.nomeDi(chiave), color = col.inchiostro, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                                overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(start = 12.dp))
+                            if (i == 0) Icon(EuriseIcons.star(), stringResource(R.string.preferita), Modifier.size(16.dp), tint = col.accento)
+                        }
+                        DropdownMenu(scelte == chiave, onDismissRequest = { scelte = null }) {
+                            if (i != 0) DropdownMenuItem(
+                                text = { Text(stringResource(R.string.rendi_preferita)) }, leadingIcon = { Icon(EuriseIcons.star(), null) },
+                                onClick = { scelte = null; model.preferita(id, chiave) },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.togli)) }, leadingIcon = { Icon(EuriseIcons.close(), null) },
+                                onClick = { scelte = null; model.togli(id, chiave) },
+                            )
+                        }
+                    }
                 }
-            }
-            Voce(col, onClick = onAggiungi) {
-                Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) { Icon(EuriseIcons.plus(), null, Modifier.size(22.dp), tint = col.accento) }
-                Text(stringResource(R.string.aggiungi_app), color = col.accento, fontSize = 14.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = 10.dp))
-            }
-            Voce(col, onClick = onModifica) {
-                Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) { Icon(EuriseIcons.pencil(), null, Modifier.size(20.dp), tint = col.accento) }
-                Text(stringResource(R.string.modifica_categoria), color = col.accento, fontSize = 14.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = 10.dp))
             }
         }
     }
@@ -289,16 +308,6 @@ fun EditorCategoria(model: PostazioneModel, id: String, onChiudi: () -> Unit) {
             }) { Text(stringResource(R.string.imp_fatto)) }
         },
         dismissButton = { TextButton(onChiudi) { Text(stringResource(R.string.annulla)) } },
-    )
-}
-
-@Composable
-private fun Voce(col: Colori, onClick: () -> Unit, contenuto: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().height(60.dp).background(col.pieno, RoundedCornerShape(20.dp)).clickable { onClick() }
-            .padding(start = 10.dp, end = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        content = contenuto,
     )
 }
 

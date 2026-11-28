@@ -33,6 +33,7 @@
     <string name="adesso">ADESSO</string>
     <string name="tra_min">TRA %1$d MIN</string>
     <string name="tra_ore">TRA %1$d H</string>
+    <string name="tra_giorni">TRA %1$d GIORNI</string>
     <string name="domani">DOMANI</string>
     <string name="poi">POI</string>
     <string name="tutto_il_giorno">tutto il giorno</string>
@@ -386,4 +387,5 @@
     <string name="av_elimina">Elimina</string>
     <string name="av_elimina_ancora">Tocca di nuovo per eliminare</string>
     <string name="b_aggiungi_a">Aggiungi una bolla a «%1$s»</string>
+    <string name="impegno_domani">Domani</string>
 </resources>

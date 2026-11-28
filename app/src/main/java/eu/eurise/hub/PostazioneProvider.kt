@@ -205,14 +205,21 @@ class PostazioneProvider : ContentProvider() {
         val data = EuriseData.create(context)
         val now = System.currentTimeMillis()
         val zone = ZoneId.systemDefault()
+        fun leggi(da: Long, a: Long) = runCatching { runBlocking { data.calendar.startingBetween(da, a) } }
+            .getOrDefault(emptyList())
+            .map { e -> Triple(e, e.start.atZone(zone).toInstant().toEpochMilli(), e.end.atZone(zone).toInstant().toEpochMilli()) }
+            .filter { (_, _, end) -> end > now }
         val events = if (data.calendar.hasPermission()) {
-            runCatching { runBlocking { data.calendar.startingBetween(now - 15 * 60_000L, now + C.HOURS * 3_600_000L) } }
-                .getOrDefault(emptyList())
-                .map { e -> Triple(e, e.start.atZone(zone).toInstant().toEpochMilli(), e.end.atZone(zone).toInstant().toEpochMilli()) }
-                .filter { (_, _, end) -> end > now }
+            val vicini = leggi(now - 15 * 60_000L, now + C.HOURS * 3_600_000L)
                 // Prima gli impegni con un orario, poi quelli di tutto il giorno.
                 .sortedWith(compareBy({ it.first.allDay }, { it.second }))
-                .take(C.MAX_EVENTS)
+            // Niente nelle prossime ore: il primo giorno con impegni, anche fra qualche giorno (fino a [C.AVANTI_GIORNI]).
+            vicini.ifEmpty {
+                val dopo = leggi(now, now + C.AVANTI_GIORNI * 86_400_000L).sortedBy { it.second }
+                val giorno = dopo.firstOrNull()?.let { Instant.ofEpochMilli(it.second).atZone(zone).toLocalDate() }
+                dopo.filter { Instant.ofEpochMilli(it.second).atZone(zone).toLocalDate() == giorno }
+                    .sortedWith(compareBy({ it.first.allDay }, { it.second }))
+            }.take(C.MAX_EVENTS)
         } else emptyList()
         val today = LocalDate.now()
         val startOfDay = today.atStartOfDay(zone).toInstant().toEpochMilli()

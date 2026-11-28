@@ -257,7 +257,7 @@ private fun ContenutoBolla(model: PostazioneModel, l: Linguetta, b: Bolla, col: 
                 else -> g.impegni.take(n).forEach { e ->
                     Column(Modifier.fillMaxWidth().clickable { model.apriImpegno(e) }) {
                         Text(e.titolo, color = col.inchiostro, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(if (e.tuttoIlGiorno) stringResource(R.string.tutto_il_giorno) else orario(e.inizio) + "–" + orario(e.fine), color = col.sotto, fontSize = 12.5.sp, maxLines = 1)
+                        Text(giornoImpegno(e.inizio, model.adesso) + if (e.tuttoIlGiorno) stringResource(R.string.tutto_il_giorno) else orario(e.inizio) + "–" + orario(e.fine), color = col.sotto, fontSize = 12.5.sp, maxLines = 1)
                     }
                 }
             }

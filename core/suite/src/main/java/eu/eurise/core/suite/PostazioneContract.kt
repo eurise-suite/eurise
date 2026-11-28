@@ -8,7 +8,7 @@ package eu.eurise.core.suite
 object PostazioneContract {
     fun authority(hubPackage: String) = "$hubPackage.postazione"
 
-    /** Impegni da poco prima di adesso fino a [HOURS] ore dopo, e attività aperte con scadenza fino a oggi. */
+    /** Impegni da poco prima di adesso fino a [HOURS] ore dopo (o, se non ce ne sono, quelli del primo giorno che ne ha), e attività aperte con scadenza fino a oggi. */
     const val METHOD_TODAY = "today"
 
     /** Array di String: titolo dell'impegno. */
@@ -152,4 +152,6 @@ object PostazioneContract {
     const val MAX_EVENTS = 5
     const val MAX_TASKS = 8
     const val HOURS = 36
+    /** Se nelle prossime [HOURS] ore non c'è niente, si cerca il primo giorno con impegni fino a tanti giorni avanti. */
+    const val AVANTI_GIORNI = 30
 }
