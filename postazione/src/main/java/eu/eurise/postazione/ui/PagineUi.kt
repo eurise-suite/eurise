@@ -31,6 +31,17 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -171,10 +182,27 @@ fun CassettoCategorie(model: PostazioneModel, col: Colori, giri: Int, onModifica
                 Modifier.size(44.dp).clickable { scelte = emptyList() }.padding(12.dp), tint = testoSu(model),
             )
         }
+        // Le app partono dal basso, vicino al pollice e alla dock (regola «Ergonomia»): la prima è in basso, le altre salgono.
+        // In «Tutte», l'indice delle lettere sta dal lato della mano, con la A in basso come le app.
+        val griglia = rememberLazyGridState()
+        val scope = rememberCoroutineScope()
+        LaunchedEffect(attiva, giri) { runCatching { griglia.scrollToItem(0) } }
+        Row(Modifier.weight(1f).padding(horizontal = 10.dp).background(col.foglio, RoundedCornerShape(28.dp))) {
+        val indice: @Composable () -> Unit = {
+            if (categoria == null && scelte.isEmpty()) {
+                val app = model.app
+                IndiceLettere(app.map { it.iniziale }.distinct(), col, dalBasso = true, Modifier.padding(vertical = 10.dp, horizontal = 4.dp)) { l ->
+                    val i = app.indexOfFirst { it.iniziale == l }
+                    if (i >= 0) scope.launch { griglia.scrollToItem(i) }
+                }
+            }
+        }
+        if (model.mancino) indice()
         LazyVerticalGrid(
-            GridCells.Fixed(4), Modifier.weight(1f).padding(horizontal = 10.dp).background(col.foglio, RoundedCornerShape(28.dp)),
+            GridCells.Fixed(4), Modifier.weight(1f).fillMaxHeight(), state = griglia,
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Bottom),
+            reverseLayout = true,
         ) {
             if (lista.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
                 Text(stringResource(R.string.gruppo_vuoto), color = col.sotto, fontSize = 13.5.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(16.dp))
@@ -189,6 +217,8 @@ fun CassettoCategorie(model: PostazioneModel, col: Colori, giri: Int, onModifica
                     onLungo = { scelte = if (scelta) scelte - chiave else scelte + chiave },
                 )
             }
+        }
+        if (!model.mancino) indice()
         }
         if (scelte.isNotEmpty()) {
             // Le azioni sulle app scelte, sotto il pollice.
@@ -228,8 +258,9 @@ fun CassettoCategorie(model: PostazioneModel, col: Colori, giri: Int, onModifica
         }
         // La dock delle categorie.
         val voci = model.dock.map { it.id } + TUTTE
+        val tutteNome = stringResource(R.string.cat_tutte)
         LazyRow(
-            Modifier.restaNellaFila().padding(start = 8.dp, end = 8.dp, bottom = 12.dp, top = 4.dp).fillMaxWidth().height(80.dp).background(col.barra, RoundedCornerShape(26.dp)),
+            Modifier.restaNellaFila().padding(start = 8.dp, end = 8.dp, bottom = 12.dp, top = 4.dp).fillMaxWidth().height(AltezzaDock).background(col.barra, RoundedCornerShape(26.dp)),
             contentPadding = PaddingValues(horizontal = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -239,21 +270,21 @@ fun CassettoCategorie(model: PostazioneModel, col: Colori, giri: Int, onModifica
                 val c = model.categoria(id)
                 val sel = id == attiva
                 Column(
-                    Modifier.width(58.dp).combinedClickable(
+                    Modifier.width(52.dp).combinedClickable(
                         onClick = { attiva = id; scelte = emptyList() },
                         onLongClick = { if (c != null) { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onModifica(id) } },
                     ).padding(vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    if (c != null) {
-                        val a = aspetto(c)
-                        Icon(a.icona, null, Modifier.size(if (sel) 25.dp else 23.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta)
-                        Text(a.nome, color = if (sel) col.inchiostro else col.sotto, fontSize = 9.5.sp, letterSpacing = (-0.2).sp,
-                            fontWeight = if (sel) FontWeight.Bold else FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
-                    } else {
-                        Text("A–Z", color = if (sel) col.inchiostro else col.sotto, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                        Text(stringResource(R.string.cat_tutte), color = if (sel) col.inchiostro else col.sotto, fontSize = 9.5.sp,
-                            fontWeight = if (sel) FontWeight.Bold else FontWeight.SemiBold, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
+                    // Solo icone, senza scritte (28 novembre): il nome lo legge TalkBack; «Tutte» è «A–Z».
+                    Box(Modifier.height(30.dp), contentAlignment = Alignment.Center) {
+                        if (c != null) {
+                            val a = aspetto(c)
+                            Icon(a.icona, a.nome, Modifier.size(if (sel) 26.dp else 24.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta)
+                        } else {
+                            Text("A–Z", color = if (sel) col.inchiostro else col.sotto, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                                modifier = Modifier.semantics { contentDescription = tutteNome })
+                        }
                     }
                     Box(Modifier.padding(top = 3.dp).width(16.dp).height(2.5.dp).background(if (sel) col.accento else Color.Transparent, RoundedCornerShape(2.dp)))
                 }
@@ -273,3 +304,50 @@ fun CassettoCategorie(model: PostazioneModel, col: Colori, giri: Int, onModifica
 /** Il testo sopra il cielo, dove non c'è il foglio. */
 @Composable
 private fun testoSu(model: PostazioneModel): Color = testoSulCielo(model.cielo)
+
+/**
+ * L'indice delle lettere accanto a un elenco alfabetico, dal lato della mano: si tocca una lettera o si scorre con il
+ * dito lungo la fila, e l'elenco salta alla prima app con quell'iniziale. Con [dalBasso] la A sta in basso, come le app
+ * che partono dal basso.
+ */
+@Composable
+internal fun IndiceLettere(lettere: List<Char>, col: Colori, dalBasso: Boolean, modifier: Modifier = Modifier, onLettera: (Char) -> Unit) {
+    if (lettere.size < 2) return
+    val ordine = if (dalBasso) lettere.reversed() else lettere
+    var altezza by remember { mutableIntStateOf(1) }
+    var attuale by remember { mutableStateOf<Char?>(null) }
+    val haptic = LocalHapticFeedback.current
+    val salta by androidx.compose.runtime.rememberUpdatedState(onLettera)
+    val scegli: (Float) -> Unit = { y ->
+        val l = ordine[(y / altezza * ordine.size).toInt().coerceIn(0, ordine.lastIndex)]
+        if (l != attuale) { attuale = l; haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); salta(l) }
+    }
+    Column(
+        modifier.fillMaxHeight().width(30.dp).background(col.riquadro, RoundedCornerShape(15.dp))
+            .onSizeChanged { altezza = it.height.coerceAtLeast(1) }
+            .pointerInput(ordine) {
+                awaitEachGesture {
+                    val giu = awaitFirstDown()
+                    giu.consume(); scegli(giu.position.y)
+                    while (true) {
+                        val e = awaitPointerEvent()
+                        val c = e.changes.firstOrNull { it.id == giu.id } ?: break
+                        if (!c.pressed) break
+                        c.consume(); scegli(c.position.y)
+                    }
+                    attuale = null
+                }
+            }
+            .padding(vertical = 6.dp),
+        verticalArrangement = Arrangement.SpaceEvenly,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        ordine.forEach { l ->
+            Text(
+                l.toString(), color = if (l == attuale) col.inchiostro else col.accento,
+                fontSize = if (l == attuale) 14.sp else 11.5.sp, fontWeight = if (l == attuale) FontWeight.Bold else FontWeight.SemiBold,
+            )
+        }
+    }
+}
+

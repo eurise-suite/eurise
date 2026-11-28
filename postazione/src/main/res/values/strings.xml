@@ -383,4 +383,7 @@
     <string name="av_vedi">Vedi la foto</string>
     <string name="av_rispondi_breve">Rispondi</string>
     <string name="av_foto_in_app">La foto si apre nella chat</string>
+    <string name="av_elimina">Elimina</string>
+    <string name="av_elimina_ancora">Tocca di nuovo per eliminare</string>
+    <string name="b_aggiungi_a">Aggiungi una bolla a «%1$s»</string>
 </resources>

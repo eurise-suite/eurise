@@ -109,6 +109,7 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
     var scegliPer by remember { mutableStateOf<String?>(null) }
     var impostazioni by remember { mutableStateOf(false) }
     var modificaBolle by remember { mutableStateOf(false) }
+    var chiediBolla by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var aiAperta by remember { mutableStateOf(false) }
     var pagineAperte by remember { mutableStateOf(false) }
     var gestiAperti by remember { mutableStateOf(false) }
@@ -174,11 +175,11 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
                         onModifica = { pagineAperte = true },
                     )
                     i == homeIndex -> Column(
-                        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(bottom = if (largo) 14.dp else 112.dp),
+                        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(bottom = if (largo) 14.dp else AltezzaDock + 28.dp),
                     ) {
                         if (modificaBolle) BarraModifica(model, col) { modificaBolle = false } else Testata(model, suCielo, Modifier)
-                        Linguette(model, col, suCielo, onBolle = { modificaBolle = true })
-                        FoglioBolle(model, model.attiva, col, giri, modificaBolle, { modificaBolle = it }, Modifier.weight(1f))
+                        Linguette(model, col, suCielo, onBolle = { modificaBolle = true }, onAggiungiBolla = { modificaBolle = true; chiediBolla++ })
+                        FoglioBolle(model, model.attiva, col, giri, modificaBolle, { modificaBolle = it }, Modifier.weight(1f), chiediBolla)
                     }
                     else -> CassettoCategorie(model, col, giri, onModifica = { editor = it })
                 }
@@ -189,7 +190,7 @@ fun PostazioneScreen(model: PostazioneModel, home: Flow<Unit>) {
             // Lo swipe dal basso apre l'AI della pagina: il richiamo sopra la dock.
             val ai = model.aiDi(paginaAi)
             Row(
-                Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 92.dp)
+                Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = AltezzaDock + 8.dp)
                     .clickable { aiAperta = true }.pointerInput(Unit) { scorriSu { aiAperta = true } }.padding(horizontal = 16.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -317,7 +318,8 @@ internal fun nomeLinguetta(l: Linguetta): String = l.nome.ifBlank {
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun Linguette(model: PostazioneModel, col: Colori, suCielo: Color, onBolle: () -> Unit) {
+private fun Linguette(model: PostazioneModel, col: Colori, suCielo: Color, onBolle: () -> Unit, onAggiungiBolla: () -> Unit) {
+    var piu by remember { mutableStateOf(false) }
     val attiva = model.attiva
     var menu by remember { mutableStateOf<Linguetta?>(null) }
     var rinomina by remember { mutableStateOf<Linguetta?>(null) }
@@ -365,11 +367,22 @@ private fun Linguette(model: PostazioneModel, col: Colori, suCielo: Color, onBol
                     }
                 }
             }
-            if (model.linguette.size < Pagine.MAX_LINGUETTE) {
+            // Il «+»: aggiungere una bolla a questa scheda, sistemare le bolle o aggiungere una scheda.
+            Box {
                 Box(
-                    Modifier.padding(start = 2.dp, bottom = 5.dp).size(28.dp).background(col.foglio, CircleShape).clickable { nuova = true },
+                    Modifier.padding(start = 2.dp, bottom = 5.dp).size(32.dp).background(col.foglio, CircleShape).clickable { piu = true },
                     contentAlignment = Alignment.Center,
-                ) { Icon(EuriseIcons.plus(), stringResource(R.string.lg_aggiungi), Modifier.size(14.dp), tint = suCielo) }
+                ) { Icon(EuriseIcons.plus(), stringResource(R.string.b_aggiungi), Modifier.size(15.dp), tint = suCielo) }
+                DropdownMenu(piu, onDismissRequest = { piu = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.b_aggiungi_a, nomeLinguetta(attiva))) },
+                        leadingIcon = { Icon(EuriseIcons.plus(), null) }, onClick = { piu = false; onAggiungiBolla() },
+                    )
+                    DropdownMenuItem(text = { Text(stringResource(R.string.lg_bolle)) }, leadingIcon = { Icon(EuriseIcons.pencil(), null) }, onClick = { piu = false; onBolle() })
+                    if (model.linguette.size < Pagine.MAX_LINGUETTE) DropdownMenuItem(
+                        text = { Text(stringResource(R.string.lg_aggiungi)) }, onClick = { piu = false; nuova = true },
+                    )
+                }
             }
         }
         Row(

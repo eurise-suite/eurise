@@ -198,6 +198,21 @@ object SmsStore {
         runCatching { context.contentResolver.delete(uri, null, null) }
     }
 
+    /**
+     * «Elimina» dalla notifica: toglie l'SMS ricevuto più recente della conversazione con questo testo, non la
+     * conversazione. Riesce solo se Messaggi è l'app degli SMS del telefono.
+     */
+    suspend fun deleteIncoming(context: Context, threadId: Long, body: String) = withContext(Dispatchers.IO) {
+        if (threadId < 0 || body.isEmpty()) return@withContext
+        runCatching {
+            context.contentResolver.query(
+                Telephony.Sms.CONTENT_URI, arrayOf(Telephony.Sms._ID),
+                "${Telephony.Sms.THREAD_ID} = ? AND ${Telephony.Sms.TYPE} = ${Telephony.Sms.MESSAGE_TYPE_INBOX} AND ${Telephony.Sms.BODY} = ?",
+                arrayOf(threadId.toString(), body), "${Telephony.Sms.DATE} DESC",
+            )?.use { c -> if (c.moveToFirst()) context.contentResolver.delete(Uri.parse("content://sms/${c.getLong(0)}"), null, null) }
+        }
+    }
+
     fun deleteSms(context: Context, uri: Uri) {
         runCatching { context.contentResolver.delete(uri, null, null) }
     }

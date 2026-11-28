@@ -28,6 +28,7 @@ object Notifications {
     private const val CHANNEL_FAILED = "failed"
     const val EXTRA_THREAD = "thread"
     const val EXTRA_ADDRESS = "address"
+    const val EXTRA_BODY = "body"
     const val KEY_REPLY = "reply"
 
     private fun channels(context: Context) {
@@ -72,6 +73,13 @@ object Notifications {
                 .addRemoteInput(input).setAllowGeneratedReplies(false).build())
         }
         builder.addAction(Notification.Action.Builder(null, context.getString(R.string.ms_mark_read), action(NotificationActionReceiver.ACTION_READ, 2)).build())
+        // «Elimina» (azione semantica DELETE, la usa anche la Postazione): toglie questo SMS, non la conversazione.
+        val elimina = PendingIntent.getBroadcast(context, id * 10 + 4,
+            Intent(context, NotificationActionReceiver::class.java).setAction(NotificationActionReceiver.ACTION_DELETE)
+                .putExtra(EXTRA_THREAD, threadId).putExtra(EXTRA_ADDRESS, address).putExtra(EXTRA_BODY, text),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        builder.addAction(Notification.Action.Builder(null, context.getString(R.string.ms_delete), elimina)
+            .setSemanticAction(Notification.Action.SEMANTIC_ACTION_DELETE).build())
         runCatching { context.getSystemService(NotificationManager::class.java).notify(id, builder.build()) }
     }
 
@@ -118,6 +126,13 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     try { SmsStore.markRead(context, threadId) } finally { Notifications.cancel(context, threadId); pending.finish() }
                 }
             }
+            ACTION_DELETE -> {
+                val body = intent.getStringExtra(Notifications.EXTRA_BODY).orEmpty()
+                val pending = goAsync()
+                receiverScope.launch {
+                    try { SmsStore.deleteIncoming(context, threadId, body) } finally { Notifications.cancel(context, threadId); pending.finish() }
+                }
+            }
             ACTION_COPY -> {
                 intent.getStringExtra(Intent.EXTRA_TEXT)?.let { code ->
                     context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("codice", code))
@@ -131,5 +146,6 @@ class NotificationActionReceiver : BroadcastReceiver() {
         const val ACTION_REPLY = "eu.eurise.messages.REPLY"
         const val ACTION_READ = "eu.eurise.messages.READ"
         const val ACTION_COPY = "eu.eurise.messages.COPY"
+        const val ACTION_DELETE = "eu.eurise.messages.DELETE"
     }
 }

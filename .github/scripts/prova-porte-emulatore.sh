@@ -65,6 +65,8 @@ echo "$r" | grep -q "richiamare=CHIUSA.*Unknown authority" && ko "il Telefono no
 attesa "$r" richiamare CHIUSA "la curiosa non legge le chiamate da richiamare del Telefono"
 attesa "$r" nonrichiamare CHIUSA "la curiosa non toglie chiamate da «Da richiamare»"
 attesa "$r" lette CHIUSA "la curiosa non segna come letti gli SMS"
+echo "$r" | grep -q "cestino=CHIUSA.*Unknown authority" && ko "Email non è installata: la porta trash non è provata"
+attesa "$r" cestino CHIUSA "la curiosa non sposta email nel Cestino"
 attesa "$r" tastiera CHIUSA "la curiosa non comanda il ripristino della Tastiera"
 attesa "$r" aspetto CHIUSA "la curiosa non legge le impostazioni della suite"
 attesa "$r" giornata CHIUSA "la curiosa non legge impegni e cose da fare (Postazione)"

@@ -45,6 +45,8 @@ class Avviso(
     /** «Segna come letto» e «Archivia» della notifica, se l'app li offre. */
     val letto: Notification.Action? = null,
     val archivia: Notification.Action? = null,
+    /** «Elimina» della notifica (Gmail, Eurise Messaggi…), se l'app lo offre. */
+    val elimina: Notification.Action? = null,
     /** Il nome dell'app che ha mandato la notifica («WhatsApp», «Email»). */
     val app: String = "",
     /**
@@ -131,11 +133,12 @@ class AscoltoService : NotificationListenerService() {
         val semplici = n.actions?.filter { it.remoteInputs == null && it.actionIntent != null }.orEmpty()
         val letto = semplici.firstOrNull { it.semanticAction == Notification.Action.SEMANTIC_ACTION_MARK_AS_READ || LETTO.containsMatchIn(it.title?.toString().orEmpty()) }
         val archivia = semplici.firstOrNull { it.semanticAction == Notification.Action.SEMANTIC_ACTION_ARCHIVE || ARCHIVIA.containsMatchIn(it.title?.toString().orEmpty()) }
+        val elimina = semplici.firstOrNull { it.semanticAction == Notification.Action.SEMANTIC_ACTION_DELETE || ELIMINA.containsMatchIn(it.title?.toString().orEmpty()) }
         val app = runCatching { packageManager.getApplicationLabel(packageManager.getApplicationInfo(sbn.packageName, 0)).toString() }.getOrDefault("")
         return Avviso(
             sbn.key, sbn.packageName, n.extras?.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE)?.toString()?.takeIf { it.isNotBlank() } ?: titolo,
             testo, sbn.postTime, n.contentIntent, rispondi, chiamata, richiama, sbn.isClearable,
-            storia = storia(n), foto = foto(n), letto = letto, archivia = archivia, app = app, simbolo = n.smallIcon,
+            storia = storia(n), foto = foto(n), letto = letto, archivia = archivia, elimina = elimina, app = app, simbolo = n.smallIcon,
         )
     }
 
@@ -179,6 +182,7 @@ class AscoltoService : NotificationListenerService() {
         )
         private val LETTO = Regex("(?i)letto|letta|read|gelesen|\\blu\\b")
         private val ARCHIVIA = Regex("(?i)archiv")
+        private val ELIMINA = Regex("(?i)elimin|delete|cestin|trash|lösch|supprim|borrar")
         private val RICHIAMA = Regex("(?i)richiam|call ?back|chiama|rappel|zurückrufen|devolver")
 
         internal const val K_FINO = "pausa.fino"

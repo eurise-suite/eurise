@@ -1,5 +1,6 @@
 package eu.eurise.postazione.ui
 
+import androidx.compose.ui.unit.dp
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -26,6 +27,9 @@ enum class Accento { Ceruleo, Petrolio, Ottone }
 private fun sfuma(a: Long, b: Long, c: Long) = Brush.linearGradient(listOf(Color(a), Color(b), Color(c)))
 
 /** Il cangiante della lente (accento Ceruleo), lo stesso della riga del «Prossimo» e del pulsante principale. */
+/** Altezza della dock in basso, senza scritte: la Home e il richiamo dell'AI ci si appoggiano sopra. */
+val AltezzaDock = 66.dp
+
 val Lente = sfuma(0xFF2AA2E2, 0xFF1298DF, 0xFF003AC7)
 
 class Colori(

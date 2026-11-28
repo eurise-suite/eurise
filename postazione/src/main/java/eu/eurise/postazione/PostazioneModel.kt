@@ -476,6 +476,25 @@ class PostazioneModel(application: Application) : AndroidViewModel(application) 
         togliDallaLista(a)
     }
 
+    /** Si può eliminare: un'email di Eurise Email (va nel Cestino) o una notifica che offre «Elimina». */
+    fun eliminabile(a: Avviso): Boolean = a.rifMail.isNotEmpty() || a.elimina != null
+
+    /**
+     * «Elimina» nella bolla, dopo il secondo tocco: l'email di Eurise Email va nel Cestino della casella (porta `trash`,
+     * solo suite); per le altre si usa l'«Elimina» della notifica (per esempio un SMS di Eurise Messaggi o un'email di Gmail).
+     */
+    fun elimina(a: Avviso) {
+        when {
+            a.rifMail.isNotEmpty() -> {
+                DallaSuite.nascondi(contesto, a, perUnOra = false)
+                viewModelScope.launch(Dispatchers.IO) { runCatching { PeopleContract.trashMail(contesto, a.rifMail) } }
+            }
+            a.elimina != null -> { runCatching { a.elimina.actionIntent.send() }; Ascolto.vista(a) }
+            else -> return
+        }
+        togliDallaLista(a)
+    }
+
     /** Tutte le righe di una bolla via, con un tocco. */
     fun vistaTutte(chiamate: Boolean) { avvisi.filter { it.chiamata == chiamate }.forEach { vista(it) } }
 

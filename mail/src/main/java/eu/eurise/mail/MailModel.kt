@@ -648,6 +648,22 @@ object MailCache {
         return true
     }
 
+    /**
+     * L'email «casella:uid» va nel Cestino della casella (come «Elimina» in Email) e sparisce dall'elenco sul telefono
+     * solo se lo spostamento riesce; senza rete resta dov'era.
+     */
+    fun trash(context: Context, ref: String): Boolean {
+        val id = ref.substringBeforeLast(':', "")
+        val uid = ref.substringAfterLast(':').toLongOrNull() ?: return false
+        val account = AccountStore(context).load().firstOrNull { it.id == id } ?: return false
+        if (read(context, id).none { it.uid == uid }) return false
+        Thread {
+            val ok = runCatching { MailClient(account).move(uid, MailClient.Target.Trash) }.getOrDefault(false)
+            if (ok) synchronized(this) { write(context, id, read(context, id).filter { it.uid != uid }) }
+        }.start()
+        return true
+    }
+
     /** Tutte le email da leggere di questi indirizzi diventano lette (la Chat apre il filo di una persona). */
     fun markSeenFrom(context: Context, emails: List<String>): Boolean {
         val wanted = emails.map { it.trim().lowercase() }.filter { it.isNotBlank() }.toSet()

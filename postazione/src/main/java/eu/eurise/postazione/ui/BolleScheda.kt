@@ -103,6 +103,7 @@ private fun nomeMisura(m: Misura): Int = when (m) {
 @Composable
 fun FoglioBolle(
     model: PostazioneModel, l: Linguetta, col: Colori, giri: Int, modifica: Boolean, onModifica: (Boolean) -> Unit, modifier: Modifier,
+    chiediAggiungi: Int = 0,
 ) {
     val stato = remember(l.id) { LazyListState() }
     LaunchedEffect(giri, l.id) { stato.scrollToItem(0) }
@@ -110,6 +111,8 @@ fun FoglioBolle(
     val forma = RoundedCornerShape(topStart = if (prima) 0.dp else 22.dp, topEnd = 22.dp, bottomStart = 22.dp, bottomEnd = 22.dp)
     val bolle = model.bolleDi(l)
     var aggiungi by remember { mutableStateOf(false) }
+    // Il «+» accanto alle linguette chiede «Aggiungi una bolla»: si apre la scelta, già in modifica.
+    LaunchedEffect(chiediAggiungi) { if (chiediAggiungi > 0) aggiungi = true }
     LazyColumn(
         modifier.fillMaxWidth().padding(horizontal = 10.dp).background(col.foglio, forma), state = stato,
         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp),
@@ -139,6 +142,19 @@ fun FoglioBolle(
         }
         if (vuote.isNotEmpty()) item(key = "vuote") { StrisciaVuote(model, vuote, col) }
         if (bolle.isEmpty() && !modifica) item { Riga(stringResource(R.string.b_vuoto), stringResource(R.string.b_aggiungi), col) { onModifica(true); aggiungi = true } }
+        // Sempre in fondo alla scheda, piccolo e dal lato della mano: «+ Bolla» porta subito alla scelta.
+        if (!modifica && bolle.isNotEmpty()) item(key = "piu") {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = if (model.mancino) Arrangement.Start else Arrangement.End) {
+                Row(
+                    Modifier.background(col.bolla, RoundedCornerShape(16.dp)).clickable { onModifica(true); aggiungi = true }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(EuriseIcons.plus(), null, Modifier.size(15.dp), tint = col.accento)
+                    Text(" " + stringResource(R.string.b_aggiungi), color = col.accento, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
         if (modifica) item(key = "aggiungi") {
             Box(
                 Modifier.fillMaxWidth().height(48.dp).background(col.bolla, RoundedCornerShape(16.dp)).clickable { aggiungi = true },
@@ -603,6 +619,7 @@ private fun FoglioAvviso(model: PostazioneModel, a: Avviso, col: Colori, onChiud
                         } else {
                             add { Tasto(EuriseIcons.close(), stringResource(if (a.chiamata) R.string.av_non_richiamare else R.string.av_togli), col) { model.vista(a); onChiudi() } }
                         }
+                        if (model.eliminabile(a)) add { TastoElimina(stringResource(R.string.av_elimina), col) { model.elimina(a); onChiudi() } }
                         if (a.archivia != null) add { Tasto(EuriseIcons.folder(), stringResource(R.string.av_archivia), col) { model.archivia(a); onChiudi() } }
                         add { Tasto(EuriseIcons.clock(), stringResource(R.string.sw_dopo), col) { model.piuTardi(a); onChiudi() } }
                         add { Tasto(EuriseIcons.task(), stringResource(R.string.sw_da_fare), col) { model.daFare(a); onChiudi() } }
@@ -710,6 +727,26 @@ private fun Tasto(icona: ImageVector, nome: String, col: Colori, forte: Boolean 
             ),
         contentAlignment = Alignment.Center,
     ) { Icon(icona, nome, Modifier.size(19.dp), tint = if (forte) col.accento else col.sotto) }
+}
+
+/**
+ * «Elimina»: il cestino. Il primo tocco lo fa diventare rosso e dice «Tocca di nuovo per eliminare»; il secondo elimina.
+ * Così un tocco per sbaglio non cancella niente (un SMS eliminato non torna).
+ */
+@Composable
+private fun TastoElimina(nome: String, col: Colori, onElimina: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var pronto by remember { mutableStateOf(false) }
+    val rosso = Color(0xFFB3261E)
+    val ancora = stringResource(R.string.av_elimina_ancora)
+    LaunchedEffect(pronto) { if (pronto) { kotlinx.coroutines.delay(3_000); pronto = false } }
+    Box(
+        Modifier.size(44.dp).background(if (pronto) rosso else col.riquadro, CircleShape)
+            .clickable(onClickLabel = nome, role = androidx.compose.ui.semantics.Role.Button) {
+                if (pronto) onElimina() else { pronto = true; android.widget.Toast.makeText(context, ancora, android.widget.Toast.LENGTH_SHORT).show() }
+            },
+        contentAlignment = Alignment.Center,
+    ) { Icon(EuriseIcons.trash(), nome, Modifier.size(19.dp), tint = if (pronto) Color.White else col.sotto) }
 }
 
 /** Le bolle che si possono aggiungere alla linguetta (quelle che non ha). */

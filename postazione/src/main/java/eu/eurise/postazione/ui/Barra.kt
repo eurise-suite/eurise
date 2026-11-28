@@ -49,6 +49,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import eu.eurise.core.designsystem.icon.EuriseIcons
@@ -68,7 +70,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * La dock in basso: otto categorie con la loro icona, le stesse in ogni scheda (un tocco apre il ventaglio con le sue app, tenere
+ * La dock in basso: otto categorie con la loro icona, senza scritte, le stesse in ogni scheda (un tocco apre il ventaglio con le sue app, tenere
  * premuto apre la preferita) e la lente con la stellina di Eurise dal lato della mano (un tocco cerca ovunque, tenere premuto
  * chiama Alfred).
  */
@@ -80,19 +82,21 @@ fun Barra(
     modifier: Modifier = Modifier,
 ) {
     val haptic = LocalHapticFeedback.current
+    val cercaNome = stringResource(R.string.cerca)
     val lente: @Composable () -> Unit = {
         Column(
             Modifier.combinedClickable(onClick = onLente, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onAlfred() }),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(Modifier.size(44.dp).background(col.lente, RoundedCornerShape(15.dp)), contentAlignment = Alignment.Center) {
-                LenteEurise(Color.White, Modifier.size(25.dp))
-            }
-            Text(stringResource(R.string.cerca), color = col.sotto, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
+            Box(
+                Modifier.size(46.dp).background(col.lente, RoundedCornerShape(15.dp))
+                    .semantics { contentDescription = cercaNome },
+                contentAlignment = Alignment.Center,
+            ) { LenteEurise(Color.White, Modifier.size(25.dp)) }
         }
     }
     Row(
-        modifier.navigationBarsPadding().padding(start = 8.dp, end = 8.dp, bottom = 12.dp).fillMaxWidth().height(84.dp)
+        modifier.navigationBarsPadding().padding(start = 8.dp, end = 8.dp, bottom = 12.dp).fillMaxWidth().height(AltezzaDock)
             .background(col.barra, RoundedCornerShape(26.dp)).padding(horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -110,16 +114,11 @@ fun Barra(
                     ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    // Solo il disegno nel suo colore, senza alone: otto categorie ci stanno senza stringersi.
-                    Box(Modifier.size(34.dp), contentAlignment = Alignment.Center) {
-                        Icon(a.icona, null, Modifier.size(23.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta)
+                    // Solo il disegno nel suo colore, senza scritte (richiesta del proprietario, 28 novembre): il nome lo legge
+                    // TalkBack. Il tocco è largo quanto la colonna.
+                    Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                        Icon(a.icona, a.nome, Modifier.size(25.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta)
                     }
-                    // Nomi fino a nove lettere interi («Comunica»): un filo più piccoli e stretti, mai tagliati se ci stanno.
-                    Text(
-                        a.nome, color = col.sotto, fontSize = if (a.nome.length > 7) 8.5.sp else 9.5.sp, letterSpacing = (-0.3).sp,
-                        fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
                 }
             }
         }
@@ -152,10 +151,9 @@ fun Binario(
                 Modifier.combinedClickable(onClick = { onVentaglio(c.id) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onGruppo(c.id) }),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
-                    Icon(a.icona, null, Modifier.size(24.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta)
+                Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                    Icon(a.icona, a.nome, Modifier.size(25.dp), tint = if (col.notte) Color(0xFFE9EBEE) else a.tinta)
                 }
-                Text(a.nome, color = col.sotto, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
             }
         }
         Spacer(Modifier.height(6.dp))

@@ -32,6 +32,8 @@ object PeopleContract {
     const val METHOD_DISMISS_CALLBACK = "dismissCallBack"
     /** Email: segna come letta l'email [EXTRA_REF] («casella:uid»), sul telefono e nella casella. */
     const val METHOD_MARK_SEEN = "markSeen"
+    /** Email: sposta nel Cestino della casella l'email [EXTRA_REF] («casella:uid»); si recupera dal Cestino. */
+    const val METHOD_TRASH = "trash"
     /** Messaggi, Telefono, Email: tutto ciò che è da leggere con questi numeri ([EXTRA_PHONES]) o email ([EXTRA_EMAILS])
      *  diventa letto (la Chat, aprendo il filo di una persona). */
     const val METHOD_MARK_READ = "markRead"
@@ -221,6 +223,10 @@ object PeopleContract {
     /** Segna come letta un'email in Eurise Email (fuori dal thread principale). */
     fun markMailSeen(context: Context, ref: String): Boolean =
         call(context, App.Mail, METHOD_MARK_SEEN, Bundle().apply { putString(EXTRA_REF, ref) })?.getBoolean(EXTRA_RESULT) == true
+
+    /** Sposta nel Cestino un'email di Eurise Email (fuori dal thread principale): «Elimina» nella Postazione. */
+    fun trashMail(context: Context, ref: String): Boolean =
+        call(context, App.Mail, METHOD_TRASH, Bundle().apply { putString(EXTRA_REF, ref) })?.getBoolean(EXTRA_RESULT) == true
 
     /** Segna come letto in [app] tutto ciò che viene da questi numeri o indirizzi (fuori dal thread principale). */
     fun markRead(context: Context, app: App, phones: List<String>, emails: List<String>): Boolean {

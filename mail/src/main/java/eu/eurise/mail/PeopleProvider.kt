@@ -24,6 +24,8 @@ class PeopleProvider : ContentProvider() {
                 // «Vista» nella Postazione: l'email si segna come letta (anche nella casella).
                 P.METHOD_MARK_READ -> Bundle().apply { putBoolean(P.EXTRA_RESULT, MailCache.markSeenFrom(ctx, extras?.getStringArray(P.EXTRA_EMAILS).orEmpty().toList())) }
                 P.METHOD_MARK_SEEN -> Bundle().apply { putBoolean(P.EXTRA_RESULT, MailCache.markSeen(ctx, extras?.getString(P.EXTRA_REF).orEmpty())) }
+                // «Elimina» nella Postazione: nel Cestino della casella, da cui si recupera.
+                P.METHOD_TRASH -> Bundle().apply { putBoolean(P.EXTRA_RESULT, MailCache.trash(ctx, extras?.getString(P.EXTRA_REF).orEmpty())) }
                 else -> null
             }
         }.getOrNull()
