@@ -74,7 +74,7 @@ jobs:
             for f in $(find "$1" -name '*.apk'); do
               pkg=$("$bt/aapt2" dump packagename "$f" 2>/dev/null || true)
               case "$pkg" in
-                eu.eurise.hub.debug|eu.eurise.password.debug|eu.eurise.messages.debug|eu.eurise.keyboard.debug|eu.eurise.postazione.debug|eu.eurise.phone.debug) cp "$f" "$2/$pkg.apk";;
+                eu.eurise.hub.debug|eu.eurise.password.debug|eu.eurise.messages.debug|eu.eurise.keyboard.debug|eu.eurise.postazione.debug|eu.eurise.phone.debug|eu.eurise.mail.debug) cp "$f" "$2/$pkg.apk";;
               esac
             done
             ls -la "$2"
